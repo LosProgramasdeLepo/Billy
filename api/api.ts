@@ -731,38 +731,36 @@ export async function logIn(email: string, password: string) {
       .from(USERS_TABLE)
       .select('email, name, surname')
       .eq('email', user.email)
-      .single();
+      .single();  
 
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      return { error: profileError };
-    }
+    // Modificación: Usar el token de sesión en lugar de user.id
+    if (session && session.access_token) {
+      const { data: authUser, error: authError } = await supabase.auth.getUser(session.access_token);
 
-    // Verificar si el usuario existe en la tabla de autenticación de Supabase
-    const { data: authUser, error: authError } = await supabase.auth.getUser(user.id);
+      if (authError) {
+        console.error("Error fetching user from authentication:", authError);
+        // Si hay un error de autenticación, asumimos que el email no está validado
+        return { error: "Email not validated" };
+      }
 
-    if (authError) {
-      console.error("Error fetching user from authentication:", authError);
-      return { error: authError };
-    }
+      // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
+      if (!profile && authUser && !authUser.user.user_metadata?.email_verified) {
+        console.error("Email not validated");
+        return { error: "Email not validated" };
+      }
 
-    // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
-    if (!profile && authUser && !user.user_metadata?.email_verified) {
-      console.error("Email not validated");
-      return { error: "Email not validated" };
-    }
-
-    // Si el usuario existe en la autenticación y está verificado, pero no está en nuestra tabla de usuarios, agregarlo
-    if (!profile && authUser && user.user_metadata?.email_verified) {
-      const newUser = {
-        email: user.email,
-        name: user.user_metadata?.name,
-        surname: user.user_metadata?.surname
-      };
-      await supabase
-        .from(USERS_TABLE)
-        .insert(newUser)
-        .select();
+      // Si el usuario existe en la autenticación y está verificado, pero no está en nuestra tabla de usuarios, agregarlo
+      if (!profile && authUser && authUser.user.user_metadata?.email_verified) {
+        const newUser = {
+          email: authUser.user.email,
+          name: authUser.user.user_metadata?.name,
+          surname: authUser.user.user_metadata?.surname
+        };
+        await addData(USERS_TABLE, newUser);
+      }
+    } else {
+      console.error("No valid session token found");
+      return { error: "No valid session token found" };
     }
 
     await AsyncStorage.setItem('userSession', JSON.stringify(session));
@@ -775,6 +773,7 @@ export async function logIn(email: string, password: string) {
     return { error: "An unexpected error occurred." };
   }
 }
+
 
 export async function logOut() {
   try {
