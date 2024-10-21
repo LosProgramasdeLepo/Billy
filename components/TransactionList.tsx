@@ -1,13 +1,13 @@
-import React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, FlatList, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { removeIncome, IncomeData, removeOutcome, OutcomeData} from '../api/api';
+import { removeIncome, IncomeData, removeOutcome, OutcomeData, getBillParticipants } from '../api/api';
 import moment from 'moment';
 import 'moment/locale/es';
 import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ExpenseDetailsModal } from './modals/ExpenseDetailsModal';
 
 moment.locale('es');
 
@@ -25,6 +25,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   
   const navigation = useNavigation();
   const [selectedTransaction, setSelectedTransaction] = useState<IncomeData | OutcomeData | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [paidBy, setPaidBy] = useState<string>('');
 
   const sortTransactions = useCallback((transactions: (IncomeData | OutcomeData)[]) => {
     return transactions.sort((a, b) => new Date(b.created_at ?? "").getTime() - new Date(a.created_at ?? "").getTime());
@@ -80,6 +83,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
     return Object.entries(grouped).map(([date, transactions]) => ({ date, data: transactions }));
   }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators]);
 
+  const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
+    setSelectedTransaction(transaction);
+    if ((transaction as OutcomeData).bill_id) {
+      const billParticipants = await getBillParticipants((transaction as OutcomeData).bill_id);
+      if (billParticipants) {
+        setParticipants(billParticipants.map(p => p.email));
+        const payer = billParticipants.find(p => p.amount_paid === transaction.amount);
+        setPaidBy(payer ? payer.email : 'Desconocido');
+      }
+    } else {
+      setParticipants([]);
+      setPaidBy('');
+    }
+    setModalVisible(true);
+  }, []);
+
   const handleLongPress = useCallback((transaction: IncomeData | OutcomeData) => {
     setSelectedTransaction(transaction);
     Alert.alert("Eliminar transacción", "¿Está seguro de que quiere eliminar la transacción?", [
@@ -107,7 +126,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   };
 
   const renderTransactionItem = useCallback(({ item }: { item: IncomeData | OutcomeData }) => (
-    <TouchableOpacity onLongPress={() => handleLongPress(item)}>
+    <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
       <View style={styles.card}>
         <View style={styles.iconContainer}>
           {(item as any).type === 'income' ? (
@@ -127,7 +146,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
         </ThemedText>
       </View>
     </TouchableOpacity>
-  ), [handleLongPress, getCategoryIcon, showDateSeparators]);
+  ), [handlePress, handleLongPress, getCategoryIcon, showDateSeparators]);
 
   const renderDateHeader = useCallback(({ date }: { date: string }) => (
     <View style={styles.dateHeader}>
@@ -152,7 +171,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   }, [renderDateHeader, renderTransactionItem]);
 
   return (
-    <View>
+    <View style={styles.container}>
       {showHeader && (
         <View style={styles.rowContainer}>
           <Text style={styles.transactionsTitle}>Actividad reciente</Text>
@@ -168,6 +187,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
         showsVerticalScrollIndicator={false}
         scrollEnabled={scrollEnabled}
       />
+      {selectedTransaction && (
+        <ExpenseDetailsModal
+          isVisible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          expense={{
+            id: selectedTransaction.id ?? "",
+            amount: selectedTransaction.amount,
+            description: selectedTransaction.description,
+            paidBy: paidBy,
+            participants: participants,
+            categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -244,5 +277,8 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: '#4B00B8',
     textDecorationLine: 'underline',
+  },
+  container: {
+    flex: 1,
   },
 });
