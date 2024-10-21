@@ -12,8 +12,8 @@ interface DebtEntryProps {
 }
 
 {/* Debts data component */}
-const useDebtsData = (profileEmail: string) => {
-  const { currentProfileId } = useAppContext();
+export const useDebtsData = () => {  
+  const { user, currentProfileId } = useAppContext();
 
   const [totalDebtsToUser, setTotalDebtsToUser] = useState(0);
   const [totalDebtsFromUser, setTotalDebtsFromUser] = useState(0);
@@ -24,9 +24,9 @@ const useDebtsData = (profileEmail: string) => {
   const fetchDebts = useCallback(async () => {
     try {
       const [debtsToUser, debtsFromUser, totalToPay] = await Promise.all([
-        getDebtsToUser(profileEmail, currentProfileId ?? ""),
-        getDebtsFromUser(profileEmail, currentProfileId ?? ""),
-        getTotalToPayForUserInDateRange(profileEmail, currentProfileId ?? "", new Date('2024-01-01'), new Date('2030-12-31'))
+        getDebtsToUser(user?.email ?? "", currentProfileId ?? ""),
+        getDebtsFromUser(user?.email ?? "", currentProfileId ?? ""),
+        getTotalToPayForUserInDateRange(user?.email ?? "", currentProfileId ?? "", new Date('2024-01-01'), new Date('2030-12-31'))
       ]);
 
       if (debtsToUser && debtsFromUser) {
@@ -41,11 +41,7 @@ const useDebtsData = (profileEmail: string) => {
     catch (error) {
       console.error('Error fetching debts:', error);
     }
-  }, [profileEmail, currentProfileId]);
-
-  useEffect(() => {
-    fetchDebts();
-  }, [fetchDebts]);
+  }, [user?.email, currentProfileId]);
 
   return { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts: fetchDebts };
 };
@@ -84,7 +80,7 @@ export const SharedBalanceCard  = () => {
   const [title, setTitle] = useState(profileName);
   const [isExpanded, setIsExpanded] = useState(false);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
-  const { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts } = useDebtsData(user?.email ?? "");
+  const { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts } = useDebtsData();
 
   useEffect(() => {
     const fetchUserNames = async () => {
@@ -124,9 +120,7 @@ export const SharedBalanceCard  = () => {
   }, [fetchProfileName]);
   
   useEffect(() => {
-    if (!isLoading) {
-      setTitle(profileName);
-    }
+    if (!isLoading) setTitle(profileName);
   }, [profileName, isLoading]);
 
   useEffect(() => {
