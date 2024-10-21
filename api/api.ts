@@ -740,7 +740,7 @@ export async function logIn(email: string, password: string) {
       }
       
       // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
-      if (!userData && authUser && !authUser.user.user_metadata.email_verified) {
+      if (!userData && authUser && (authUser.user.last_sign_in_at != null)) {
         console.error("Email not validated");
         return { error: "Email not validated" };
       }
