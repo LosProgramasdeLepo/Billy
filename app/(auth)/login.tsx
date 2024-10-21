@@ -3,7 +3,7 @@ import { View, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingV
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { getUser, logIn } from '@/api/api';
+import { addProfile, changeCurrentProfile, getUser, logIn } from '@/api/api';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Alert } from 'react-native';
 import { requestPasswordReset } from '../../api/api';  
@@ -22,23 +22,43 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const result = await logIn(email, password);
-      if (result.user) { 
-        const user = await getUser(email);
-        setUser(user);
-        navigation.reset({ index: 0, routes: [{ name: '(tabs)' as never }] });
-      } else {
+      const { user, error } = await logIn(email, password);
+      if (error) {
         Alert.alert('Login Failed', 'Invalid email or password');
+        return;
       }
-    } catch (error) {
-      Alert.alert('Login Error', 'An error occurred during login');
+      
+      if (!user) {
+        Alert.alert('Login Error', 'User not found. Please check your email and try again.');
+        return;
+      }
+  
+      const userData = await getUser(email);
+      if (!userData) {
+        Alert.alert('Login Error', 'User data not found. Please try again.');
+        return;
+      }
+  
+      setUser(userData);
+  
+      // Create default profile if it doesn't exist
+      if (!userData.my_profiles || userData.my_profiles.length === 0) {
+        const newProfile = await addProfile('Default', email);
+        if (newProfile?.id) await changeCurrentProfile(email, newProfile.id);
+      }
+  
+      navigation.reset({ index: 0, routes: [{ name: '(tabs)' as never }] });
+    } 
+    
+    catch (error) {
+      console.error('Login Error:', error);
+      Alert.alert('Login Error', 'An error occurred during login. Please try again.');
     }
   };
 
   const handleForgotPassword = () => {
-    if (!email) {
-      setErrorMessage('Por favor inserte un email');
-    } else {
+    if (!email) setErrorMessage('Por favor inserte un email');
+    else {
       setErrorMessage('');
       requestPasswordReset(email);
     }

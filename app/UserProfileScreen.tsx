@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
 import { VerificationModal } from '@/components/modals/VerificationModal';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 
 const EditableField = ({ label, value, isEditing, editingField, fieldName, onChangeText, onEditField }: { label: string, value: string, isEditing: boolean, editingField: string, fieldName: string, onChangeText: (text: string) => void, onEditField: (field: string | null) => void }) => (
   <View style={styles.infoContainer}>
@@ -31,6 +32,8 @@ const EditableField = ({ label, value, isEditing, editingField, fieldName, onCha
 export default function UserProfileScreen() {
   const { user, refreshUser } = useAppContext();
   const navigation = useNavigation();
+  const router = useRouter();
+
   const [userName, setUserName] = useState<string>('');
   const [userSurname, setUserSurname] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
@@ -167,9 +170,13 @@ export default function UserProfileScreen() {
 
   const handleLogout = async () => {
     const result = await logOut();
-    if (result.error) Alert.alert('Logout Error', result.error);
-    navigation.navigate('start' as never);
+    if (result.error) {
+      Alert.alert('Logout Error', result.error);
+    } else {
+      router.replace('/(auth)/start');
+    }
   };
+
 
   const handleClose = () => {
     navigation.goBack();

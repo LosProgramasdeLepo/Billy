@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { useNavigation } from '@react-navigation/native';
-import { signUp, addProfile, changeCurrentProfile, getUser } from '@/api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signUp } from '@/api/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '@/hooks/useAppContext';
 
@@ -31,22 +30,21 @@ export default function Signup() {
       Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
     }
-
+  
     try {
-      const { error, session } = await signUp(email, password, name, surname);
+      const { error } = await signUp(email, password);
       if (error) Alert.alert('Error de registro', 'No se pudo crear la cuenta');
-      
       else {
-        await AsyncStorage.setItem('userSession', JSON.stringify(session));
-        const user = await getUser(email);
-        setUser(user);
-        const newProfile = await addProfile('Default', email);
-        await changeCurrentProfile(email, newProfile?.id ?? "");
-        navigation.navigate('(tabs)' as never);
+        Alert.alert(
+          'Registro exitoso',
+          'Se ha enviado un correo de verificación. Por favor, verifica tu correo antes de iniciar sesión.',
+          [{ text: 'OK', onPress: () => navigation.navigate('login' as never) }]
+        );
       }
-    } 
-    
+    }
+
     catch (error) {
+      console.error('Error during signup:', error);
       Alert.alert('Error de registro', 'Ocurrió un error durante el registro');
     }
   };
