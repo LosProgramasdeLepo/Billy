@@ -13,6 +13,11 @@ interface ExpenseDetailsModalProps {
     paidBy: string;
     participants: string[];
     categoryIcon: any;
+    sharedOutcomeData?: {
+      users: string[];
+      to_pay: number[];
+      has_paid: boolean[];
+    };
   };
 }
 
@@ -34,7 +39,17 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
           <ThemedText style={styles.label}>Quien Pagó:</ThemedText>
           <ThemedText style={styles.value}>{expense.paidBy}</ThemedText>
           <ThemedText style={styles.label}>Participantes:</ThemedText>
-          <ThemedText style={styles.value}>{expense.participants.join(', ')}</ThemedText>
+          {expense.sharedOutcomeData ? (
+            expense.sharedOutcomeData.users.map((user, index) => (
+              <View key={index} style={styles.participantRow}>
+                <ThemedText style={styles.value}>{user}</ThemedText>
+                <ThemedText style={styles.value}>$ {expense.sharedOutcomeData!.to_pay[index].toFixed(2)}</ThemedText>
+                <ThemedText style={styles.value}>{expense.sharedOutcomeData!.has_paid[index] ? 'Pagado' : 'Pendiente'}</ThemedText>
+              </View>
+            ))
+          ) : (
+            <ThemedText style={styles.value}>{expense.participants.join(', ')}</ThemedText>
+          )}
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
           </TouchableOpacity>
@@ -91,7 +106,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 20,
-    fontWeight: '400',
+    fontWeight: 'bold',
     color: '#000000',
     marginTop: 15,
   },
@@ -113,5 +128,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  participantRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 5,
   },
 });

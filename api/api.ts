@@ -43,7 +43,8 @@ export interface OutcomeData {
 
 export interface SharedOutcomeData {
   id? : string;
-  users : string[];
+  users: string[];
+  userNames?: string[];
   to_pay : number[];
   has_paid? : boolean[];
 }
@@ -1779,4 +1780,36 @@ export async function getBillDebts(billId: string) {
     console.error("Error inesperado al obtener las deudas de la factura:", error);
     return null;
   }
+}
+
+export async function getUserName(email: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from(USERS_TABLE)
+      .select('name')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      console.error("Error fetching name from Users:", error);
+      return email;
+    }
+
+    return data?.name || email;
+  } catch (error) {
+    console.error("Unexpected error fetching user name:", error);
+    return email;
+  }
+}
+
+export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutcomeData | null> {
+  const sharedOutcome = await getSharedOutcome(id);
+  if (sharedOutcome) {
+    const userNames = await Promise.all(sharedOutcome.users.map(getUserName));
+    return {
+      ...sharedOutcome,
+      userNames
+    };
+  }
+  return null;
 }

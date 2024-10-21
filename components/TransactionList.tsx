@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, FlatList, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { removeIncome, IncomeData, removeOutcome, OutcomeData, getBillDebts } from '../api/api';
+import { removeIncome, IncomeData, removeOutcome, OutcomeData, getSharedOutcomeWithNames } from '../api/api';
 import moment from 'moment';
 import 'moment/locale/es';
 import { useNavigation } from '@react-navigation/native';
@@ -85,12 +85,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
 
   const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
     setSelectedTransaction(transaction);
-    if ((transaction as OutcomeData).bill_id) {
-      const billDebts = await getBillDebts((transaction as OutcomeData).bill_id);
-      if (billDebts) {
-        setParticipants(billDebts.map(debt => debt.debtor));
-        const payer = billDebts.find(debt => debt.amount === transaction.amount);
-        setPaidBy(payer ? payer.creditor : 'Desconocido');
+    if ((transaction as OutcomeData).shared_outcome) {
+      const sharedOutcome = (transaction as OutcomeData).shared_outcome;
+      if (sharedOutcome) {
+        const sharedOutcomeData = await getSharedOutcomeWithNames(sharedOutcome);
+        if (sharedOutcomeData) {
+          setParticipants(sharedOutcomeData.userNames || sharedOutcomeData.users);
+          setPaidBy(sharedOutcomeData.userNames?.[0] || sharedOutcomeData.users[0]);
+        }
       }
     } else {
       setParticipants([]);
