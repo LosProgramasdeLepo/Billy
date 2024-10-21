@@ -793,6 +793,32 @@ export async function getUser(email: string): Promise<UserData | null> {
   return await getData(USERS_TABLE, email, 'email');
 }
 
+export async function getUsers(emails: string[]): Promise<{ names: Record<string, string>, avatars: Record<string, string> }> {
+  try {
+    const { data, error } = await supabase
+      .from('Users')
+      .select('email, name, surname, profile_picture_url')
+      .in('email', emails);
+
+    if (error) throw error;
+
+    const names: Record<string, string> = {};
+    const avatars: Record<string, string> = {};
+
+    data.forEach(user => {
+      names[user.email] = `${user.name} ${user.surname}`;
+      avatars[user.email] = user.profile_picture_url;
+    });
+
+    return { names, avatars };
+  } 
+  
+  catch (error) {
+    console.error('Error fetching users:', error);
+    return { names: {}, avatars: {} };
+  }
+}
+
 export async function changeCurrentProfile(user: string, newProfileID: string) {
   return await updateData(USERS_TABLE, 'current_profile', newProfileID, 'email', user);
 }
