@@ -691,7 +691,7 @@ async function updateBalance(profile: string, added: number): Promise<void | nul
 
 /* User */
 
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string, name: string, surname: string) {
   try {
     const { data, error } = await supabase.auth.signUp({
       email: email,
@@ -702,6 +702,9 @@ export async function signUp(email: string, password: string) {
       console.error("Error during sign up:", error);
       return { error };
     }
+
+    const newUser: UserData = { email: email, name: name, surname: surname };
+    await addData(USERS_TABLE, newUser);
 
     return { data };
   } 
@@ -714,10 +717,7 @@ export async function signUp(email: string, password: string) {
 
 export async function logIn(email: string, password: string) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email, password: password });
 
     if (error) {
       console.error("Error during login:", error);
@@ -725,13 +725,9 @@ export async function logIn(email: string, password: string) {
     }
 
     const { user, session } = data;
-
-    // Verificar si el usuario existe en la tabla de usuarios
-    const { data: profile, error: profileError } = await supabase
-      .from(USERS_TABLE)
-      .select('email, name, surname')
-      .eq('email', user.email)
-      .single();  
+    
+    // Tomo el usuario de la tabla (si está)
+    const userData = await getUser(user.email ?? "");
 
     // Modificación: Usar el token de sesión en lugar de user.id
     if (session && session.access_token) {
@@ -742,30 +738,22 @@ export async function logIn(email: string, password: string) {
         // Si hay un error de autenticación, asumimos que el email no está validado
         return { error: "Email not validated" };
       }
-
+      
       // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
-      if (!profile && authUser && !authUser.user.user_metadata?.email_verified) {
+      if (!userData && authUser && !authUser.user.user_metadata.email_verified) {
         console.error("Email not validated");
         return { error: "Email not validated" };
       }
-
-      // Si el usuario existe en la autenticación y está verificado, pero no está en nuestra tabla de usuarios, agregarlo
-      if (!profile && authUser && authUser.user.user_metadata?.email_verified) {
-        const newUser = {
-          email: authUser.user.email,
-          name: authUser.user.user_metadata?.name,
-          surname: authUser.user.user_metadata?.surname
-        };
-        await addData(USERS_TABLE, newUser);
-      }
-    } else {
+    } 
+    
+    else {
       console.error("No valid session token found");
       return { error: "No valid session token found" };
     }
 
     await AsyncStorage.setItem('userSession', JSON.stringify(session));
 
-    return { user, profile, session };
+    return { user, userData, session };
   } 
   
   catch (error) {

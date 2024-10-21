@@ -32,7 +32,7 @@ export default function Signup() {
     }
   
     try {
-      const { error } = await signUp(email, password);
+      const { error } = await signUp(email, password, name, surname);
       if (error) Alert.alert('Error de registro', 'No se pudo crear la cuenta');
       else {
         Alert.alert(
