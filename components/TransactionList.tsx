@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, FlatList, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { removeIncome, IncomeData, removeOutcome, OutcomeData, getBillParticipants } from '../api/api';
+import { removeIncome, IncomeData, removeOutcome, OutcomeData, getBillDebts } from '../api/api';
 import moment from 'moment';
 import 'moment/locale/es';
 import { useNavigation } from '@react-navigation/native';
@@ -86,11 +86,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
     setSelectedTransaction(transaction);
     if ((transaction as OutcomeData).bill_id) {
-      const billParticipants = await getBillParticipants((transaction as OutcomeData).bill_id);
-      if (billParticipants) {
-        setParticipants(billParticipants.map(p => p.email));
-        const payer = billParticipants.find(p => p.amount_paid === transaction.amount);
-        setPaidBy(payer ? payer.email : 'Desconocido');
+      const billDebts = await getBillDebts((transaction as OutcomeData).bill_id);
+      if (billDebts) {
+        setParticipants(billDebts.map(debt => debt.debtor));
+        const payer = billDebts.find(debt => debt.amount === transaction.amount);
+        setPaidBy(payer ? payer.creditor : 'Desconocido');
       }
     } else {
       setParticipants([]);
