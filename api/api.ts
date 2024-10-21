@@ -691,12 +691,7 @@ async function updateBalance(profile: string, added: number): Promise<void | nul
 
 /* User */
 
-export async function addUser(email: string, name: string, surname: string): Promise<UserData | null> {
-  const newUser: UserData = { email: email, name: name, surname: surname };
-  return await addData(USERS_TABLE, newUser);
-}
-
-export async function signUp(email: string, password: string, name: string, surname: string) {
+export async function signUp(email: string, password: string) {
   try {
     const { data, error } = await supabase.auth.signUp({
       email: email,
@@ -708,23 +703,7 @@ export async function signUp(email: string, password: string, name: string, surn
       return { error };
     }
 
-    const { user, session } = data;
-
-    if (!user) {
-      console.error("User is null during sign up");
-      return { error: "User is null" };
-    }
-
-    const { error: insertError } = await supabase
-      .from(USERS_TABLE)
-      .insert([{ email: email, name: name, surname: surname }]);
-
-    if (insertError) {
-      console.error("Error creating user profile:", insertError);
-      return { error: insertError };
-    }
-
-    return { user, session };
+    return { data };
   } 
   
   catch (error) {
@@ -747,6 +726,7 @@ export async function logIn(email: string, password: string) {
 
     const { user, session } = data;
 
+    // Verificar si el usuario existe en la tabla de usuarios
     const { data: profile, error: profileError } = await supabase
       .from(USERS_TABLE)
       .select('email, name, surname')
@@ -756,6 +736,33 @@ export async function logIn(email: string, password: string) {
     if (profileError) {
       console.error("Error fetching user profile:", profileError);
       return { error: profileError };
+    }
+
+    // Verificar si el usuario existe en la tabla de autenticación de Supabase
+    const { data: authUser, error: authError } = await supabase.auth.getUser(user.id);
+
+    if (authError) {
+      console.error("Error fetching user from authentication:", authError);
+      return { error: authError };
+    }
+
+    // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
+    if (!profile && authUser && !user.user_metadata?.email_verified) {
+      console.error("Email not validated");
+      return { error: "Email not validated" };
+    }
+
+    // Si el usuario existe en la autenticación y está verificado, pero no está en nuestra tabla de usuarios, agregarlo
+    if (!profile && authUser && user.user_metadata?.email_verified) {
+      const newUser = {
+        email: user.email,
+        name: user.user_metadata?.name,
+        surname: user.user_metadata?.surname
+      };
+      await supabase
+        .from(USERS_TABLE)
+        .insert(newUser)
+        .select();
     }
 
     await AsyncStorage.setItem('userSession', JSON.stringify(session));
