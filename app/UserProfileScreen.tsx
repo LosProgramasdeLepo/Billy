@@ -53,7 +53,7 @@ export default function UserProfileScreen() {
         setUserName(user.name || '');
         setUserSurname(user.surname || '');
         setUserEmail(user.email);
-        setUserIcon(profilePictureUrl || '@/assets/images/icons/UserIcon.png');
+        setUserIcon(profilePictureUrl);
       } 
       catch (error) {
         console.error('Error fetching user data:', error);
@@ -177,7 +177,6 @@ export default function UserProfileScreen() {
     }
   };
 
-
   const handleClose = () => {
     navigation.goBack();
   };
@@ -196,7 +195,7 @@ export default function UserProfileScreen() {
               <View style={styles.iconContainer}>
                 <Image 
                   source={userIcon ? { uri: userIcon } : require('@/assets/images/icons/UserIcon.png')} 
-                  style={styles.userIcon} 
+                  style={styles.userIcon}
                 />
 
                 {isEditing && (
