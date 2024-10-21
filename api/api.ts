@@ -1179,6 +1179,51 @@ export async function processInvitation(invitationId: string, email: string): Pr
 
 /* Debts */
 
+export async function getDebt(profileId: string, paidBy: string, debtor: string): Promise<DebtData | null> {
+  try {
+    const { data, error } = await supabase
+      .from(DEBTS_TABLE)
+      .select('*')
+      .eq('profile', profileId)
+      .eq('paid_by', paidBy)
+      .eq('debtor', debtor)
+      .single();
+
+    if (error) {
+      console.error("Error fetching debt:", error);
+      return null;
+    }
+
+    return data;
+  } 
+  
+  catch (error) {
+    console.error("Unexpected error fetching debt:", error);
+    return null;
+  }
+}
+
+export async function getDebtsFromProfile(profileId: string): Promise<DebtData[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from(DEBTS_TABLE)
+      .select('*')
+      .eq('profile', profileId)
+
+    if (error) {
+      console.error("Error fetching debts:", error);
+      return null;
+    }
+
+    return data;
+  } 
+  
+  catch (error) {
+    console.error("Unexpected error fetching debts:", error);
+    return null;
+  }
+}
+
 export async function getDebtsToUser(debtor: string, profileId: string): Promise<DebtData[] | null> {
   try {
     const { data, error } = await supabase
