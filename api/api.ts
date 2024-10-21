@@ -661,8 +661,9 @@ export async function isProfileShared(profileId: string): Promise<boolean | null
 
 /* Balance */
 
-export async function fetchBalance(profile: string): Promise<number | null> {
-  return await getValueFromData(PROFILES_TABLE, 'balance', 'id', profile);
+export async function fetchBalance(profileId: string): Promise<number> {
+  const balance = await getValueFromData(PROFILES_TABLE, 'balance', 'id', profileId);
+  return balance !== null ? balance : 0;
 }
 
 async function updateBalance(profile: string, added: number): Promise<void | null> {

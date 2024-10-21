@@ -38,14 +38,14 @@ export default function Login() {
         Alert.alert('Login Error', 'User data not found. Please try again.');
         return;
       }
-  
-      setUser(userData);
-  
+
       // Create default profile if it doesn't exist
       if (!userData.my_profiles || userData.my_profiles.length === 0) {
         const newProfile = await addProfile('Default', email);
         if (newProfile?.id) await changeCurrentProfile(email, newProfile.id);
       }
+
+      setUser(userData);
   
       navigation.reset({ index: 0, routes: [{ name: '(tabs)' as never }] });
     } 
