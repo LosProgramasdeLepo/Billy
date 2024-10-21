@@ -19,7 +19,7 @@ export default function Start() {
           if (parsedSession && parsedSession.user && parsedSession.user.email) {
             const user = await getUser(parsedSession.user.email);
             setUser(user);
-            navigation.navigate('(tabs)' as never);
+            navigation.reset({ index: 0, routes: [{ name: '(tabs)' as never }] });
           } 
           else await AsyncStorage.removeItem('userSession');
         }

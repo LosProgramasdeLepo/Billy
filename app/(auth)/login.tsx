@@ -26,7 +26,7 @@ export default function Login() {
       if (result.user) { 
         const user = await getUser(email);
         setUser(user);
-        navigation.navigate('(tabs)' as never);
+        navigation.reset({ index: 0, routes: [{ name: '(tabs)' as never }] });
       } else {
         Alert.alert('Login Failed', 'Invalid email or password');
       }
