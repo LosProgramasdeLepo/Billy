@@ -4,6 +4,8 @@ import { createURL } from 'expo-linking';
 import { Alert } from 'react-native';
 import { decode } from 'base64-arraybuffer';
 import { AuthError } from '@supabase/supabase-js';
+import * as http from 'http';
+
 
 const INCOMES_TABLE = 'Incomes';
 const OUTCOMES_TABLE = 'Outcomes';
@@ -850,7 +852,7 @@ export async function updateUserEmail(currentEmail: string, newEmail: string): P
 export async function requestPasswordReset(email: string): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: undefined,
+      redirectTo: 'http://localhost:3000',
     });
 
     if (error) {
