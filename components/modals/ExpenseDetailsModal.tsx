@@ -43,19 +43,21 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
                     try {
                         await onMarkAsPaid(currentUser, expense.id, true);
                         // Actualizar el estado local si es necesario
-                        const updatedHasPaid = [...expense.sharedOutcomeData.has_paid];
-                        const userIndex = expense.sharedOutcomeData.users.indexOf(currentUser);
-                        if (userIndex !== -1) {
-                            updatedHasPaid[userIndex] = true; // Marcamos como pagado
+                        if (expense.sharedOutcomeData) { // Verificar si sharedOutcomeData no es undefined
+                            const updatedHasPaid = [...expense.sharedOutcomeData.has_paid];
+                            const userIndex = expense.sharedOutcomeData.users.indexOf(currentUser);
+                            if (userIndex !== -1) {
+                                updatedHasPaid[userIndex] = true; // Marcamos como pagado
+                            }
+                            // Actualizamos el estado del componente (si es necesario)
+                            // setExpense(prev => ({
+                            //     ...prev,
+                            //     sharedOutcomeData: {
+                            //         ...prev.sharedOutcomeData,
+                            //         has_paid: updatedHasPaid,
+                            //     },
+                            // });
                         }
-                        // Actualizamos el estado del componente (si es necesario)
-                        setExpense(prev => ({
-                            ...prev,
-                            sharedOutcomeData: {
-                                ...prev.sharedOutcomeData,
-                                has_paid: updatedHasPaid,
-                            },
-                        }));
                     } catch (error) {
                         console.error("Error al marcar como pagado:", error);
                         Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
