@@ -126,7 +126,12 @@ export default function UserProfileScreen() {
     }
   };
 
-  const handlePasswordSubmit = async (newPassword: string) => {
+  const handlePasswordSubmit = async (newPassword: string, confirmPassword: string) => {
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match. Please try again.');
+      return;
+    }
+
     try {
       const { success, error } = await updateUserPassword(newPassword);
       if (!success) throw new Error(error || 'Failed to update password.');
