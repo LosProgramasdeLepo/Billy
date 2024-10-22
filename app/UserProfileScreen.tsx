@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAppContext } from '@/hooks/useAppContext';
-import { updateUserPassword, updateUserFullName, logOut, requestPasswordReset, verifyPasswordResetCode, uploadProfilePicture, getProfilePictureUrl, updateUserEmail} from '@/api/api';
+import { updateUserPassword, updateUserFullName, logOut, requestPasswordReset, verifyPasswordResetCode, uploadProfilePicture, getProfilePictureUrl} from '@/api/api';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { BillyHeader } from '@/components/BillyHeader';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -81,7 +81,8 @@ export default function UserProfileScreen() {
       setIsUpdating(true);
       try {
         await updateUserFullName(user?.email || '', userName, userSurname);
-        await updateUserEmail(user?.email || '', userEmail);
+        {/* TODO: falta chequear la parte de email que funcione bien */}
+        //   await updateUserEmail(user?.email || '', userEmail);
         await refreshUser();
         setIsEditing(false);
         setEditingField(null);
@@ -208,7 +209,7 @@ export default function UserProfileScreen() {
               
               <EditableField label="Apellido" value={userSurname} isEditing={isEditing} editingField={editingField || ''} fieldName="surname" onChangeText={setUserSurname} onEditField={handleEditField}/>
 
-              <EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/>
+              {/* <EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
 
               <TouchableOpacity style={[ styles.button, isEditing ? styles.saveButton : null, isUpdating ? styles.disabledButton : null ]} onPress={handleEdit} disabled={isUpdating}>
                 <Text style={styles.buttonText}>
