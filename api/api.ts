@@ -207,7 +207,7 @@ async function getValueFromData(table: string, columnToReturn: string, columnToC
     
     if (error) {
       if (error.code === 'PGRST116') {
-        console.log(`No data found in ${table} for ${columnToCheck} = ${id}`);
+        console.error(`No data found in ${table} for ${columnToCheck} = ${id}`);
         return null;
       }
       console.error(`Error fetching ${columnToReturn} from ${table}:`, error);
@@ -306,7 +306,7 @@ export async function getOutcome(id: string): Promise<OutcomeData | null> {
 export async function addOutcome(profile: string, category: string, amount: number, description: string, created_at?: Date, paid_by?: string, debtors?: string[]) {
   try {
     if (category === "") {
-      console.log("No se pudo añadir debido a categoría faltante");
+      console.error("No se pudo añadir debido a categoría faltante");
       return null;
     }
 
