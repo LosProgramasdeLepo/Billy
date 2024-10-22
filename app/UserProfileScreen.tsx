@@ -214,7 +214,14 @@ export default function UserProfileScreen() {
               
               <EditableField label="Apellido" value={userSurname} isEditing={isEditing} editingField={editingField || ''} fieldName="surname" onChangeText={setUserSurname} onEditField={handleEditField}/>
 
-              {/* <EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.fieldValue}>
+                  <Text style={styles.fieldLabel}>Email: </Text>
+                  {userEmail}
+                </Text>
+              </View>
+
+              {/*<EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
 
               <TouchableOpacity style={[ styles.button, isEditing ? styles.saveButton : null, isUpdating ? styles.disabledButton : null ]} onPress={handleEdit} disabled={isUpdating}>
                 <Text style={styles.buttonText}>
@@ -353,5 +360,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#370185',
     borderRadius: 15,
     padding: 5,
+  },
+    fieldContainer: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  fieldValue: {
+    fontSize: 16,
   },
 });
