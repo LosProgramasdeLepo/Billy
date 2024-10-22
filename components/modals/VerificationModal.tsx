@@ -4,31 +4,24 @@ import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'reac
 interface VerificationModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (code: string) => void;
   verificationCode: string;
   setVerificationCode: (code: string) => void;
 }
 
-export const VerificationModal: React.FC<VerificationModalProps> = ({
-  isVisible,
-  onClose,
-  onSubmit,
-  verificationCode,
-  setVerificationCode,
-}) => {
+export const VerificationModal: React.FC<VerificationModalProps> = ({isVisible, onClose, onSubmit, verificationCode, setVerificationCode}) => {
+  const handleSubmit = () => {
+    onSubmit(verificationCode);
+    setVerificationCode('');
+  };
+
   return (
     <Modal visible={isVisible} transparent animationType="slide">
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <Text style={styles.title}>Ingrese el código de verificación</Text>
-          <TextInput
-            style={styles.input}
-            value={verificationCode}
-            onChangeText={setVerificationCode}
-            placeholder="Ingrese el código"
-            keyboardType="number-pad"
-          />
-          <TouchableOpacity style={styles.button} onPress={onSubmit}>
+          <TextInput style={styles.input} value={verificationCode} onChangeText={setVerificationCode} placeholder="Ingrese el código" keyboardType="number-pad"/>
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Verificar</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onClose}>

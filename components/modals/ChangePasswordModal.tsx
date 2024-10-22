@@ -21,7 +21,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
     <Modal visible={isVisible} transparent animationType="slide">
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.title}>Change Password</Text>
+          <Text style={styles.title}>Cambiar Contraseña</Text>
           <TextInput
             style={styles.input}
             placeholder="New Password"
@@ -29,6 +29,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
             value={newPassword}
             onChangeText={setNewPassword}
           />
+          <Text style={styles.title}>Confirmar Contraseña</Text>
           <TextInput
             style={styles.input}
             placeholder="Confirm New Password"
@@ -38,10 +39,10 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
           />
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>Submit</Text>
+              <Text style={styles.buttonText}>Guardar</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
