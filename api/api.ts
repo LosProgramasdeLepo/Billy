@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createURL } from 'expo-linking';
 import { Alert } from 'react-native';
 import { decode } from 'base64-arraybuffer';
+import { AuthError } from '@supabase/supabase-js';
+import * as http from 'http';
+
 
 const INCOMES_TABLE = 'Incomes';
 const OUTCOMES_TABLE = 'Outcomes';
@@ -15,12 +18,11 @@ const BILLS_TABLE = 'Bills';
 
 export interface UserData {
   email: string;
-  password: string;
   name: string;
   surname: string;
   currentProfile?: string;
   my_profiles?: string[];
-  profilePicture?: string;
+  profile_picture?: string;
 }
 
 export interface IncomeData {
@@ -43,7 +45,8 @@ export interface OutcomeData {
 
 export interface SharedOutcomeData {
   id? : string;
-  users : string[];
+  users: string[];
+  userNames?: string[];
   to_pay : number[];
   has_paid? : boolean[];
 }
@@ -107,12 +110,12 @@ async function fetchData(table: string, columnToCheck: string, parentID: string)
   }
 }
 
-async function getData(table: string, id: string): Promise<any | null> {
+async function getData(table: string, id: string, columnToCheck: string = 'id'): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from(table)
       .select('*')
-      .eq('id', id)
+      .eq(columnToCheck ?? 'id', id)
       .single();
 
     if (error) {
@@ -205,6 +208,10 @@ async function getValueFromData(table: string, columnToReturn: string, columnToC
       .single();
     
     if (error) {
+      if (error.code === 'PGRST116') {
+        console.error(`No data found in ${table} for ${columnToCheck} = ${id}`);
+        return null;
+      }
       console.error(`Error fetching ${columnToReturn} from ${table}:`, error);
       return null;
     }
@@ -236,7 +243,7 @@ export async function addIncome(profile: string, amount: number, description: st
       profile: profile, 
       amount: amount, 
       description: description, 
-      created_at: created_at, 
+      created_at: created_at || new Date(), 
     };
     
     const [{ data: insertData, error: insertError }] = await Promise.all([
@@ -294,14 +301,14 @@ export async function fetchOutcomes(profile: string): Promise<OutcomeData[] | nu
   return await fetchData(OUTCOMES_TABLE, 'profile', profile);
 }
 
-export async function getOutcome(id: string): Promise<OutcomeData | null> {
+export async function getOutcome(id: string): Promise<OutcomeData | null> {  
   return await getData(OUTCOMES_TABLE, id);
 }
 
 export async function addOutcome(profile: string, category: string, amount: number, description: string, created_at?: Date, paid_by?: string, debtors?: string[]) {
   try {
     if (category === "") {
-      console.log("No se pudo añadir debido a categoría faltante");
+      console.error("No se pudo añadir debido a categoría faltante");
       return null;
     }
 
@@ -313,45 +320,43 @@ export async function addOutcome(profile: string, category: string, amount: numb
       created_at: created_at || new Date()
     };
 
-    // Verificar si se ha alcanzado el límite
-    const isWithinLimit = await checkCategoryLimit(category, amount);
-    if (!isWithinLimit) {
-      // Obtener el nombre de la categoría directamente desde la lista de categorías
-      const categoryData = await fetchCategories(profile); // Asegúrate de que esta función devuelva todas las categorías
-      if (!categoryData) {
-          throw new Error("No se encontraron categorías."); // Manejo de error si categoryData es null
-      }
-      const categoryInfo = categoryData.find(cat => cat.id === category);
-      const categoryName = categoryInfo ? categoryInfo.name : "Categoría desconocida"; // Obtener el nombre
+    // Verificar si se ha alcanzado el límite y añadir el outcome en paralelo
+    const [isWithinLimit, categoryData, outcomeData] = await Promise.all([
+      checkCategoryLimit(category, amount),
+      fetchCategories(profile),
+      addData(OUTCOMES_TABLE, newOutcome)
+    ]);
 
-      Alert.alert("¡Cuidado!", `Has alcanzado tu límite en ${categoryName}.`); // Mostrar el nombre en la alerta
+    if (!isWithinLimit) {
+      if (!categoryData) throw new Error("No se encontraron categorías.");
+      const categoryInfo = categoryData.find(cat => cat.id === category);
+      const categoryName = categoryInfo ? categoryInfo.name : "Categoría desconocida";
+      Alert.alert("¡Cuidado!", `Has alcanzado tu límite en ${categoryName}.`);
     }
 
-    const outcomeData = await addData(OUTCOMES_TABLE, newOutcome);
+    const operations = [
+      updateBalance(profile, -amount),
+      updateCategorySpent(category, amount)
+    ];
 
     // Si es un gasto grupal, añadir las deudas correspondientes
     if (paid_by && debtors && debtors.length > 0) {
       const amountPerPerson = amount / (debtors.length + 1);
-
       const allUsers = [paid_by, ...debtors];
       const allAmounts = allUsers.map(() => amountPerPerson);
-      const sharedOutcomeId = await addSharedOutcome(allUsers, allAmounts);
-      await updateData(OUTCOMES_TABLE, 'shared_outcome', sharedOutcomeId, 'id', outcomeData.id);
 
-      for (const debtor of debtors) {
-        const success = await addDebt(outcomeData.id, outcomeData.profile, paid_by, debtor, amountPerPerson);
-        if (!success) {
-          console.error("Error añadiendo deuda para", debtor);
-          await removeOutcome(profile, outcomeData.id);
-          return null;
-        }
-      }
+      operations.push(addSharedOutcome(allUsers, allAmounts).then(sharedOutcomeId => updateData(OUTCOMES_TABLE, 'shared_outcome', sharedOutcomeId, 'id', outcomeData.id)));
+      operations.push(...debtors.map(debtor => addDebt(outcomeData.id, outcomeData.profile, paid_by, debtor, amountPerPerson)));
     }
 
-    await Promise.all([
-      updateBalance(profile, -amount),
-      updateCategorySpent(category, amount)
-    ]);
+    const results = await Promise.allSettled(operations);
+
+    const failedOperations = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value === false));
+    if (failedOperations.length > 0) {
+      console.error("Error en una o más operaciones:", failedOperations);
+      await removeOutcome(profile, outcomeData.id);
+      return null;
+    }
 
     return [outcomeData];
   } 
@@ -375,17 +380,12 @@ async function getSharedOutcome(id: string): Promise<SharedOutcomeData | null> {
 // In testing phase
 async function removeSharedOutcomeDebts(profile: string, sharedOutcome: SharedOutcomeData) {
   const paidBy = sharedOutcome.users[0];
-
-  for (let i = 1; i < sharedOutcome.users.length; i++) {
-    const debtor = sharedOutcome.users[i];
-    const amount = sharedOutcome.to_pay[i];
-    await updateDebt(profile, paidBy, debtor, -amount);
-  }
-
+  const debtUpdatePromises = sharedOutcome.users.slice(1).map((debtor, index) => updateDebt(profile, paidBy, debtor, -sharedOutcome.to_pay[index + 1]));
+  await Promise.all(debtUpdatePromises);
   await redistributeDebts(profile);
 }
 
-export async function removeOutcome(profile: string, id: string) {
+export async function removeOutcome(profile: string, id: string) {  
   try {
     const outcome = await getOutcome(id);
     
@@ -394,19 +394,27 @@ export async function removeOutcome(profile: string, id: string) {
       return { error: "Outcome not found." };
     }
 
-    const [deleteResult] = await Promise.all([
-      supabase.from(OUTCOMES_TABLE).delete().eq('id', id),
+    const operations = [
       updateBalance(profile, outcome.amount),
       updateCategorySpent(outcome.category, -outcome.amount),
-      outcome.shared_outcome ? removeSharedOutcomeDebts(profile, (await getSharedOutcome(outcome.shared_outcome)) ?? { users: [], to_pay: [] }) : Promise.resolve()
-    ]);
+      removeData(OUTCOMES_TABLE, id)
+    ];
 
-    if (deleteResult.error) {
-      console.error("Error removing outcome:", deleteResult.error);
+    if (outcome.shared_outcome) {
+      operations.push(getSharedOutcome(outcome.shared_outcome).then(sharedOutcomeData => 
+          sharedOutcomeData ? removeSharedOutcomeDebts(profile, sharedOutcomeData) : Promise.resolve()
+      ));
+    }
+
+    const results = await Promise.allSettled(operations);
+
+    const failedOperations = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value === false));
+    if (failedOperations.length > 0) {
+      console.error("Error en una o más operaciones:", failedOperations);
       return null;
     }
 
-    return deleteResult;
+    return results;
   }
   
   catch (error) {
@@ -485,18 +493,13 @@ async function updateCategorySpent(category: string, added: number) {
   if (currentSpent !== null) return await updateData(CATEGORIES_TABLE, 'spent', currentSpent + added, 'id', category);
 }
 
-export async function checkCategoryLimit(category: string, amount: number): Promise<boolean | null> {
-  try {
-    const limit = await getCategoryLimit(category);
-    if (limit == null || limit <= 0) return true;
-    const spent = await getCategorySpent(category);
-    return ((spent??0) + amount <= limit);
-  } 
-  
-  catch (error) {
-    console.error("Error checking category limit:", error);
-    return null;
-  }
+export async function checkCategoryLimit(category: string, amount: number): Promise<boolean> {
+  const [limit, spent] = await Promise.all([
+    getCategoryLimit(category),
+    getCategorySpent(category)
+  ]);
+  if (limit == null || limit <= 0) return true;
+  return ((spent ?? 0) + amount <= limit);
 }
 
 
@@ -511,14 +514,15 @@ export async function fetchProfiles(user: string): Promise<ProfileData[] | null>
       console.error("No profiles found or invalid data returned for user:", user);
       return null;
     }
+    
+    const { data: profiles, error } = await supabase
+      .from(PROFILES_TABLE)
+      .select('*')
+      .in('id', profileIds);
 
-    const profiles: ProfileData[] = [];
-
-    for (const profileId of profileIds) {
-      const profile = await fetchData(PROFILES_TABLE, 'id', profileId);
-      if (profile && profile.length > 0) {
-        profiles.push(profile[0]);
-      }
+    if (error) {
+      console.error("Error fetching profiles:", error);
+      return null;
     }
 
     return profiles;
@@ -547,8 +551,10 @@ export async function addProfile(name: string, user: string): Promise<ProfileDat
     const newProfile: ProfileData = { name, owner: user };
     const profile = await addData(PROFILES_TABLE, newProfile);
 
-    const { error: userError } = await supabase.rpc('append_to_my_profiles', { user_email: user, new_profile_id: profile.id });
-    const { error: profileError } = await supabase.rpc('append_user_to_profile', { profile_id: profile.id, new_user: user });
+    const [{ error: userError }, { error: profileError }] = await Promise.all([
+      supabase.rpc('append_to_my_profiles', { user_email: user, new_profile_id: profile.id }),
+      supabase.rpc('append_user_to_profile', { profile_id: profile.id, new_user: user })
+    ]);
 
     if (userError || profileError) {
       console.error("Failed to append new profile to user's my_profiles:", userError && profileError);
@@ -567,17 +573,16 @@ export async function addProfile(name: string, user: string): Promise<ProfileDat
 
 export async function removeProfile(profileId: string, email: string) {
   try {
+    if(await isProfileShared(profileId)) return await removeSharedProfile(profileId, email);
 
-    if(await isProfileShared(profileId) === true){
-      await removeSharedProfile(profileId, email);
-      return true;
-    }
+    const [removedProfile, { error }] = await Promise.all([
+      removeData(PROFILES_TABLE, profileId),
+      supabase.rpc('remove_from_my_profiles', { profile_id_param: profileId })
+    ]);
 
-    const removedProfile = await removeData(PROFILES_TABLE, profileId);
-
-    if (removedProfile) {
-      const { error } = await supabase.rpc('remove_from_my_profiles', { profile_id_param: profileId });
-      if (error) console.error("Error removing profile from user's my_profiles:", error);
+    if (error) {
+      console.error("Error removing profile from user's my_profiles:", error);
+      return null;
     }
 
     return removedProfile;
@@ -663,8 +668,9 @@ export async function isProfileShared(profileId: string): Promise<boolean | null
 
 /* Balance */
 
-export async function fetchBalance(profile: string): Promise<number | null> {
-  return await getValueFromData(PROFILES_TABLE, 'balance', 'id', profile);
+export async function fetchBalance(profileId: string): Promise<number> {
+  const balance = await getValueFromData(PROFILES_TABLE, 'balance', 'id', profileId);
+  return balance !== null ? balance : 0;
 }
 
 async function updateBalance(profile: string, added: number): Promise<void | null> {
@@ -693,11 +699,6 @@ async function updateBalance(profile: string, added: number): Promise<void | nul
 
 /* User */
 
-export async function addUser(email: string, password: string, name: string, surname: string): Promise<UserData | null> {
-  const newUser: UserData = { email: email, password: password, name: name, surname: surname };
-  return await addData(USERS_TABLE, newUser);
-}
-
 export async function signUp(email: string, password: string, name: string, surname: string) {
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -710,23 +711,10 @@ export async function signUp(email: string, password: string, name: string, surn
       return { error };
     }
 
-    const { user, session } = data;
+    const newUser: UserData = { email: email, name: name, surname: surname };
+    await addData(USERS_TABLE, newUser);
 
-    if (!user) {
-      console.error("User is null during sign up");
-      return { error: "User is null" };
-    }
-
-    const { error: insertError } = await supabase
-      .from(USERS_TABLE)
-      .insert([{ email: email, name: name, surname: surname }]);
-
-    if (insertError) {
-      console.error("Error creating user profile:", insertError);
-      return { error: insertError };
-    }
-
-    return { user, session };
+    return { data };
   } 
   
   catch (error) {
@@ -737,10 +725,7 @@ export async function signUp(email: string, password: string, name: string, surn
 
 export async function logIn(email: string, password: string) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email, password: password });
 
     if (error) {
       console.error("Error during login:", error);
@@ -748,21 +733,35 @@ export async function logIn(email: string, password: string) {
     }
 
     const { user, session } = data;
+    
+    // Tomo el usuario de la tabla (si está)
+    const userData = await getUser(user.email ?? "");
 
-    const { data: profile, error: profileError } = await supabase
-      .from(USERS_TABLE)
-      .select('email, name, surname')
-      .eq('email', user.email)
-      .single();
+    // Modificación: Usar el token de sesión en lugar de user.id
+    if (session && session.access_token) {
+      const { data: authUser, error: authError } = await supabase.auth.getUser(session.access_token);
 
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      return { error: profileError };
+      if (authError) {
+        console.error("Error fetching user from authentication:", authError);
+        // Si hay un error de autenticación, asumimos que el email no está validado
+        return { error: "Email not validated" };
+      }
+      
+      // Si el usuario existe en la autenticación pero no en nuestra tabla de usuarios, significa que no validó el email
+      if (!userData && authUser && (authUser.user.last_sign_in_at != null)) {
+        console.error("Email not validated");
+        return { error: "Email not validated" };
+      }
+    } 
+    
+    else {
+      console.error("No valid session token found");
+      return { error: "No valid session token found" };
     }
 
     await AsyncStorage.setItem('userSession', JSON.stringify(session));
 
-    return { user, profile, session };
+    return { user, userData, session };
   } 
   
   catch (error) {
@@ -770,6 +769,7 @@ export async function logIn(email: string, password: string) {
     return { error: "An unexpected error occurred." };
   }
 }
+
 
 export async function logOut() {
   try {
@@ -791,8 +791,34 @@ export async function logOut() {
   }
 }
 
-export async function getUser(email: string): Promise<UserData | null> {
-  return await getData(USERS_TABLE, email);
+export async function getUser(email: string): Promise<UserData | null> {  
+  return await getData(USERS_TABLE, email, 'email');
+}
+
+export async function getUsers(emails: string[]): Promise<{ names: Record<string, string>, avatars: Record<string, string> }> {
+  try {
+    const { data, error } = await supabase
+      .from('Users')
+      .select('email, name, surname, profile_picture_url')
+      .in('email', emails);
+
+    if (error) throw error;
+
+    const names: Record<string, string> = {};
+    const avatars: Record<string, string> = {};
+
+    data.forEach(user => {
+      names[user.email] = `${user.name} ${user.surname}`;
+      avatars[user.email] = user.profile_picture_url;
+    });
+
+    return { names, avatars };
+  } 
+  
+  catch (error) {
+    console.error('Error fetching users:', error);
+    return { names: {}, avatars: {} };
+  }
 }
 
 export async function changeCurrentProfile(user: string, newProfileID: string) {
@@ -803,25 +829,94 @@ export async function fetchCurrentProfile(user: string) {
   return await getValueFromData(USERS_TABLE, 'current_profile', 'email', user);
 }
 
-export async function updateUserEmail(profileId: string, newEmail: string) {
-  return await updateData(PROFILES_TABLE, 'email', newEmail, 'id', profileId);
+export async function updateUserEmail(currentEmail: string, newEmail: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error: authError } = await supabase.auth.updateUser({ email: newEmail });
+
+    if (authError) {
+      console.error("Error updating email in Auth:", authError);
+      return { success: false, error: authError.message };
+    }
+    
+    await updateData(USERS_TABLE, 'email', newEmail, 'email', currentEmail);
+
+    return { success: true };
+  } 
+  
+  catch (error) {
+    console.error("Unexpected error updating email:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
 }
 
-export async function updateUserPassword(profileId: string, newPassword: string) {
-  return await updateData(PROFILES_TABLE, 'password', newPassword, 'id', profileId);
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'http://localhost:3000',
+    });
+
+    if (error) {
+      console.error("Error requesting password reset:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error requesting password reset:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
 }
 
-export async function updateUserName(profileId: string, newName: string) {
-  return await updateData(PROFILES_TABLE, 'name', newName, 'id', profileId);
+export async function verifyPasswordResetCode(email: string, token: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'recovery'
+    });
+
+    if (error) {
+      console.error("Error verifying password reset code:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error verifying password reset code:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
 }
 
-export async function updateUserSurname(profileId: string, newSuranme: string) {
-  return await updateData(PROFILES_TABLE, 'surname', newSuranme, 'id', profileId);
+export async function updateUserPassword(newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      console.error("Error updating password:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } 
+  
+  catch (error) {
+    console.error("Unexpected error updating password:", error);
+    if (error instanceof AuthError) return { success: false, error: error.message };
+    return { success: false, error: "An unexpected error occurred." };
+  }
 }
 
-export async function updateUserFullName(profileId: string, newName: string, newSurname: string) {
-  updateUserName(profileId, newName);
-  updateUserSurname(profileId, newSurname);
+export async function updateUserName(email: string, newName: string) {
+  return await updateData(USERS_TABLE, 'name', newName, 'email', email);
+}
+
+export async function updateUserSurname(email: string, newSuranme: string) {
+  return await updateData(USERS_TABLE, 'surname', newSuranme, 'email', email);
+}
+
+export async function updateUserFullName(email: string, newName: string, newSurname: string) {
+  updateUserName(email, newName);
+  updateUserSurname(email, newSurname);
 }
 
 export async function getUserNames(emails: string[]): Promise<Record<string, string>> {
@@ -848,13 +943,17 @@ export async function getUserNames(emails: string[]): Promise<Record<string, str
   }
 }
 
-export async function uploadProfilePicture(userId: string, base64Image: string): Promise<string | null> {
+export async function uploadProfilePicture(email: string, base64Image: string): Promise<string | null> {
   try {
-    const fileName = `${userId}_${Date.now()}.jpg`;
-    const { data, error } = await supabase.storage
-      .from('Users')
-      .upload(fileName, decode(base64Image), {
-        contentType: 'image/jpeg',
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+    
+    const fileName = `${email}_${Date.now()}.png`;
+    const bucketName = 'profile_pictures';
+
+    const { error } = await supabase.storage
+      .from(bucketName)
+      .upload(fileName, decode(base64Data), {
+        contentType: 'image/png',
         upsert: true
       });
 
@@ -864,35 +963,26 @@ export async function uploadProfilePicture(userId: string, base64Image: string):
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('Users')
+      .from(bucketName)
       .getPublicUrl(fileName);
 
-    await updateUserProfileUrl(userId, publicUrl);
+    await updateProfilePictureUrl(email, publicUrl);
 
     return publicUrl;
-  } catch (error) {
+  } 
+  
+  catch (error) {
     console.error("Unexpected error uploading profile picture:", error);
     return null;
   }
 }
 
-async function updateUserProfileUrl(userId: string, profileUrl: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from(USERS_TABLE)
-      .update({ profile_url: profileUrl })
-      .eq('id', userId);
+async function updateProfilePictureUrl(email: string, profilePictureUrl: string) {
+  return await updateData(USERS_TABLE, 'profile_picture_url', profilePictureUrl, 'email', email);
+}
 
-    if (error) {
-      console.error("Error updating user profile URL:", error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Unexpected error updating user profile URL:", error);
-    return false;
-  }
+export async function getProfilePictureUrl(email: string) {
+  return await getValueFromData(USERS_TABLE, 'profile_picture_url', 'email', email);
 }
 
 /* Stats */
@@ -1079,7 +1169,7 @@ export async function processInvitation(invitationId: string, email: string): Pr
 
     // Verificar si el usuario ya tiene este perfil
     const { data: existingProfile, error: profileError } = await supabase
-      .from('Users')
+      .from(USERS_TABLE)
       .select('my_profiles')
       .eq('email', email)
       .single();
@@ -1117,19 +1207,47 @@ export async function processInvitation(invitationId: string, email: string): Pr
 
 /* Debts */
 
-export async function getDebtsBeetweenUsers(user1: string, user2: string) {
+export async function getDebt(profileId: string, paidBy: string, debtor: string): Promise<DebtData | null> {
   try {
     const { data, error } = await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .select('*')
-      .eq('paid_by', user1)
-      .eq('debtor', user2)
-      .eq('has_paid', false);
-      
-  }
+      .eq('profile', profileId)
+      .eq('paid_by', paidBy)
+      .eq('debtor', debtor)
+      .single();
+
+    if (error) {
+      console.error("Error fetching debt:", error);
+      return null;
+    }
+
+    return data;
+  } 
   
   catch (error) {
-    console.error("Unexpected error fetching debts between users:", error);
+    console.error("Unexpected error fetching debt:", error);
+    return null;
+  }
+}
+
+export async function getDebtsFromProfile(profileId: string): Promise<DebtData[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from(DEBTS_TABLE)
+      .select('*')
+      .eq('profile', profileId)
+
+    if (error) {
+      console.error("Error fetching debts:", error);
+      return null;
+    }
+
+    return data;
+  } 
+  
+  catch (error) {
+    console.error("Unexpected error fetching debts:", error);
     return null;
   }
 }
@@ -1137,7 +1255,7 @@ export async function getDebtsBeetweenUsers(user1: string, user2: string) {
 export async function getDebtsToUser(debtor: string, profileId: string): Promise<DebtData[] | null> {
   try {
     const { data, error } = await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .select('*')
       .eq('paid_by', debtor)
       .eq('profile', profileId)
@@ -1160,7 +1278,7 @@ export async function getDebtsToUser(debtor: string, profileId: string): Promise
 export async function getDebtsFromUser(debtor: string, profileId: string): Promise<DebtData[] | null> {
   try {
     const { data, error } = await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .select('*')
       .eq('debtor', debtor)
       .eq('profile', profileId)
@@ -1182,22 +1300,34 @@ export async function getDebtsFromUser(debtor: string, profileId: string): Promi
 
 export async function removeSharedProfile(profileId: string, email: string) {
   const profile = await getProfile(profileId);
-  if (profile?.owner !== email) {
-    await removeSharedUsers(profileId, [email]);
-  }
   
-  else {
-    await removeSharedUsers(profileId, profile.users ?? []);
-    await removeData(PROFILES_TABLE, profileId);
+  if (!profile) {
+    console.error("Profile not found:", profileId);
+    return false;
   }
-  return true;
+
+  const usersToRemove = profile.owner === email ? (profile.users ?? []) : [email];
+  
+  const operations = [removeSharedUsers(profileId, usersToRemove)];
+  
+  if (profile.owner === email) operations.push(removeData(PROFILES_TABLE, profileId));
+
+  try {
+    await Promise.all(operations);
+    return true;
+  } 
+  
+  catch (error) {
+    console.error("Error removing shared profile:", error);
+    return false;
+  }
 }
 
 export async function redistributeDebts(profileId: string): Promise<boolean> {
   try {
     // Obtener todas las deudas del perfil
     const { data: debts, error: debtsError } = await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .select('*')
       .eq('profile', profileId)
       .eq('has_paid', false);
@@ -1227,11 +1357,11 @@ export async function redistributeDebts(profileId: string): Promise<boolean> {
     let cambios = true;
     while (cambios) {
       cambios = false;
-      for (const [acreedor, deudores] of netDebts) {
-        for (const [deudor, cantidad] of deudores) {
+      Array.from(netDebts.entries()).forEach(([acreedor, deudores]) => {
+        Array.from(deudores.entries()).forEach(([deudor, cantidad]) => {
           const deudasDeudor = netDebts.get(deudor);
           if (deudasDeudor) {
-            for (const [tercero, cantidadTercero] of deudasDeudor) {
+            Array.from(deudasDeudor.entries()).forEach(([tercero, cantidadTercero]) => {
               if (tercero !== acreedor) {
                 const cantidadTransferir = Math.min(cantidad, cantidadTercero);
                 if (cantidadTransferir > 0) {
@@ -1243,21 +1373,21 @@ export async function redistributeDebts(profileId: string): Promise<boolean> {
                   cambios = true;
                 }
               }
-            }
+            });
           }
-        }
-      }
+        });
+      });
     }
 
     // Aplicar las deudas redistribuidas
     await removeAllDebts(profileId);
-    for (const [acreedor, deudores] of netDebts) {
-      for (const [deudor, cantidad] of deudores) {
+    await Promise.all(Array.from(netDebts.entries()).map(async ([acreedor, deudores]) => {
+      await Promise.all(Array.from(deudores.entries()).map(async ([deudor, cantidad]) => {
         if (cantidad > 0) {
           await updateDebt(profileId, acreedor, deudor, cantidad);
         }
-      }
-    }
+      }));
+    }));
 
     return true;
   } 
@@ -1270,7 +1400,7 @@ export async function redistributeDebts(profileId: string): Promise<boolean> {
 
 async function removeAllDebts(profileId: string): Promise<void> {
   await supabase
-    .from('Debts')
+    .from(DEBTS_TABLE)
     .delete()
     .eq('profile', profileId)
     .eq('has_paid', false);
@@ -1278,7 +1408,7 @@ async function removeAllDebts(profileId: string): Promise<void> {
 
 async function updateDebt(profileId: string, paidBy: string, debtor: string, amount: number): Promise<void> {
   const { data: existingDebt, error: debtError } = await supabase
-    .from('Debts')
+    .from(DEBTS_TABLE)
     .select('*')
     .eq('profile', profileId)
     .eq('paid_by', paidBy)
@@ -1293,7 +1423,7 @@ async function updateDebt(profileId: string, paidBy: string, debtor: string, amo
 
   if (existingDebt) {
     await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .update({ amount: amount })
       .eq('profile', existingDebt.profile)
       .eq('paid_by', paidBy)
@@ -1301,7 +1431,7 @@ async function updateDebt(profileId: string, paidBy: string, debtor: string, amo
   } 
   
   else {
-    await supabase.from('Debts').insert({
+    await supabase.from(DEBTS_TABLE).insert({
       profile: profileId,
       paid_by: paidBy,
       debtor: debtor,
@@ -1313,7 +1443,7 @@ async function updateDebt(profileId: string, paidBy: string, debtor: string, amo
 
 async function removeDebt(profileId: string, paidBy: string, debtor: string): Promise<void> {
   await supabase
-    .from('Debts')
+    .from(DEBTS_TABLE)
     .delete()
     .eq('profile', profileId)
     .eq('paid_by', paidBy)
@@ -1324,7 +1454,7 @@ async function removeDebt(profileId: string, paidBy: string, debtor: string): Pr
 export async function addDebt(outcomeId: string, profileId: string, paidBy: string, debtor: string, amount: number): Promise<boolean> {
   try {
     const { data: existingDebt, error: existingDebtError } = await supabase
-      .from('Debts')
+      .from(DEBTS_TABLE)
       .select('*')
       .eq('profile', profileId)
       .eq('paid_by', paidBy)
@@ -1340,7 +1470,7 @@ export async function addDebt(outcomeId: string, profileId: string, paidBy: stri
     if (existingDebt) {
       const newAmount = existingDebt.amount + amount;
       const { error: updateError } = await supabase
-        .from('Debts')
+        .from(DEBTS_TABLE)
         .update({ amount: newAmount })
         .eq('profile', profileId)
         .eq('paid_by', paidBy)
@@ -1354,7 +1484,7 @@ export async function addDebt(outcomeId: string, profileId: string, paidBy: stri
     
     else {
       const { error: insertError } = await supabase
-        .from('Debts')
+        .from(DEBTS_TABLE)
         .insert({
           profile: profileId,
           paid_by: paidBy,
@@ -1377,6 +1507,46 @@ export async function addDebt(outcomeId: string, profileId: string, paidBy: stri
     return false;
   }
 }
+
+export async function markAsPaid(profile: string, whoPaid: string, outcomeId: string, paid: boolean): Promise<boolean> {
+  const outcome = await getData(OUTCOMES_TABLE, outcomeId);
+  const sharedOutcome = await getData(SHARED_OUTCOMES_TABLE, outcome.shared_outcome);
+
+  const userIndex = sharedOutcome.users.indexOf(whoPaid);
+  if (userIndex === -1) {
+    console.error("User not found in shared outcome:", whoPaid);
+    return false;
+  }
+
+  const newHasPaid = [...sharedOutcome.has_paid];
+  newHasPaid[userIndex] = paid;
+
+  await updateData(SHARED_OUTCOMES_TABLE, 'has_paid', newHasPaid, 'id', outcome.shared_outcome);
+
+  const paidBy = sharedOutcome.users[0];
+
+  const { data: debtData, error: debtError } = await supabase
+    .from('Debts')
+    .select('*')
+    .eq('profile', profile)
+    .eq('debtor', whoPaid)
+    .eq('paid_by', paidBy)
+    .single();
+
+  if (debtError) {
+    console.error("Error fetching debt:", debtError);
+    return false;
+  }
+
+  if (debtData) {
+    const newAmount = paid ? debtData.amount - outcome.amount : debtData.amount + outcome.amount;
+    await updateDebt(profile, paidBy, whoPaid, newAmount);
+  }
+
+  return true;
+}
+
+
 
 /* División de Cuenta */
 
@@ -1612,6 +1782,38 @@ export async function getBillDebts(billId: string) {
     console.error("Error inesperado al obtener las deudas de la factura:", error);
     return null;
   }
+}
+
+export async function getUserName(email: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from(USERS_TABLE)
+      .select('name')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      console.error("Error fetching name from Users:", error);
+      return email;
+    }
+
+    return data?.name || email;
+  } catch (error) {
+    console.error("Unexpected error fetching user name:", error);
+    return email;
+  }
+}
+
+export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutcomeData | null> {
+  const sharedOutcome = await getSharedOutcome(id);
+  if (sharedOutcome) {
+    const userNames = await Promise.all(sharedOutcome.users.map(getUserName));
+    return {
+      ...sharedOutcome,
+      userNames
+    };
+  }
+  return null;
 }
 
 /* AI */

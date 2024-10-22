@@ -32,6 +32,7 @@ export default function RootLayout() {
           <Stack.Screen name="CategoriesScreen" options={{ headerShown: false }}/>
           <Stack.Screen name="TransactionsScreen" options={{ headerShown: false }}/>
           <Stack.Screen name="CategoryDetailsScreen" options={{ headerShown: false }}/>
+          <Stack.Screen name="UserProfileScreen" options={{ headerShown: false }}/>
         </Stack>
       </ThemeProvider>
     </AppProvider>

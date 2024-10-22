@@ -1,9 +1,10 @@
 import { createContext } from 'react';
-import { IncomeData, OutcomeData, CategoryData, ProfileData } from '@/api/api';
+import { IncomeData, OutcomeData, CategoryData, ProfileData, UserData } from '@/api/api';
 
 export interface AppContextType {
-  user: { email: string } | null;
-  setUser: (user: { email: string } | null) => void;
+  user: UserData | null;
+  setUser: (user: UserData | null) => void;
+  refreshUser: () => Promise<void>;
   currentProfileId: string | null;
   setCurrentProfileId: (id: string | null) => void;
   incomeData: IncomeData[] | null;

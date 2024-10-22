@@ -1,7 +1,7 @@
-import React from 'react';
-import { StyleSheet, Alert, View, Image, TouchableOpacity, Text, ImageStyle } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Image, TouchableOpacity, Text, ImageStyle } from 'react-native';
 import { Platform, StatusBar } from 'react-native';
-import { logOut } from '@/api/api';
+import { getProfilePictureUrl } from '@/api/api';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -12,18 +12,30 @@ interface BillyHeaderProps {
   icon?: string;
 }
 
-export const BillyHeader: React.FC<BillyHeaderProps> = React.memo(({ title, subtitle, icon }) => {
-  const { profileData, currentProfileId } = useAppContext();
+export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon }) => {
+  const { user, profileData, currentProfileId } = useAppContext();
   const navigation = useNavigation();
-  
-  const handleLogout = async () => {
-    const result = await logOut();
-    if (result.error) Alert.alert('Logout Error', result.error);
-    navigation.navigate('start' as never);
-  };
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
   const currentProfile = profileData?.find(profile => profile.id === currentProfileId);
   const profileName = currentProfile ? currentProfile.name : 'Profile';
+
+  const fetchProfilePicture = useCallback(async () => {
+    if (!user?.email || !currentProfile) return;
+    try {
+      const url = await getProfilePictureUrl(user.email);
+      setProfilePicture(url);
+    } 
+    catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setProfilePicture(null);
+    }
+  }, [user?.email, currentProfile]);
+  
+  useEffect(() => {
+    const timer = setTimeout(fetchProfilePicture, 500);
+    return () => clearTimeout(timer);
+  }, [fetchProfilePicture]);
 
   return (
     <View style={styles.headerContainer}>
@@ -33,8 +45,11 @@ export const BillyHeader: React.FC<BillyHeaderProps> = React.memo(({ title, subt
             <Image source={require('../assets/images/Billy/logo2.png')} style={styles.logoBilly as ImageStyle}/>
             <Text style={styles.profileName}>{profileName}</Text>
           </View>
-          <TouchableOpacity onPress={handleLogout}>
-            <Image source={require('../assets/images/icons/UserIcon.png')} style={styles.usuario as ImageStyle} />
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfileScreen' as never)}>
+            <Image 
+              source={profilePicture ? { uri: profilePicture } : require('../assets/images/icons/UserIcon.png')} 
+              style={styles.usuario} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -50,7 +65,7 @@ export const BillyHeader: React.FC<BillyHeaderProps> = React.memo(({ title, subt
       </View>
     </View>
   );
-});
+};
 
 const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 40 : (StatusBar.currentHeight ?? 0) + 10;
 
@@ -88,14 +103,15 @@ const styles = StyleSheet.create({
   usuario: {
     width: 47,
     height: 47,
-    resizeMode: 'contain',
+    borderRadius: 23.5, 
+    resizeMode: 'cover',
   },
   tituloContainer: {
     marginHorizontal: 5,
   },
   tituloTexto: {
     color: '#ffffff',
-    fontSize: 32,
+    fontSize: 28,
     fontFamily: 'ArialRoundedMTBold',
     letterSpacing: -1.6,
     marginVertical: 5,

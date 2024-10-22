@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '@/hooks/useAppContext';
 
 export default function TransactionsScreen() {
-    const { currentProfileId, incomeData, outcomeData, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshProfileData } = useAppContext();
+  const { currentProfileId, incomeData, outcomeData, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshProfileData } = useAppContext();
 
   const fetchData = useCallback(async () => {
     await refreshProfileData();

@@ -14,7 +14,7 @@ interface AddTransactionModalProps {
 }
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
-  const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData } = useAppContext();
+  const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
   
   const [type, setType] = useState<'Income' | 'Outcome'>('Income');
   const [amount, setAmount] = useState('');
@@ -71,7 +71,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     if (isSubmitting) return;
     setIsSubmitting(true);
     if (type === 'Income') {
-      await addIncome(currentProfileId??"", parseFloat(amount), description);
+      await addIncome(currentProfileId??"", parseFloat(amount), description, date);
       refreshIncomeData();
     } 
     else {
@@ -95,6 +95,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       refreshOutcomeData();
       refreshCategoryData();
     }
+    refreshBalanceData();
     // Reset form
     setAmount('');
     setDescription('');
@@ -102,7 +103,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     setSelectedCategory('');
     setIsSubmitting(false);
     onClose();
-  }, [type, isSubmitting, amount, description, selectedCategory, refreshIncomeData, refreshOutcomeData, refreshCategoryData, currentProfileId, onClose, shared, whoPaidIt, selectedSharedUser, date]);
+  }, [type, isSubmitting, amount, description, selectedCategory, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, currentProfileId, onClose, shared, whoPaidIt, selectedSharedUser, date]);
 
   const switchType = useCallback((newType: 'Income' | 'Outcome') => {
     setType(newType);

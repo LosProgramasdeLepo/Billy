@@ -16,7 +16,7 @@ interface CobroPagoPopUpProps {
 }
 
 const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions }: CobroPagoPopUpProps) => {
-  const { refreshIncomeData, refreshOutcomeData, refreshCategoryData, currentProfileId } = useAppContext();
+  const { refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, currentProfileId } = useAppContext();
 
   const [type, setType] = useState<'Income' | 'Outcome'>(initialType);
   const [amount, setAmount] = useState('');
@@ -85,16 +85,17 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
     }
 
     if (type === 'Income') {
-      await addIncome(currentProfileId || "", amountNumber, description);
+      await addIncome(currentProfileId || "", amountNumber, description, date);
       refreshIncomeData();
     } 
     
     else {
-      await addOutcome(currentProfileId || "", selectedCategory, amountNumber, description);
+      await addOutcome(currentProfileId || "", selectedCategory, amountNumber, description, date);
       refreshOutcomeData();
     }
 
     refreshCategoryData();
+    refreshBalanceData();
     refreshTransactions();
     setAmount('');
     setDescription('');

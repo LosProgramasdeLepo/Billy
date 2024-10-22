@@ -4,13 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import { Ionicons } from '@expo/vector-icons';
-import { CategoryList } from '../../components/CategoryList';
 import CalendarAddModal from '../../components/modals/CalendarAddModal';
-import { getOutcomesFromDateRange, fetchCurrentProfile, getIncomesFromDateRange } from '../../api/api';
+import { getOutcomesFromDateRange, getIncomesFromDateRange } from '../../api/api';
 import { useFocusEffect } from '@react-navigation/native';
 import BillyHeader from "@/components/BillyHeader";
 import TimePeriodModal from "@/components/modals/TimePeriodModal";
 import { useAppContext } from '@/hooks/useAppContext';
+import { TransactionList } from "@/components/TransactionList";
 
 const customArrowLeft = () => {
   return (
@@ -29,7 +29,7 @@ const customArrowRight = () => {
 };
 
 export default function CalendarScreen() {
-  const { currentProfileId, refreshCategoryData, refreshIncomeData, refreshOutcomeData } = useAppContext();
+  const { currentProfileId, refreshIncomeData, refreshOutcomeData } = useAppContext();
 
   const [markedDates, setMarkedDates] = useState({});
   const [currentDate, setCurrentDate] = useState(moment().format('YYYY-MM-DD'));
@@ -54,20 +54,17 @@ export default function CalendarScreen() {
   };
 
   const onDayPress = useCallback((day: any) => {
+    const selectedDate = moment(day.dateString).utc().startOf('day');
     if (selectionStart) {
-      const start = moment(selectionStart);
-      const end = moment(day.dateString);
-      if (end.isBefore(start)) setSelectedRange({ start: day.dateString, end: selectionStart });
-      else setSelectedRange({ start: selectionStart, end: day.dateString });
+      const start = moment(selectionStart).utc().startOf('day');
+      const end = selectedDate;
+      if (end.isBefore(start)) setSelectedRange({ start: end.format('YYYY-MM-DD'), end: start.format('YYYY-MM-DD') });
+      else setSelectedRange({ start: start.format('YYYY-MM-DD'), end: end.format('YYYY-MM-DD') });
       setSelectionStart(null);
-      setIsTimePeriodModalVisible(true);
     } 
-    else {
-      setSelectedRange({ start: day.dateString, end: day.dateString });
-      setIsTimePeriodModalVisible(true);
-    }
+    else setSelectedRange({ start: selectedDate.format('YYYY-MM-DD'), end: selectedDate.format('YYYY-MM-DD') });
   }, [selectionStart]);
-
+  
   const onDayLongPress = useCallback((day: any) => {
     setSelectionStart(day.dateString);
     Alert.alert('Fecha de inicio', `${day.dateString} seleccionada. Ahora seleccione una fecha final.`);
@@ -153,7 +150,7 @@ export default function CalendarScreen() {
   useFocusEffect(
     useCallback(() => {
         if (currentProfileId) processTransactions();
-    }, [currentProfileId, refreshCategoryData, refreshIncomeData, refreshOutcomeData])
+    }, [currentProfileId, refreshIncomeData, refreshOutcomeData])
   );
   
   const memoizedCalendar = useMemo(() => (
@@ -191,9 +188,17 @@ export default function CalendarScreen() {
                 <Text style={styles.buttonTextPago}>Agregar pago</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.categoryListContainer}>
-              <CategoryList layout="row" showAddButton={false} showHeader={false}/>
+            {selectedRange && (
+            <View style={styles.transactionListContainer}>
+              <TransactionList
+                timeRange="custom"
+                customStartDate={new Date(selectedRange.start)}
+                customEndDate={new Date(selectedRange.end)}
+                showHeader={false}
+                scrollEnabled={true}
+              />
             </View>
+          )}
           </View>
           <CalendarAddModal
             isVisible={modalVisible}
@@ -220,6 +225,10 @@ const styles = StyleSheet.create({
   },
   gradientContainer: {
     flex: 1,
+  },
+  transactionListContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   contentContainer: {
     flex: 1,
@@ -299,13 +308,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 5,
   },
-  subtituloTexto: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '400',
-    letterSpacing: -0.12,
-    marginTop: 5,
-  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -356,8 +358,5 @@ const styles = StyleSheet.create({
     color: '#370185',
     fontSize: 14,
     marginLeft: 10,
-  },
-  categoryListContainer: {
-    paddingHorizontal: 20,
   },
 });
