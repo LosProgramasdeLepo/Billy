@@ -209,7 +209,7 @@ async function getValueFromData(table: string, columnToReturn: string, columnToC
     
     if (error) {
       if (error.code === 'PGRST116') {
-        console.error(`No data found in ${table} for ${columnToCheck} = ${id}`);
+        //console.error(`No data found in ${table} for ${columnToCheck} = ${id}`);
         return null;
       }
       console.error(`Error fetching ${columnToReturn} from ${table}:`, error);

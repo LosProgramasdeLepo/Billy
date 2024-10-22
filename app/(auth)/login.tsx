@@ -3,7 +3,7 @@ import { View, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingV
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { addProfile, changeCurrentProfile, getUser, logIn, updateUserPassword, verifyPasswordResetCode } from '@/api/api';
+import { addCategory, addProfile, changeCurrentProfile, getUser, logIn, updateUserPassword, verifyPasswordResetCode } from '@/api/api';
 import { useAppContext } from '@/hooks/useAppContext';
 import { Alert } from 'react-native';
 import { requestPasswordReset } from '../../api/api';  
@@ -49,6 +49,7 @@ export default function Login() {
       if (!userData.my_profiles || userData.my_profiles.length === 0) {
         const newProfile = await addProfile('Default', email);
         if (newProfile?.id) await changeCurrentProfile(email, newProfile.id);
+        await addCategory(newProfile?.id ?? "", "Otros", JSON.stringify(['#AAAAAA', '#AAAAAA']), "shape");
       }
 
       setUser(userData);
