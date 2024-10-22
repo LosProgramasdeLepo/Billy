@@ -140,15 +140,15 @@ export const SharedBalanceCard  = () => {
 
   const handleRedistributeDebts = useCallback(async () => {
     if (currentProfileId) {
-      const success = await redistributeDebts(currentProfileId);
-      if (success) {
-        Alert.alert("Operación exitosa", "Las deudas han sido redistribuidas.");
-        refreshDebts();
-      } else {
-        Alert.alert("Error", "No se pudieron redistribuir las deudas. Por favor, inténtelo de nuevo.");
-      }
+        const success = await redistributeDebts(currentProfileId);
+        if (success) {
+            Alert.alert("Operación exitosa", "Las deudas han sido redistribuidas.");
+            refreshDebts(); // Asegúrate de que las deudas se actualicen
+        } else {
+            Alert.alert("Error", "No se pudieron redistribuir las deudas. Por favor, inténtelo de nuevo.");
+        }
     }
-  }, [currentProfileId, refreshDebts]);
+}, [currentProfileId, refreshDebts]);
 
   const handleTitleSubmit = async () => {
     setIsEditing(false);
@@ -161,6 +161,10 @@ export const SharedBalanceCard  = () => {
       setTitle(profileName);
     }
   };
+
+  // En el renderizado de deudas, filtra las que ya han sido pagadas
+  const filteredDebtsToUser = debtsToUser.filter(debt => !debt.has_paid);
+  const filteredDebtsFromUser = debtsFromUser.filter(debt => !debt.has_paid);
 
   return (
     <LinearGradient colors={['#e8e0ff', '#d6c5fc']} start={[0, 0]} end={[1, 1]} style={styles.card}>
@@ -186,15 +190,15 @@ export const SharedBalanceCard  = () => {
       </View>
 
       <View style={styles.userDebtSection}>
-        {debtsToUser.length > 0 && (
-          <DebtEntryComponent name1="Tú" name2={userNames[debtsToUser[0].debtor]} amount={debtsToUser[0].amount} avatar1={userAvatars[user?.email ?? ""]} avatar2={userAvatars[debtsToUser[0].debtor]}/>
+        {filteredDebtsToUser.length > 0 && (
+          <DebtEntryComponent name1="Tú" name2={userNames[filteredDebtsToUser[0].debtor]} amount={filteredDebtsToUser[0].amount} avatar1={userAvatars[user?.email ?? ""]} avatar2={userAvatars[filteredDebtsToUser[0].debtor]}/>
         )}
 
-        {isExpanded && debtsToUser.slice(1).map((debt, index) => (
+        {isExpanded && filteredDebtsToUser.slice(1).map((debt, index) => (
           <DebtEntryComponent key={debt.id || index} name1="Tú" name2={userNames[debt.debtor]} amount={debt.amount} avatar1={userAvatars[user?.email ?? ""]} avatar2={userAvatars[debt.debtor]}/>
         ))}
 
-        {isExpanded && debtsFromUser.map((debt, index) => (
+        {isExpanded && filteredDebtsFromUser.map((debt, index) => (
           <DebtEntryComponent key={debt.id || index} name1={userNames[debt.paid_by]} name2={userNames[debt.debtor]} amount={debt.amount} avatar1={userAvatars[debt.paid_by]} avatar2={userAvatars[debt.debtor]}/>
         ))}
       </View>

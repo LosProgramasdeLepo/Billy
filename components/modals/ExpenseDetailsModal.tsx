@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Modal, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Modal, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { ThemedText } from './../ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -14,14 +14,64 @@ interface ExpenseDetailsModalProps {
     participants: string[];
     categoryIcon: any;
     sharedOutcomeData?: {
+      userNames: string[];
       users: string[];
       to_pay: number[];
       has_paid: boolean[];
     };
   };
+  currentUser: string;
+  onMarkAsPaid: (whoPaid: string, outcomeId: string, paid: boolean) => Promise<void>;
 }
 
-export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisible, onClose, expense }) => {
+export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisible, onClose, expense, currentUser, onMarkAsPaid }) => {
+  const [isPaying, setIsPaying] = useState(false);
+
+  const handleMarkAsPaid = async () => {
+    Alert.alert(
+        "Confirmación",
+        "¿Estás seguro que quieres saldar la deuda?",
+        [
+            {
+                text: "Cancelar",
+                style: "cancel"
+            },
+            {
+                text: "Sí",
+                onPress: async () => {
+                    setIsPaying(true);
+                    try {
+                        await onMarkAsPaid(currentUser, expense.id, true);
+                        // Actualizar el estado local si es necesario
+                        const updatedHasPaid = [...expense.sharedOutcomeData.has_paid];
+                        const userIndex = expense.sharedOutcomeData.users.indexOf(currentUser);
+                        if (userIndex !== -1) {
+                            updatedHasPaid[userIndex] = true; // Marcamos como pagado
+                        }
+                        // Actualizamos el estado del componente (si es necesario)
+                        setExpense(prev => ({
+                            ...prev,
+                            sharedOutcomeData: {
+                                ...prev.sharedOutcomeData,
+                                has_paid: updatedHasPaid,
+                            },
+                        }));
+                    } catch (error) {
+                        console.error("Error al marcar como pagado:", error);
+                        Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
+                    } finally {
+                        setIsPaying(false);
+                    }
+                }
+            }
+        ],
+        { cancelable: false }
+    );
+  };
+
+  const participantCount = expense.sharedOutcomeData ? expense.sharedOutcomeData.users.length - 1 : 0;
+  const amountPerParticipant = expense.sharedOutcomeData ? expense.amount / expense.sharedOutcomeData.users.length : 0;
+
   return (
     <Modal
       animationType="slide"
@@ -40,19 +90,29 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
           <ThemedText style={styles.value}>{expense.paidBy}</ThemedText>
           <ThemedText style={styles.label}>Participantes:</ThemedText>
           {expense.sharedOutcomeData ? (
-            expense.sharedOutcomeData.users.map((user, index) => (
-              <View key={index} style={styles.participantRow}>
-                <ThemedText style={styles.value}>{user}</ThemedText>
-                <ThemedText style={styles.value}>$ {expense.sharedOutcomeData!.to_pay[index].toFixed(2)}</ThemedText>
-                <ThemedText style={styles.value}>{expense.sharedOutcomeData!.has_paid[index] ? 'Pagado' : 'Pendiente'}</ThemedText>
-              </View>
-            ))
+            expense.sharedOutcomeData.userNames.map((userName, index) => {
+              const isPaid = expense.sharedOutcomeData.has_paid[index];
+              return (
+                <View key={index} style={styles.participantRow}>
+                  <ThemedText style={styles.value}>{userName}</ThemedText>
+                  <ThemedText style={styles.value}>$ {amountPerParticipant.toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.value}>{isPaid ? 'Pagado' : 'Pendiente'}</ThemedText>
+                </View>
+              );
+            })
           ) : (
             <ThemedText style={styles.value}>{expense.participants.join(', ')}</ThemedText>
           )}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <ThemedText style={styles.closeButtonText}>Cerrar</ThemedText>
+            </TouchableOpacity>
+            {expense.sharedOutcomeData && !expense.sharedOutcomeData.has_paid[expense.sharedOutcomeData.users.indexOf(currentUser)] && (
+              <TouchableOpacity style={styles.payButton} onPress={handleMarkAsPaid} disabled={isPaying}>
+                <ThemedText style={styles.payButtonText}>{isPaying ? 'Procesando...' : 'Saldar deuda'}</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
         </LinearGradient>
       </View>
     </Modal>
@@ -118,16 +178,36 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   closeButton: {
-    marginTop: 30,
     padding: 10,
     backgroundColor: '#4B00B8',
     borderRadius: 10,
-    alignSelf: 'center',
+    flex: 1,
+    marginRight: 10,
   },
   closeButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
+    textAlign: 'center',
+  },
+  payButton: {
+    padding: 10,
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    flex: 1,
+    marginLeft: 10,
+  },
+  payButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 30,
   },
   participantRow: {
     flexDirection: 'row',

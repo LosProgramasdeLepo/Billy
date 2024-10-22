@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, FlatList, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { removeIncome, IncomeData, removeOutcome, OutcomeData, getSharedOutcomeWithNames } from '../api/api';
+import { removeIncome, IncomeData, removeOutcome, OutcomeData, getSharedOutcomeWithNames, markAsPaid } from '../api/api';
 import moment from 'moment';
 import 'moment/locale/es';
 import { useNavigation } from '@react-navigation/native';
@@ -21,13 +21,14 @@ interface TransactionListProps {
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled = true, showHeader, showDateSeparators = true, timeRange, customStartDate, customEndDate }) => {
-  const { incomeData, outcomeData, categoryData, currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
+  const { incomeData, outcomeData, categoryData, currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, user } = useAppContext();
   
   const navigation = useNavigation();
   const [selectedTransaction, setSelectedTransaction] = useState<IncomeData | OutcomeData | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
   const [paidBy, setPaidBy] = useState<string>('');
+  const [sharedOutcomeData, setSharedOutcomeData] = useState<any>(null);
 
   const sortTransactions = useCallback((transactions: (IncomeData | OutcomeData)[]) => {
     return transactions.sort((a, b) => new Date(b.created_at ?? "").getTime() - new Date(a.created_at ?? "").getTime());
@@ -92,11 +93,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
         if (sharedOutcomeData) {
           setParticipants(sharedOutcomeData.userNames || sharedOutcomeData.users);
           setPaidBy(sharedOutcomeData.userNames?.[0] || sharedOutcomeData.users[0]);
+          setSharedOutcomeData(sharedOutcomeData);
         }
       }
     } else {
       setParticipants([]);
       setPaidBy('');
+      setSharedOutcomeData(null);
     }
     setModalVisible(true);
   }, []);
@@ -126,6 +129,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
     refreshCategoryData();
     refreshBalanceData(); 
   };
+
+  const handleMarkAsPaid = useCallback(async (whoPaid: string, outcomeId: string, paid: boolean) => {
+    if (currentProfileId) {
+      const success = await markAsPaid(currentProfileId, whoPaid, outcomeId, paid);
+      if (success) {
+        refreshOutcomeData();
+        refreshBalanceData();
+        setModalVisible(false);
+      } else {
+        Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
+      }
+    }
+  }, [currentProfileId, refreshOutcomeData, refreshBalanceData]);
 
   const renderTransactionItem = useCallback(({ item }: { item: IncomeData | OutcomeData }) => (
     <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
@@ -200,7 +216,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
             paidBy: paidBy,
             participants: participants,
             categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
+            sharedOutcomeData: sharedOutcomeData,
           }}
+          currentUser={user?.email ?? ""}
+          onMarkAsPaid={handleMarkAsPaid}
         />
       )}
     </View>
