@@ -1618,7 +1618,7 @@ export async function getBillDebts(billId: string) {
 
 export const categorizePurchase = async (description: string, categories: string[]): Promise<string | null> => {
   try {
-    const response = await fetch('http://192.168.1.89:3000/categorize', {
+    const response = await fetch('http://10.9.67.45:3000/categorize', {
       method: 'POST',
     headers: {
       'Content-Type': 'application/json',
