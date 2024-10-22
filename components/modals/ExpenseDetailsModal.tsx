@@ -43,8 +43,8 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
                     try {
                         await onMarkAsPaid(currentUser, expense.id, true);
                         // Actualizar el estado local si es necesario
-                        const updatedHasPaid = [...expense.sharedOutcomeData.has_paid];
-                        const userIndex = expense.sharedOutcomeData.users.indexOf(currentUser);
+                        const updatedHasPaid = [...expense.sharedOutcomeData?.has_paid || []];
+                        const userIndex = expense.sharedOutcomeData?.users.indexOf(currentUser) || -1;
                         if (userIndex !== -1) {
                             updatedHasPaid[userIndex] = true; // Marcamos como pagado
                         }
@@ -86,12 +86,12 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
             <ThemedText style={styles.monto}>${expense.amount.toFixed(2)}</ThemedText>
           </View>
           <Image source={expense.categoryIcon} style={styles.iconoCategoria} />
-          <ThemedText style={styles.label}>Quien Pagó:</ThemedText>
+          <ThemedText style={styles.label}>Quién Pagó:</ThemedText>
           <ThemedText style={styles.value}>{expense.paidBy}</ThemedText>
           <ThemedText style={styles.label}>Participantes:</ThemedText>
           {expense.sharedOutcomeData ? (
             expense.sharedOutcomeData.userNames.map((userName, index) => {
-              const isPaid = expense.sharedOutcomeData.has_paid[index];
+              const isPaid = expense.sharedOutcomeData?.has_paid[index];
               return (
                 <View key={index} style={styles.participantRow}>
                   <ThemedText style={styles.value}>{userName}</ThemedText>
