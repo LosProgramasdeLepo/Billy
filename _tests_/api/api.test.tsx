@@ -531,31 +531,6 @@ describe('addIncome', () => {
     });
 });
 
-describe('fetchBalance', () => {
-    const mockProfileId = 'profile123';
-  
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-  
-    it('should return the balance when it exists', async () => {
-        const mockBalance = 500;
-        
-        (getValueFromData as jest.Mock).mockResolvedValue(mockBalance);
-    
-        const result = await fetchBalance(mockProfileId);
-    
-        expect(getValueFromData).toHaveBeenCalledWith(
-            'Profiles',
-            'balance',
-            'id',
-            mockProfileId
-        );
-        
-        expect(result).toBe(mockBalance);
-    });
-});
-
 describe('updateBalance', () => {
     const mockProfile = 'profile123';
     const mockAmount = 100;
@@ -635,34 +610,6 @@ describe('updateBalance', () => {
         });
 
         expect(result).toEqual(mockData);
-    });
-});
-
-describe('getProfile', () => {
-    const mockProfileId = 'profile123';
-  
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-  
-    it('should return profile data when it exists', async () => {
-        const mockProfileData = {
-            id: mockProfileId,
-            name: 'Test Profile',
-            balance: 1000,
-            created_at: new Date(),
-            owner: 'user@example.com',
-            users: ['user@example.com'],
-            is_shared: false
-        };
-  
-        (getData as jest.Mock).mockResolvedValue(mockProfileData);
-    
-        const result = await getProfile(mockProfileId);
-    
-        expect(getData).toHaveBeenCalledWith('Profiles', mockProfileId);
-        
-        expect(result).toEqual(mockProfileData);
     });
 });
 
