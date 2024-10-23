@@ -1,8 +1,7 @@
-import { updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome } from '@/api/api';
+import { updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome, addData, removeData, updateData } from '@/api/api';
 export * from '@react-native-async-storage/async-storage/jest/async-storage-mock';
 import { supabase } from '@/lib/supabase';
 import * as apiModule from '@/api/api';
-
 
 jest.mock('@/lib/supabase', () => {
     const mockSupabase = {
@@ -32,7 +31,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('@/api/api', () => ({
     ...jest.requireActual('@/api/api'),
-    addData: jest.fn(),
 }));
 
 describe('fetchData', () => {
@@ -167,6 +165,189 @@ describe('getData', () => {
         expect(consoleSpy).toHaveBeenCalledWith(`Error getting ${mockTable.slice(0, -1)}:`, mockError);
 
         consoleSpy.mockRestore();
+    });
+});
+
+describe('addData', () => {
+    const mockTable = 'TestTable';
+    const mockNewData = { name: 'Test Item', value: 42 };
+  
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should add data successfully', async () => {
+        const mockInsertedData = { id: '1', ...mockNewData };
+        const mockInsert = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockReturnThis();
+        const mockSingle = jest.fn().mockResolvedValue({ data: mockInsertedData, error: null });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            insert: mockInsert,
+            select: mockSelect,
+            single: mockSingle,
+        });
+    
+        const result = await addData(mockTable, mockNewData);
+    
+        expect(supabase.from).toHaveBeenCalledWith(mockTable);
+
+        expect(mockInsert).toHaveBeenCalledWith(mockNewData);
+
+        expect(mockSelect).toHaveBeenCalled();
+
+        expect(mockSingle).toHaveBeenCalled();
+
+        expect(result).toEqual(mockInsertedData);
+    });
+  
+    it('should return null and log error if insert fails', async () => {
+        const mockError = new Error('Insert failed');
+        const mockInsert = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockReturnThis();
+        const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            insert: mockInsert,
+            select: mockSelect,
+            single: mockSingle,
+        });
+    
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+        const result = await addData(mockTable, mockNewData);
+    
+        expect(result).toBeNull();
+
+        expect(consoleSpy).toHaveBeenCalledWith(`Error adding data to ${mockTable}:`, mockError);
+    
+        consoleSpy.mockRestore();
+    });
+});
+
+describe('removeData', () => {
+    const mockTable = 'TestTable';
+    const mockId = 'test-id-123';
+  
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should remove data successfully', async () => {
+        const mockRemovedData = { id: mockId, name: 'Removed Item' };
+        const mockDelete = jest.fn().mockReturnThis();
+        const mockEq = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockReturnThis();
+        const mockSingle = jest.fn().mockResolvedValue({ data: mockRemovedData, error: null });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            delete: mockDelete,
+            eq: mockEq,
+            select: mockSelect,
+            single: mockSingle,
+        });
+    
+        const result = await removeData(mockTable, mockId);
+    
+        expect(supabase.from).toHaveBeenCalledWith(mockTable);
+
+        expect(mockDelete).toHaveBeenCalled();
+
+        expect(mockEq).toHaveBeenCalledWith('id', mockId);
+
+        expect(mockSelect).toHaveBeenCalled();
+
+        expect(mockSingle).toHaveBeenCalled();
+
+        expect(result).toEqual(mockRemovedData);
+    });
+  
+    it('should return null and log error if delete fails', async () => {
+        const mockError = new Error('Delete failed');
+        const mockDelete = jest.fn().mockReturnThis();
+        const mockEq = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockReturnThis();
+        const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            delete: mockDelete,
+            eq: mockEq,
+            select: mockSelect,
+            single: mockSingle,
+        });
+    
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+        const result = await removeData(mockTable, mockId);
+    
+        expect(result).toBeNull();
+
+        expect(consoleSpy).toHaveBeenCalledWith("Error removing item:", mockError);
+    
+        consoleSpy.mockRestore();
+    });
+});
+
+describe('updateData', () => {
+    const mockTable = 'TestTable';
+    const mockColumnToUpdate = 'name';
+    const mockUpdateValue = 'New Name';
+    const mockColumnToCheck = 'id';
+    const mockId = 'test-id-123';
+  
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should update data successfully', async () => {
+        const mockUpdatedData = { id: mockId, name: mockUpdateValue };
+        const mockUpdateFn = jest.fn().mockReturnThis();
+        const mockEq = jest.fn().mockReturnThis();
+        const mockSingle = jest.fn().mockResolvedValue({ data: mockUpdatedData, error: null });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            update: mockUpdateFn,
+            eq: mockEq,
+            single: mockSingle,
+        });
+    
+        const result = await updateData(mockTable, mockColumnToUpdate, mockUpdateValue, mockColumnToCheck, mockId);
+    
+        expect(supabase.from).toHaveBeenCalledWith(mockTable);
+
+        expect(mockUpdateFn).toHaveBeenCalledWith({ [mockColumnToUpdate]: mockUpdateValue });
+
+        expect(mockEq).toHaveBeenCalledWith(mockColumnToCheck, mockId);
+
+        expect(mockSingle).toHaveBeenCalled();
+        
+        expect(result).toEqual(mockUpdatedData);
+    });
+  
+    it('should return null and log error if update fails', async () => {
+      const mockError = new Error('Update failed');
+      const mockUpdate = jest.fn().mockReturnThis();
+      const mockEq = jest.fn().mockReturnThis();
+      const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
+  
+      (supabase.from as jest.Mock).mockReturnValue({
+        update: mockUpdate,
+        eq: mockEq,
+        single: mockSingle,
+      });
+  
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+  
+      const result = await updateData(mockTable, mockColumnToUpdate, mockUpdate, mockColumnToCheck, mockId);
+  
+      expect(result).toBeNull();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        `Error updating ${mockColumnToUpdate} in ${mockTable} for ${mockColumnToCheck} = ${mockId}:`,
+        mockError
+      );
+  
+      consoleSpy.mockRestore();
     });
 });
 

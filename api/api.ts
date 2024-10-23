@@ -152,7 +152,7 @@ export async function addData(table: string, newData: any): Promise<any | null> 
   }
 }
 
-async function removeData(table: string, id: string) {
+export async function removeData(table: string, id: string) {
   try {
     const { data, error } = await supabase
       .from(table)
@@ -175,7 +175,7 @@ async function removeData(table: string, id: string) {
   }
 }
 
-async function updateData(table: string, columnToUpdate: string, update: any, columnToCheck: string, id: string): Promise<any | null> {
+export async function updateData(table: string, columnToUpdate: string, update: any, columnToCheck: string, id: string): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from(table)
