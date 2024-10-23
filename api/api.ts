@@ -4,8 +4,6 @@ import { createURL } from 'expo-linking';
 import { Alert } from 'react-native';
 import { decode } from 'base64-arraybuffer';
 import { AuthError } from '@supabase/supabase-js';
-import * as http from 'http';
-
 
 const INCOMES_TABLE = 'Incomes';
 const OUTCOMES_TABLE = 'Outcomes';
@@ -89,7 +87,7 @@ export interface InvitationData {
 
 /* General data */
 
-async function fetchData(table: string, columnToCheck: string, parentID: string): Promise<any[] | null> {
+export async function fetchData(table: string, columnToCheck: string, parentID: string): Promise<any[] | null> {
   try {
     const { data, error } = await supabase
       .from(table)
@@ -110,7 +108,7 @@ async function fetchData(table: string, columnToCheck: string, parentID: string)
   }
 }
 
-async function getData(table: string, id: string, columnToCheck: string = 'id'): Promise<any | null> {
+export async function getData(table: string, id: string, columnToCheck: string = 'id'): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from(table)
@@ -132,19 +130,19 @@ async function getData(table: string, id: string, columnToCheck: string = 'id'):
   }
 }
 
-async function addData(table: string, newData: any): Promise<any | null> {
+export async function addData(table: string, newData: any): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from(table)
       .insert(newData)
       .select()
       .single();
-    
+
     if (error) {
       console.error(`Error adding data to ${table}:`, error);
       return null;
     }
-  
+
     return data;
   } 
 
@@ -199,7 +197,7 @@ async function updateData(table: string, columnToUpdate: string, update: any, co
   }
 }
 
-async function getValueFromData(table: string, columnToReturn: string, columnToCheck: string, id: string): Promise<any | null> {
+export async function getValueFromData(table: string, columnToReturn: string, columnToCheck: string, id: string): Promise<any | null> {
   try {
     const { data, error } = await supabase
       .from(table)
@@ -673,7 +671,7 @@ export async function fetchBalance(profileId: string): Promise<number> {
   return balance !== null ? balance : 0;
 }
 
-async function updateBalance(profile: string, added: number): Promise<void | null> {
+export async function updateBalance(profile: string, added: number): Promise<void | null> {
   try {
     // Calls atomic function to avoid the infamous race condition
     const { data, error } = await supabase.rpc('update_balance', { 
@@ -737,7 +735,6 @@ export async function logIn(email: string, password: string) {
     // Tomo el usuario de la tabla (si está)
     const userData = await getUser(user.email ?? "");
 
-    // Modificación: Usar el token de sesión en lugar de user.id
     if (session && session.access_token) {
       const { data: authUser, error: authError } = await supabase.auth.getUser(session.access_token);
 

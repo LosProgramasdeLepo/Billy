@@ -93,7 +93,7 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
           <ThemedText style={styles.label}>Participantes:</ThemedText>
           {expense.sharedOutcomeData ? (
             expense.sharedOutcomeData.userNames.map((userName, index) => {
-              const isPaid = expense.sharedOutcomeData.has_paid[index];
+              const isPaid = expense.sharedOutcomeData?.has_paid[index];
               return (
                 <View key={index} style={styles.participantRow}>
                   <ThemedText style={styles.value}>{userName}</ThemedText>
