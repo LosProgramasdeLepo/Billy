@@ -1812,3 +1812,29 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
   }
   return null;
 }
+
+/* AI */
+
+export const categorizePurchase = async (description: string, categories: string[]): Promise<string | null> => {
+  try {
+    const response = await fetch('http://10.9.67.45:3000/categorize', {
+      method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ description, categories }),
+  });
+  
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Agregado para obtener más información
+      throw new Error(`Error en la solicitud: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data.category;
+  } catch (error) {
+    console.error('Error al categorizar la compra:', error);
+    return null;
+  }
+};

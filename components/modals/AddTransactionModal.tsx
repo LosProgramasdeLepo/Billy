@@ -3,9 +3,10 @@ import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, S
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { addIncome, addOutcome, fetchCategories, CategoryData,isProfileShared, getSharedUsers, getCategoryIdByName } from '@/api/api';
+import { addIncome, addOutcome, fetchCategories, CategoryData,isProfileShared, getSharedUsers, getCategoryIdByName, categorizePurchase } from '@/api/api';
 import moment from 'moment';
 import { useAppContext } from '@/hooks/useAppContext';
+import { debounce } from 'lodash';
 
 interface AddTransactionModalProps {
   isVisible: boolean;
@@ -55,6 +56,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   useEffect(() => {
     if (isVisible) fetchCategoriesData();
   }, [isVisible, fetchCategoriesData]);
+
+  const handleDescriptionChange = (text: string) => {
+    setDescription(text);
+    debouncedCategorize(text); // Llama a la función debounced
+  };
 
   const handleDateChange = useCallback((event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -133,6 +139,20 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     </View>
   ), [bubbleInterpolation, switchType, getTextColor]);
 
+  // Agregado: función debounced
+  const debouncedCategorize = useMemo(() => 
+    debounce(async (text: string) => {
+      if (text && categories.length > 0) {
+        const categorized = await categorizePurchase(text, categories.map(c => c.name));
+        if (categorized) {
+          const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
+          setSelectedCategory(categoryId ?? '');
+        }
+      }
+    }, 500), // Espera 300 ms después de que el usuario deja de escribir
+    [categories, currentProfileId]
+  );
+
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
       <View style={styles.modalBackground}>
@@ -147,7 +167,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             <TextInput
               style={styles.input}
               value={description}
-              onChangeText={setDescription}
+              onChangeText={handleDescriptionChange} // Llama a la función que categoriza
               placeholder="Descripción"
               placeholderTextColor="#AAAAAA"
             />
@@ -250,7 +270,6 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
     setIsOpen(false);
     //console.log({selectedUsers});
   };
-
   // Filter out whoPaidIt from sharedUsers when not in single selection mode
   const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter(user => user !== whoPaidIt) || [];
 
