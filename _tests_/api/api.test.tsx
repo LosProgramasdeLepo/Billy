@@ -1,4 +1,4 @@
-import { logIn, updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome, addData, removeData, updateData, getUser } from '@/api/api';
+import { logIn, updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome, addData, removeData, updateData, getUser, logOut } from '@/api/api';
 export * from '@react-native-async-storage/async-storage/jest/async-storage-mock';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
@@ -28,6 +28,7 @@ jest.mock('@/lib/supabase', () => {
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
     setItem: jest.fn(),
+    removeItem: jest.fn(),
 }));
 
 jest.mock('@/api/api', () => ({
@@ -738,5 +739,55 @@ describe('logIn', () => {
       const result = await logIn('test@example.com', 'password');
   
       expect(result).toEqual({ error: 'An unexpected error occurred.' });
+    });
+});
+
+describe('logOut', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should successfully log out and remove user session', async () => {
+        (supabase.auth.signOut as jest.Mock).mockResolvedValue({ error: null });
+        
+        (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
+    
+        const result = await logOut();
+    
+        expect(supabase.auth.signOut).toHaveBeenCalled();
+    
+        expect(AsyncStorage.removeItem).toHaveBeenCalledWith('userSession');
+        
+        expect(AsyncStorage.removeItem).toHaveBeenCalledTimes(1);
+    
+        expect(result).toEqual({ success: true });
+    });
+  
+    it('should handle supabase signOut error', async () => {
+        const mockError = new Error('Supabase signOut error');
+
+        (supabase.auth.signOut as jest.Mock).mockResolvedValue({ error: mockError });
+    
+        const result = await logOut();
+    
+        expect(supabase.auth.signOut).toHaveBeenCalled();
+
+        expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+
+        expect(result).toEqual({ error: "Failed to log out." });
+    });
+  
+    it('should handle unexpected errors', async () => {
+        const mockError = new Error('Unexpected error');
+
+        (supabase.auth.signOut as jest.Mock).mockRejectedValue(mockError);
+    
+        const result = await logOut();
+    
+        expect(supabase.auth.signOut).toHaveBeenCalled();
+
+        expect(AsyncStorage.removeItem).not.toHaveBeenCalled();
+
+        expect(result).toEqual({ error: "An unexpected error occurred." });
     });
 });
