@@ -767,7 +767,6 @@ export async function logIn(email: string, password: string) {
   }
 }
 
-
 export async function logOut() {
   try {
     const { error } = await supabase.auth.signOut();

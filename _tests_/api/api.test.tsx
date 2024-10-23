@@ -1,5 +1,6 @@
-import { updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome, addData, removeData, updateData } from '@/api/api';
+import { logIn, updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome, addData, removeData, updateData, getUser } from '@/api/api';
 export * from '@react-native-async-storage/async-storage/jest/async-storage-mock';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import * as apiModule from '@/api/api';
 
@@ -31,6 +32,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('@/api/api', () => ({
     ...jest.requireActual('@/api/api'),
+    getUser: jest.fn(),
 }));
 
 describe('fetchData', () => {
@@ -455,28 +457,31 @@ describe('addIncome', () => {
 
     it('should add income successfully', async () => {
         const mockInsertData = [{ id: '1', profile: mockProfile, amount: mockAmount, description: mockDescription, created_at: mockCreatedAt }];
-        const mockInsert = jest.fn().mockReturnThis();
-        const mockSelect = jest.fn().mockResolvedValue({ data: mockInsertData, error: null });
-    
+        
         (supabase.from as jest.Mock).mockReturnValue({
-          insert: mockInsert,
-          select: mockSelect,
+            insert: jest.fn().mockReturnThis(),
+            select: jest.fn().mockResolvedValue({ data: mockInsertData, error: null }),
         });
     
-        const result = await apiModule.addIncome(mockProfile, mockAmount, mockDescription, mockCreatedAt);
+        (supabase.rpc as jest.Mock).mockResolvedValue({ data: { new_balance: 200 }, error: null });
+    
+        const result = await addIncome(mockProfile, mockAmount, mockDescription, mockCreatedAt);
     
         expect(supabase.from).toHaveBeenCalledWith('Incomes');
 
-        expect(mockInsert).toHaveBeenCalledWith({
-          profile: mockProfile,
-          amount: mockAmount,
-          description: mockDescription,
-          created_at: mockCreatedAt,
+        expect(supabase.from('Incomes').insert).toHaveBeenCalledWith({
+            profile: mockProfile,
+            amount: mockAmount,
+            description: mockDescription,
+            created_at: mockCreatedAt,
         });
 
-        expect(mockSelect).toHaveBeenCalled();
+        expect(supabase.from('Incomes').select).toHaveBeenCalled();
 
-        expect(apiModule.updateBalance).toHaveBeenCalledWith(mockProfile, mockAmount);
+        expect(supabase.rpc).toHaveBeenCalledWith('update_balance', {
+            profile_id: mockProfile,
+            amount: mockAmount
+        });
         
         expect(result).toEqual(mockInsertData);
     });
@@ -657,5 +662,81 @@ describe('getProfile', () => {
         expect(getData).toHaveBeenCalledWith('Profiles', mockProfileId);
         
         expect(result).toEqual(mockProfileData);
+    });
+});
+
+describe('logIn', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should return user data on successful login', async () => {
+        const mockUser = { email: 'test@example.com' };
+        const mockSession = { access_token: 'mock_token' };
+        const mockUserData = null;
+    
+        (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
+            data: { user: mockUser, session: mockSession },
+            error: null,
+        });
+
+        (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+            data: { user: mockUser },
+            error: null,
+        });
+
+        (AsyncStorage.setItem as jest.Mock).mockResolvedValue(undefined);
+
+        (getUser as jest.Mock).mockResolvedValue(mockUserData);
+    
+        const result = await logIn('test@example.com', 'password');
+    
+        expect(result).toEqual({
+            user: mockUser,
+            userData: mockUserData,
+            session: mockSession,
+        });
+
+        expect(AsyncStorage.setItem).toHaveBeenCalledWith('userSession', JSON.stringify(mockSession));
+    });
+  
+    it('should return an error for invalid credentials', async () => {
+      (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
+        data: { user: null, session: null },
+        error: new Error('Invalid login credentials'),
+      });
+  
+      const result = await logIn('test@example.com', 'wrong_password');
+  
+      expect(result).toEqual({ error: 'Invalid login credentials' });
+    });
+  
+    it('should return an error for unvalidated email', async () => {
+      const mockUser = { email: 'test@example.com' };
+      const mockSession = { access_token: 'mock_token' };
+  
+      (supabase.auth.signInWithPassword as jest.Mock).mockResolvedValue({
+        data: { user: mockUser, session: mockSession },
+        error: null,
+      });
+
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: { ...mockUser, last_sign_in_at: new Date().toISOString() } },
+        error: null,
+      });
+      
+      (apiModule.getUser as jest.Mock).mockResolvedValue(null);
+  
+      const result = await logIn('test@example.com', 'password');
+  
+      expect(result).toEqual({ error: 'Email not validated' });
+    });
+  
+    it('should handle unexpected errors', async () => {
+      (supabase.auth.signInWithPassword as jest.Mock).mockRejectedValue(new Error('Unexpected error'));
+  
+      const result = await logIn('test@example.com', 'password');
+  
+      expect(result).toEqual({ error: 'An unexpected error occurred.' });
     });
 });
