@@ -1,6 +1,8 @@
-import { updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData } from '@/api/api';
+import { updateBalance, fetchBalance, getProfile, getValueFromData, fetchData, getData, addIncome } from '@/api/api';
 export * from '@react-native-async-storage/async-storage/jest/async-storage-mock';
 import { supabase } from '@/lib/supabase';
+import * as apiModule from '@/api/api';
+
 
 jest.mock('@/lib/supabase', () => {
     const mockSupabase = {
@@ -254,6 +256,119 @@ describe('getValueFromData', () => {
     });
 });
 
+describe('addIncome', () => {
+    const mockProfile = 'testProfile';
+    const mockAmount = 100;
+    const mockDescription = 'Test income';
+    const mockCreatedAt = new Date('2023-01-01');
+  
+    beforeEach(() => {
+        jest.clearAllMocks();
+        jest.spyOn(apiModule, 'updateBalance').mockImplementation(() => Promise.resolve(undefined));
+        jest.spyOn(apiModule, 'getValueFromData').mockImplementation(() => Promise.resolve(undefined));
+    });
+    
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it('should add income successfully', async () => {
+        const mockInsertData = [{ id: '1', profile: mockProfile, amount: mockAmount, description: mockDescription, created_at: mockCreatedAt }];
+        const mockInsert = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockResolvedValue({ data: mockInsertData, error: null });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+          insert: mockInsert,
+          select: mockSelect,
+        });
+    
+        const result = await apiModule.addIncome(mockProfile, mockAmount, mockDescription, mockCreatedAt);
+    
+        expect(supabase.from).toHaveBeenCalledWith('Incomes');
+
+        expect(mockInsert).toHaveBeenCalledWith({
+          profile: mockProfile,
+          amount: mockAmount,
+          description: mockDescription,
+          created_at: mockCreatedAt,
+        });
+
+        expect(mockSelect).toHaveBeenCalled();
+
+        expect(apiModule.updateBalance).toHaveBeenCalledWith(mockProfile, mockAmount);
+        
+        expect(result).toEqual(mockInsertData);
+    });
+  
+    it('should use current date if created_at is not provided', async () => {
+        const mockInsert = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockResolvedValue({ data: [], error: null });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            insert: mockInsert,
+            select: mockSelect,
+        });
+    
+        (updateBalance as jest.Mock).mockResolvedValue(undefined);
+    
+        await addIncome(mockProfile, mockAmount, mockDescription);
+    
+        const insertCall = mockInsert.mock.calls[0][0];
+
+        expect(insertCall.created_at).toBeInstanceOf(Date);
+        
+        expect(insertCall.created_at.getTime()).toBeCloseTo(new Date().getTime(), -3); // Allow 1 second difference
+    });
+  
+    it('should return null and log error if insert fails', async () => {
+        const mockError = new Error('Insert failed');
+        const mockInsert = jest.fn().mockReturnThis();
+        const mockSelect = jest.fn().mockResolvedValue({ data: null, error: mockError });
+    
+        (supabase.from as jest.Mock).mockReturnValue({
+            insert: mockInsert,
+            select: mockSelect,
+        });
+    
+        (updateBalance as jest.Mock).mockResolvedValue(undefined);
+    
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+        const result = await addIncome(mockProfile, mockAmount, mockDescription);
+    
+        expect(result).toBeNull();
+
+        expect(consoleSpy).toHaveBeenCalledWith('Error adding income:', mockError);
+    
+        consoleSpy.mockRestore();
+    });
+});
+
+describe('fetchBalance', () => {
+    const mockProfileId = 'profile123';
+  
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  
+    it('should return the balance when it exists', async () => {
+        const mockBalance = 500;
+        
+        (getValueFromData as jest.Mock).mockResolvedValue(mockBalance);
+    
+        const result = await fetchBalance(mockProfileId);
+    
+        expect(getValueFromData).toHaveBeenCalledWith(
+            'Profiles',
+            'balance',
+            'id',
+            mockProfileId
+        );
+        
+        expect(result).toBe(mockBalance);
+    });
+});
+
 describe('updateBalance', () => {
     const mockProfile = 'profile123';
     const mockAmount = 100;
@@ -333,31 +448,6 @@ describe('updateBalance', () => {
         });
 
         expect(result).toEqual(mockData);
-    });
-});
-
-describe('fetchBalance', () => {
-    const mockProfileId = 'profile123';
-  
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-  
-    it('should return the balance when it exists', async () => {
-        const mockBalance = 500;
-        
-        (getValueFromData as jest.Mock).mockResolvedValue(mockBalance);
-    
-        const result = await fetchBalance(mockProfileId);
-    
-        expect(getValueFromData).toHaveBeenCalledWith(
-            'Profiles',
-            'balance',
-            'id',
-            mockProfileId
-        );
-        
-        expect(result).toBe(mockBalance);
     });
 });
 
