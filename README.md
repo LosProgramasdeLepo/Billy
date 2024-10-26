@@ -1,4 +1,4 @@
-###Cosas q hacer para configurar el react native test library###
+### Cosas q hacer para configurar el react native test library ###
 
 1. Agregar en package.json todas las libraries que sean relacionadas a jest y dependencias de la libreria. Si se tiene un instalador de paquetes, ej.npm correr el comando
 
