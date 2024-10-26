@@ -11,9 +11,10 @@ import { debounce } from 'lodash';
 interface AddTransactionModalProps {
   isVisible: boolean;
   onClose: () => void;
+  testID?: string;  // Add this line
 }
 
-const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
+const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose, testID }) => {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
   
   const [type, setType] = useState<'Income' | 'Outcome'>('Income');

@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "jsx": "react",
     "strict": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
