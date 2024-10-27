@@ -11,16 +11,50 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
+// Mock expo-linking (add this)
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn(),
+}));
+
 // Mock the AppContext
 jest.mock('../../hooks/useAppContext', () => ({
   useAppContext: () => ({
     categoryData: [
-      { id: '1', name: 'Food', spent: 100, color: '["#FF0000", "#00FF00"]', icon: 'food' },
-      { id: '2', name: 'Transport', spent: 50, color: '["#0000FF", "#FF00FF"]', icon: 'car' },
-      { id: '3', name: 'Otros', spent: 25, color: '["#CECECE", "#CECECE"]', icon: 'cash-multiple' },
+      { 
+        id: '1', 
+        name: 'Food', 
+        spent: 100, 
+        color: '["#FF0000", "#00FF00"]', 
+        icon: 'food',
+        budget: 200,
+        transactions: [],
+        percentage: 50
+      },
+      { 
+        id: '2', 
+        name: 'Transport', 
+        spent: 50, 
+        color: '["#0000FF", "#FF00FF"]', 
+        icon: 'car',
+        budget: 100,
+        transactions: [],
+        percentage: 50
+      },
+      { 
+        id: '3', 
+        name: 'Otros', 
+        spent: 25, 
+        color: '["#CECECE", "#CECECE"]', 
+        icon: 'cash-multiple',
+        budget: 50,
+        transactions: [],
+        percentage: 50
+      },
     ],
     refreshCategoryData: jest.fn(),
     refreshOutcomeData: jest.fn(),
+    selectedPeriod: 'current',
+    setSelectedPeriod: jest.fn(),
   }),
 }));
 
