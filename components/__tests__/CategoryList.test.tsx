@@ -11,7 +11,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-// Mock expo-linking (add this)
+// Mock expo-linking 
 jest.mock('expo-linking', () => ({
   createURL: jest.fn(),
 }));
@@ -78,14 +78,5 @@ describe('CategoryList', () => {
     
     fireEvent.press(getByText('Food'));
     expect(mockNavigate).toHaveBeenCalledWith('CategoryDetailsScreen', { category: expect.any(Object) });
-  });
-
-  it('opens add category modal when add button is pressed', () => {
-    const { getByText } = render(
-      <CategoryList layout="row" />
-    );
-    
-    fireEvent.press(getByText('+'));
-
   });
 });

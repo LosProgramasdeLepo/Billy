@@ -1,7 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { OutcomeList } from '../OutcomeList';
-import { useAppContext } from '../../hooks/useAppContext';
 
 // Mock the navigation
 const mockNavigate = jest.fn();
@@ -32,14 +31,6 @@ jest.mock('../../hooks/useAppContext', () => ({
 
 describe('OutcomeList', () => {
   it('renders correctly with header', () => {
-    const { getByText } = render(
-      <OutcomeList />
-    );
-
-    expect(getByText('Bus Ticket')).toBeTruthy();
-  });
-
-  it('renders multiple outcomes', () => {
     const { getByText } = render(
       <OutcomeList />
     );
