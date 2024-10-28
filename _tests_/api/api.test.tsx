@@ -639,31 +639,41 @@ describe("addIncome", () => {
   });
 });
 
-// La función en sí
+// El test en cuestión
 describe("updateBalance", () => {
+  // Perfil a updatear
   const mockProfile = "profile123";
+  // Balance "inventado" en ese perfil
   const mockBalance = 100;
 
+  // Se limpiarán los mocks antes de cada test
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+  // Quiero que el balance se actualice correctamente
   it("should update balance successfully", async () => {
+    // El balance a añadir
     const amountAdded = 400;
+    // Lo que queremos que retorne la llamada a la API
     const mockData = { new_balance: mockBalance + amountAdded };
 
+    //Mock del resultado de la llamada a Supabase
     (supabase.rpc as jest.Mock).mockResolvedValue({
       data: mockData,
       error: null,
     });
 
+    // Llamada a API
     const result = await updateBalance(mockProfile, amountAdded);
 
+    // Verificación de parámetros
     expect(supabase.rpc).toHaveBeenCalledWith("update_balance", {
       profile_id: mockProfile,
       amount: amountAdded,
     });
 
+    // Verificación de resultado
     expect(result).toEqual(mockData);
   });
 
@@ -820,24 +830,32 @@ describe("logIn", () => {
   });
 });
 
+// El otro test en cuestión
 describe("logOut", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("should successfully log out and remove user session", async () => {
+    // Mock de llamada a Supabase
     (supabase.auth.signOut as jest.Mock).mockResolvedValue({ error: null });
 
+    // Mock de llamada a AsyncStorage
     (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(undefined);
 
+    // Llamada a API
     const result = await logOut();
 
+    // Queremos que la función de Supabase se haya llamado
     expect(supabase.auth.signOut).toHaveBeenCalled();
 
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("userSession");
+    // Queremos que la función de AsyncStorage se haya llamado...
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("ionujgf");
 
+    // ... exactamente una vez
     expect(AsyncStorage.removeItem).toHaveBeenCalledTimes(1);
 
+    // Queremos que el resultado sea exitoso
     expect(result).toEqual({ success: true });
   });
 
