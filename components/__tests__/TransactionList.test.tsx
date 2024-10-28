@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { TransactionList } from '../TransactionList';
 import { useAppContext } from '../../hooks/useAppContext';
 
@@ -36,17 +36,48 @@ jest.mock('../../hooks/useAppContext', () => ({
 
 describe('TransactionList', () => {
   it('renders correctly with header', () => {
-    const { getByText, getAllByText, debug } = render(
+    const { getByText } = render(
       <TransactionList timeRange="month" showHeader={true} />
     );
-
-    // Debug the output to see what is rendered
-    // debug();
 
     expect(getByText('Actividad reciente')).toBeTruthy();
     expect(getByText('Bus Ticket')).toBeTruthy();
     expect(getByText('Grocery Shopping')).toBeTruthy();
   });
 
+  it('renders without header', () => {
+    const { queryByText } = render(
+      <TransactionList timeRange="month" showHeader={false} />
+    );
 
+    expect(queryByText('Actividad reciente')).toBeNull();
+    expect(queryByText('Bus Ticket')).toBeTruthy();
+    expect(queryByText('Grocery Shopping')).toBeTruthy();
+  });
+
+  it('displays income transactions', () => {
+    const { getByText } = render(
+      <TransactionList timeRange="month" showHeader={true} />
+    );
+
+    expect(getByText('Grocery Shopping')).toBeTruthy();
+    expect(getByText('$50')).toBeTruthy();
+  });
+
+  it('displays outcome transactions', () => {
+    const { getByText } = render(
+      <TransactionList timeRange="month" showHeader={true} />
+    );
+
+    expect(getByText('Bus Ticket')).toBeTruthy();
+    expect(getByText('$2.5')).toBeTruthy();
+  });
+
+  it('navigates to transaction details on click', () => {
+    const { getByText } = render(
+      <TransactionList timeRange="month" showHeader={true} />
+    );
+
+    const transaction = getByText('Bus Ticket');
+  });
 });

@@ -24,4 +24,31 @@ describe('BalanceCard', () => {
     expect(getByText('Gastos')).toBeTruthy();
     expect(getByText('$500.00')).toBeTruthy();
   });
+
+  it('displays the correct income data', () => {
+    const { getByText } = render(
+      <BalanceCard />
+    );
+
+    expect(getByText('Ingresos')).toBeTruthy();
+    expect(getByText('$1500.00')).toBeTruthy();
+  });
+
+  it('displays the correct outcome data', () => {
+    const { getByText } = render(
+      <BalanceCard />
+    );
+
+    expect(getByText('Gastos')).toBeTruthy();
+    expect(getByText('$500.00')).toBeTruthy();
+  });
+
+  it('displays the correct balance', () => {
+    const { getByText } = render(
+      <BalanceCard />
+    );
+
+    expect(getByText('Balance total:')).toBeTruthy();
+    expect(getByText('$1000.00')).toBeTruthy();
+  });
 });
