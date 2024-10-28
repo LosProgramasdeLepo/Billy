@@ -17,7 +17,7 @@ Otra alternativa es agregar en el package.json:
 Si se quiere especificar el archivo de configuración de jest:
 ```     jest --config nombreArchivo ```
 
-3. Utilizar un modulo q permita traducir librerías de react native, las cuales jest no reconoce.  babel.config.js
+3. Babbel permite traducir librerías de react native, las cuales jest no reconoce, o garantizar la compatibilidad.  babel.config.js
 ```npm install --save-dev @babel/plugin-transform-private-methods babel-preset-expo```
 ![Alt text](images/babelConfig.png)
 
@@ -30,18 +30,16 @@ Si se quiere especificar el archivo de configuración de jest:
 }
 ```
 
-5. Write your tests:
+5. Escribir tus tests:
 Crear archivos con estilo ComponentName.test.js:
 ![Alt text](images/BalanceCardTest.png)
 
-**TODO:** 
-Cambiar esta parte.
-Use @testing-library/react-native's query methods like getByText, getByTestId, queryByText, etc., to find elements in your rendered component.
-Use fireEvent to simulate user interactions like pressing buttons or typing text.
-If you're using React Navigation, you might need to mock it in your tests. You can do this by creating a __mocks__ folder in your project root and adding mock files for the navigation modules.
-Para este test a funcionar, se debe agregar testID props a los componentes.
+**Usar @testing-library/react-native's:** 
 
-Cuando es la primera vez, tardan los tests al tener que subir los modulos. Pero una vez subidos, el tiempo se reduce significativamente.
+- query methods como getByText, getByTestId, queryByText, etc., para buscar elementos especificos en tu render component. 
+- Usar fireEvent para simular la interacion del usuario. 
+- Si se usa mock, hay que renderizar usando mocks. 
+- Cuando es la primera vez, tardan los tests al tener que subir los modulos. Pero una vez subidos, el tiempo se reduce significativamente.
 
 6. Eliminar cache de jest:
 ```npx jest --clearCache```
@@ -52,6 +50,12 @@ Cuando es la primera vez, tardan los tests al tener que subir los modulos. Pero 
 Otra manera es:
 ```npx jest --verbose```  
 permite ver mejor los errores. 
+
+De un archivo especifico seria
+```npm test -- components/__tests__/CategoryList.test.tsx```
+```npm test -- components/__tests__/TransactionList.test.tsx```
+```npm test -- components/__tests__/OutcomeList.test.tsx```
+```npm test -- components/__tests__/BalanceCard.test.tsx```
 
 8. Si todavia faltan dependencias:
 ```npm install```
