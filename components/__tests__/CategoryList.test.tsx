@@ -86,7 +86,6 @@ describe('CategoryList', () => {
     );
     
     fireEvent.press(getByText('+'));
-    // You would need to add a testID to your AddCategoryModal to properly test this
-    // expect(getByTestId('add-category-modal')).toBeTruthy();
+
   });
 });

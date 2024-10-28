@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { TransactionList } from '../TransactionList';
+import { OutcomeList } from '../OutcomeList';
 import { useAppContext } from '../../hooks/useAppContext';
 
 // Mock the navigation
@@ -12,21 +12,17 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('expo-linking', () => ({
-    createURL: jest.fn(),
-  }));
+  createURL: jest.fn(),
+}));
 
 // Mock the AppContext
 jest.mock('../../hooks/useAppContext', () => ({
   useAppContext: () => ({
-    incomeData: [
-      { id: '1', description: 'Grocery Shopping', amount: 50, created_at: '2024-10-01' },
-    ],
     outcomeData: [
       { id: '2', description: 'Bus Ticket', amount: 2.5, created_at: '2024-10-02' },
     ],
-    categoryData: ["Comida"],
+    categoryData: ["Transporte"],
     currentProfileId: '123',
-    refreshIncomeData: jest.fn(),
     refreshOutcomeData: jest.fn(),
     refreshCategoryData: jest.fn(),
     refreshBalanceData: jest.fn(),
@@ -34,19 +30,15 @@ jest.mock('../../hooks/useAppContext', () => ({
   }),
 }));
 
-describe('TransactionList', () => {
+describe('OutcomeList', () => {
   it('renders correctly with header', () => {
-    const { getByText, getAllByText, debug } = render(
-      <TransactionList timeRange="month" showHeader={true} />
+    const { getByText, debug } = render(
+      <OutcomeList />
     );
 
-    // Debug the output to see what is rendered
+    // // Debug the output to see what is rendered
     // debug();
 
-    expect(getByText('Actividad reciente')).toBeTruthy();
     expect(getByText('Bus Ticket')).toBeTruthy();
-    expect(getByText('Grocery Shopping')).toBeTruthy();
   });
-
-
 });

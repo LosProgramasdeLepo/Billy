@@ -6,7 +6,8 @@ module.exports = function(api) {
       ['module-resolver', {
         root: ['./'],
         alias: {
-          '@': './'
+          '@': './',
+          '@expo/vector-icons': '@expo/vector-icons/build/vendor/react-native-vector-icons',
         }
       }]
     ]
