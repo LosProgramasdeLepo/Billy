@@ -19,11 +19,12 @@
       "<rootDir>/jest.setup.js"
     ],
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-native|@react-native|expo-linking|expo-linear-gradient|react-native-vector-icons)/)"
+      "node_modules/(?!(@expo/vector-icons|react-native|@react-native|expo-linking|expo-linear-gradient|react-native-vector-icons)/)"
     ],
     "transform": {
       "^.+\\.(js|jsx|ts|tsx)$": "babel-jest"
-    }
+    },
+    "testEnvironment": "jsdom"
   },
   "dependencies": {
     "@expo-google-fonts/roboto": "^0.2.3",
@@ -88,6 +89,9 @@
     "@babel/plugin-transform-class-properties": "^7.25.9",
     "@babel/plugin-transform-private-methods": "^7.25.9",
     "@babel/plugin-transform-private-property-in-object": "^7.25.9",
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-react": "^7.25.9",
+    "@babel/preset-typescript": "^7.26.0",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.8.0",
     "@types/base64-arraybuffer": "^0.1.0",
@@ -97,7 +101,7 @@
     "@types/react-native-bcrypt": "^2.4.6",
     "@types/react-native-vector-icons": "^6.4.18",
     "@types/react-test-renderer": "^18.0.7",
-    "babel-jest": "^29.0.0",
+    "babel-jest": "^29.7.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "concurrently": "^9.0.1",
     "cypress": "^13.15.0",

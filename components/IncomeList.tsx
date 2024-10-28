@@ -7,7 +7,12 @@ import { FontAwesome } from '@expo/vector-icons';
 import moment from 'moment';
 import { useAppContext } from '@/hooks/useAppContext';
 
-export const IncomeList = () => {
+interface IncomeListProps {
+  layout: string;
+  // ... other props
+}
+
+export const IncomeList: React.FC<IncomeListProps> = ({ layout, ...props }) => {
   const { incomeData, currentProfileId, refreshIncomeData } = useAppContext();
 
   // For deleting
