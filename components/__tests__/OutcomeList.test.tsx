@@ -32,12 +32,17 @@ jest.mock('../../hooks/useAppContext', () => ({
 
 describe('OutcomeList', () => {
   it('renders correctly with header', () => {
-    const { getByText, debug } = render(
+    const { getByText } = render(
       <OutcomeList />
     );
 
-    // // Debug the output to see what is rendered
-    // debug();
+    expect(getByText('Bus Ticket')).toBeTruthy();
+  });
+
+  it('renders multiple outcomes', () => {
+    const { getByText } = render(
+      <OutcomeList />
+    );
 
     expect(getByText('Bus Ticket')).toBeTruthy();
   });
