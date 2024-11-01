@@ -17,6 +17,8 @@ export interface AppContextType {
   refreshBalanceData: () => Promise<void>;
   profileData: ProfileData[] | null;
   refreshProfileData: () => Promise<void>;
+  userProfilePicture: string | null;
+  setUserProfilePicture: (url: string | null) => void;
   refreshAllData: () => Promise<void>;
 }
 
