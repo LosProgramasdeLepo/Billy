@@ -32,7 +32,7 @@ const App = () => {
   useFocusEffect(
     useCallback(() => {
       if (currentProfileId) isProfileShared(currentProfileId).then(setShared);
-    }, [])
+    }, [currentProfileId])
   );
 
   const toggleSelector = (type: 'month' | 'year') => () => {
@@ -75,9 +75,7 @@ const App = () => {
 
   return (
     <LinearGradient colors={['#4B00B8', '#20014E']} style={styles.gradientContainer}>
-      <View style={styles.headerContainer}>
-        <BillyHeader title="Estadísticas" subtitle="Mirá tu actividad mensual o anual." />
-      </View>
+      <BillyHeader/>
       <View style={styles.contentContainer}>
         <View style={styles.selectorWrapper}>
           <View style={styles.selectorContainer}>
@@ -131,15 +129,15 @@ const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
   },
-  headerContainer: {
-  },
   contentContainer: {
+    marginHorizontal: '2.5%',
     flex: 1,
   },
   selectorWrapper: {
     alignItems: 'center',
   },
   selectorContainer: {
+    marginTop: 5,
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 25,
@@ -167,7 +165,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    paddingTop: 40,
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -179,7 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   arrowButton: {
-    width: 40,
+    width: 25,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { TransactionList } from '../TransactionList';
 import { getOutcomesFromDateRange, getIncomesFromDateRange, IncomeData, OutcomeData } from '@/api/api';
 import moment from 'moment';
@@ -42,22 +42,36 @@ const TimePeriodModal: React.FC<TimePeriodModalProps> = ({ isVisible, onClose, s
         end: moment(dateRange.end).format('DD/MM/YYYY'),
     }), [dateRange]);
 
+    const renderHeader = useCallback(() => (
+        <Text style={styles.detailsModalTitle}>
+            {formattedDateRange.start} - {formattedDateRange.end}
+        </Text>
+    ), [formattedDateRange]);
+
+    const renderFooter = useCallback(() => (
+        <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+    ), [handleClose]);
+
     return (
         <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={handleClose}>
             <View style={styles.detailsModalBackground}>
                 <View style={styles.detailsModalContainer}>
-                    <Text style={styles.detailsModalTitle}>
-                        {formattedDateRange.start} - {formattedDateRange.end}
-                    </Text>
-                    <TransactionList timeRange='custom' customStartDate={startDate} customEndDate={endDate}/>
-                    <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-                        <Text style={styles.closeButtonText}>Close</Text>
-                    </TouchableOpacity>
+                    <FlatList
+                        ListHeaderComponent={renderHeader}
+                        ListFooterComponent={renderFooter}
+                        data={[{ key: 'transactions' }]}
+                        renderItem={() => (
+                            <TransactionList timeRange='custom' customStartDate={startDate} customEndDate={endDate}/>
+                        )}
+                    />
                 </View>
             </View>
         </Modal>
     );
 };
+
 const styles = StyleSheet.create({
     detailsModalBackground: {
         flex: 1,
@@ -72,6 +86,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 40,
         maxHeight: '80%',
+    },
+    scrollViewContent: {
+        flexGrow: 1,
     },
     detailsModalTitle: {
         fontSize: 24,

@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { NavigationProp } from '@/types/navigation';
+import { formatNumber } from '@/lib/utils';
 
 interface CategoryListProps {
     layout: 'row' | 'grid';
@@ -99,7 +100,7 @@ export const CategoryList: React.FC<CategoryListProps> = ({ layout, showAddButto
                         {category.name}
                     </ThemedText>
                     <ThemedText style={layout === 'grid' ? styles.gridCategoryAmount : styles.rowCategoryAmount}>
-                        ${category.spent}
+                        ${formatNumber(category.spent ?? 0)}
                     </ThemedText>
                 </LinearGradient>
             </TouchableOpacity>

@@ -1,9 +1,9 @@
-import React from 'react';
-import { StyleSheet, Alert, View, Image, TouchableOpacity, Text } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Image, TouchableOpacity, Text, ImageStyle } from 'react-native';
 import { Platform, StatusBar } from 'react-native';
-import { logOut } from '@/api/api';
+import { getProfilePictureUrl } from '@/api/api';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAppContext } from '@/hooks/useAppContext';
 
 interface BillyHeaderProps {
@@ -12,30 +12,46 @@ interface BillyHeaderProps {
   icon?: string;
 }
 
-export const BillyHeader: React.FC<BillyHeaderProps> = React.memo(({ title, subtitle, icon }) => {
-  const { profileData, currentProfileId } = useAppContext();
-
+export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon }) => {
+  const { user, profileData, currentProfileId } = useAppContext();
   const navigation = useNavigation();
-  
-  const handleLogout = async () => {
-    const result = await logOut();
-    if (result.error) Alert.alert('Logout Error', result.error);
-    navigation.navigate('start' as never);
-  };
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
   const currentProfile = profileData?.find(profile => profile.id === currentProfileId);
   const profileName = currentProfile ? currentProfile.name : 'Profile';
 
+  const fetchProfilePicture = useCallback(async () => {
+    if (!user?.email || !currentProfile) return;
+    try {
+      const url = await getProfilePictureUrl(user.email);
+      setProfilePicture(url);
+    } 
+    catch (error) {
+      console.error('Error fetching profile picture:', error);
+      setProfilePicture(null);
+    }
+  }, [user?.email, currentProfile]);
+  
+  useEffect(() => {
+    const timer = setTimeout(fetchProfilePicture, 500);
+    return () => clearTimeout(timer);
+  }, [fetchProfilePicture]);
+
   return (
     <View style={styles.headerContainer}>
-      <View style={styles.barraSuperior}>
-        <Image source={require('../assets/images/Billy/logo2.png')} style={styles.logoBilly}/>
-        <View style={styles.profileContainer}>
-          <Text style={styles.profileName}>{profileName}</Text>
+      <View>
+        <View style={styles.overlapGroup}>
+          <View>
+            <Image source={require('../assets/images/Billy/logo2.png')} style={styles.logoBilly as ImageStyle}/>
+            <Text style={styles.profileName}>{profileName}</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('UserProfileScreen' as never)}>
+            <Image 
+              source={profilePicture ? { uri: profilePicture } : require('../assets/images/icons/UserIcon.png')} 
+              style={styles.usuario} 
+            />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={handleLogout}>
-          <Image source={require('../assets/images/icons/UserIcon.png')} style={styles.usuario} />
-        </TouchableOpacity>
       </View>
       
       <View style={styles.textIconContainer}>
@@ -44,83 +60,72 @@ export const BillyHeader: React.FC<BillyHeaderProps> = React.memo(({ title, subt
           {subtitle && <Text style={styles.subtituloTexto}>{subtitle}</Text>}
         </View>
         {icon && (
-          <Icon name={icon} size={40} color="#FFFFFF" style={styles.icon} />
+          <Icon name={icon} size={40} color="#FFFFFF" />
         )}
       </View>
     </View>
   );
-});
+};
 
 const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 40 : (StatusBar.currentHeight ?? 0) + 10;
 
 const styles = StyleSheet.create({
-  barraSuperior: {
-    height: 60,
+  headerContainer: {
+    paddingTop: STATUSBAR_HEIGHT,
+    paddingHorizontal: 10,
+  },
+  overlapGroup: {
     backgroundColor: '#ffffff',
     borderRadius: 30,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
-    shadowRadius: 5,
+    shadowRadius: 10,
     elevation: 5,
+    height: 65,
+    position: 'relative',
+    paddingHorizontal: 22,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 28,
-    marginHorizontal: 10,
-    marginBottom: 10,
+    justifyContent: 'space-between', 
   },
   logoBilly: {
     width: 80,
     height: 40,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    marginTop: 10,
+  },
+  profileName: {
+    color: '#3d2b7e',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: -15,
+    fontFamily: 'ArialRoundedMTBold',
   },
   usuario: {
-    width: 40,
-    height: 40,
-    resizeMode: 'contain',
-    borderRadius: 20,
-    alignSelf: 'center',
+    width: 47,
+    height: 47,
+    borderRadius: 23.5, 
+    resizeMode: 'cover',
   },
   tituloContainer: {
-    marginHorizontal: 20,
-    marginBottom: 10,
+    marginHorizontal: 5,
   },
   tituloTexto: {
     color: '#ffffff',
-    fontSize: 32,
-    fontWeight: '400',
+    fontSize: 28,
+    fontFamily: 'ArialRoundedMTBold',
     letterSpacing: -1.6,
+    marginVertical: 5,
   },
   subtituloTexto: {
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '400',
     letterSpacing: -0.12,
-    marginTop: 5,
-  },
-  headerContainer: {
-    paddingTop: STATUSBAR_HEIGHT,
-  },
-  icon: {
-    marginRight: 15,
   },
   textIconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  profileContainer: {
-    justifyContent: 'center',
-  },
-  profileName: {
-    color: '#4B00B8',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginRight: 40,
   },
 });
 

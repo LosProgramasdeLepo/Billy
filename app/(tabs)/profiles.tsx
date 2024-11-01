@@ -71,7 +71,7 @@ export default function Profiles() {
     return(
         <View style={styles.container}>
             <LinearGradient colors={['#4B00B8', '#20014E']} start={{x: 1, y: 0}} end={{x: 0, y: 1}} style={styles.gradientContainer}>
-                <BillyHeader title="Perfiles" subtitle="Gestioná tus perfiles individuales y grupales."/>
+                <BillyHeader/>
                 <View style={styles.contentContainer}>
                     {memoizedProfileList}
                 </View>

@@ -1,13 +1,14 @@
-import React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, FlatList, Text } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { removeIncome, IncomeData, removeOutcome, OutcomeData} from '../api/api';
+import { removeIncome, IncomeData, removeOutcome, OutcomeData, getSharedOutcomeWithNames, markAsPaid } from '../api/api';
 import moment from 'moment';
 import 'moment/locale/es';
 import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { ExpenseDetailsModal } from './modals/ExpenseDetailsModal';
+import { formatNumber } from '@/lib/utils';
 
 moment.locale('es');
 
@@ -21,10 +22,14 @@ interface TransactionListProps {
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled = true, showHeader, showDateSeparators = true, timeRange, customStartDate, customEndDate }) => {
-  const { incomeData, outcomeData, categoryData, currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
+  const { incomeData, outcomeData, categoryData, currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, user } = useAppContext();
   
   const navigation = useNavigation();
   const [selectedTransaction, setSelectedTransaction] = useState<IncomeData | OutcomeData | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [paidBy, setPaidBy] = useState<string>('');
+  const [sharedOutcomeData, setSharedOutcomeData] = useState<any>(null);
 
   const sortTransactions = useCallback((transactions: (IncomeData | OutcomeData)[]) => {
     return transactions.sort((a, b) => new Date(b.created_at ?? "").getTime() - new Date(a.created_at ?? "").getTime());
@@ -44,17 +49,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
     const sorted = sortTransactions(combined);
     
     const filteredTransactions = sorted.filter(transaction => {
-      const transactionDate = moment(transaction.created_at);
-      const now = moment();
+      const transactionDate = moment(transaction.created_at).utc().startOf('day');
       switch (timeRange) {
         case 'day':
-          return transactionDate.isSameOrAfter(now.clone().startOf('day'));
+          return transactionDate.isSame(moment().utc().startOf('day'), 'day');
         case 'week':
-          return transactionDate.isSameOrAfter(now.clone().startOf('week'));
+          return transactionDate.isSameOrAfter(moment().utc().startOf('week'), 'day');
         case 'month':
-          return transactionDate.isSameOrAfter(now.clone().startOf('month'));
+          return transactionDate.isSameOrAfter(moment().utc().startOf('month'), 'day');
         case 'year':
-          return transactionDate.isSameOrAfter(now.clone().startOf('year'));
+          return transactionDate.isSameOrAfter(moment().utc().startOf('year'), 'day');
         case 'custom':
           if (customStartDate && customEndDate) {
             const start = moment(customStartDate).utc().startOf('day');
@@ -66,20 +70,40 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
           return true;
       }
     });
-
+  
     if (!showDateSeparators) {
       return filteredTransactions;
     }
-
+  
     const grouped = filteredTransactions.reduce((acc, transaction) => {
-      const date = moment(transaction.created_at).format('YYYY-MM-DD');
+      const date = moment(transaction.created_at).utc().format('YYYY-MM-DD');
       if (!acc[date]) acc[date] = [];
       acc[date].push(transaction);
       return acc;
     }, {} as Record<string, (IncomeData | OutcomeData)[]>);
-
+  
     return Object.entries(grouped).map(([date, transactions]) => ({ date, data: transactions }));
   }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators]);
+
+  const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
+    setSelectedTransaction(transaction);
+    if ((transaction as OutcomeData).shared_outcome) {
+      const sharedOutcome = (transaction as OutcomeData).shared_outcome;
+      if (sharedOutcome) {
+        const sharedOutcomeData = await getSharedOutcomeWithNames(sharedOutcome);
+        if (sharedOutcomeData) {
+          setParticipants(sharedOutcomeData.userNames || sharedOutcomeData.users);
+          setPaidBy(sharedOutcomeData.userNames?.[0] || sharedOutcomeData.users[0]);
+          setSharedOutcomeData(sharedOutcomeData);
+        }
+      }
+    } else {
+      setParticipants([]);
+      setPaidBy('');
+      setSharedOutcomeData(null);
+    }
+    setModalVisible(true);
+  }, []);
 
   const handleLongPress = useCallback((transaction: IncomeData | OutcomeData) => {
     setSelectedTransaction(transaction);
@@ -103,12 +127,25 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   const handleRemoveOutcome = async (profile: string, id: string) => {
     await removeOutcome(profile, id);
     refreshOutcomeData();
-    refreshCategoryData?.();
+    refreshCategoryData();
     refreshBalanceData(); 
   };
 
+  const handleMarkAsPaid = useCallback(async (whoPaid: string, outcomeId: string, paid: boolean) => {
+    if (currentProfileId) {
+      const success = await markAsPaid(currentProfileId, whoPaid, outcomeId, paid);
+      if (success) {
+        refreshOutcomeData();
+        refreshBalanceData();
+        setModalVisible(false);
+      } else {
+        Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
+      }
+    }
+  }, [currentProfileId, refreshOutcomeData, refreshBalanceData]);
+
   const renderTransactionItem = useCallback(({ item }: { item: IncomeData | OutcomeData }) => (
-    <TouchableOpacity onLongPress={() => handleLongPress(item)}>
+    <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
       <View style={styles.card}>
         <View style={styles.iconContainer}>
           {(item as any).type === 'income' ? (
@@ -124,11 +161,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
           </ThemedText>
         </View>
         <ThemedText style={[(item as any).type === 'income' ? styles.incomeAmount : styles.outcomeAmount]}>
-          {(item as any).type === 'income' ? '+' : '-'} ${item.amount.toFixed(2)}
+          {(item as any).type === 'income' ? '+' : '-'} ${formatNumber(item.amount)}
         </ThemedText>
       </View>
     </TouchableOpacity>
-  ), [handleLongPress, getCategoryIcon, showDateSeparators]);
+  ), [handlePress, handleLongPress, getCategoryIcon, showDateSeparators]);
 
   const renderDateHeader = useCallback(({ date }: { date: string }) => (
     <View style={styles.dateHeader}>
@@ -153,7 +190,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
   }, [renderDateHeader, renderTransactionItem]);
 
   return (
-    <View>
+    <View style={styles.container}>
       {showHeader && (
         <View style={styles.rowContainer}>
           <Text style={styles.transactionsTitle}>Actividad reciente</Text>
@@ -162,13 +199,36 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
           </TouchableOpacity>
         </View>
       )}
-      <FlatList
-        data={groupedTransactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => 'date' in item ? item.date : item.id?.toString() || ''}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={scrollEnabled}
-      />
+      {groupedTransactions.length > 0 ? (
+        <FlatList
+          data={groupedTransactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => 'date' in item ? item.date : item.id?.toString() || ''}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>No hay información disponible.</ThemedText>
+        </View>
+      )}
+      {selectedTransaction && (
+        <ExpenseDetailsModal
+          isVisible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          expense={{
+            id: selectedTransaction.id ?? "",
+            amount: selectedTransaction.amount,
+            description: selectedTransaction.description,
+            paidBy: paidBy,
+            participants: participants,
+            categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
+            sharedOutcomeData: sharedOutcomeData,
+          }}
+          currentUser={user?.email ?? ""}
+          onMarkAsPaid={handleMarkAsPaid}
+        />
+      )}
     </View>
   );
 };
@@ -199,7 +259,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateHeader: {
-    paddingVertical: 8,
     paddingHorizontal: 8,
   },
   dateText: {
@@ -246,5 +305,18 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: '#4B00B8',
     textDecorationLine: 'underline',
+  },
+  container: {
+    flex: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { addIncome, addOutcome, fetchCategories, CategoryData,isProfileShared, getSharedUsers, getCategoryIdByName } from '@/api/api';
+import { addIncome, addOutcome, fetchCategories, CategoryData,isProfileShared, getSharedUsers, getCategoryIdByName, categorizePurchase } from '@/api/api';
 import moment from 'moment';
 import { useAppContext } from '@/hooks/useAppContext';
+import { debounce } from 'lodash';
 
 interface AddTransactionModalProps {
   isVisible: boolean;
@@ -13,7 +14,7 @@ interface AddTransactionModalProps {
 }
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
-  const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData } = useAppContext();
+  const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
   
   const [type, setType] = useState<'Income' | 'Outcome'>('Income');
   const [amount, setAmount] = useState('');
@@ -36,7 +37,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       
       if (isShared) {
         const users = await getSharedUsers(currentProfileId);
-        setSharedUsers(users);
+        setSharedUsers(users.map(user => user.email));
       }
     }
   }, [currentProfileId]);
@@ -56,6 +57,11 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     if (isVisible) fetchCategoriesData();
   }, [isVisible, fetchCategoriesData]);
 
+  const handleDescriptionChange = (text: string) => {
+    setDescription(text);
+    debouncedCategorize(text);
+  };
+
   const handleDateChange = useCallback((event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) setDate(selectedDate);
@@ -65,7 +71,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     if (isSubmitting) return;
     setIsSubmitting(true);
     if (type === 'Income') {
-      await addIncome(currentProfileId??"", parseFloat(amount), description);
+      await addIncome(currentProfileId??"", parseFloat(amount), description, date);
       refreshIncomeData();
     } 
     else {
@@ -89,14 +95,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       refreshOutcomeData();
       refreshCategoryData();
     }
-    // Reset form
+    refreshBalanceData();
     setAmount('');
     setDescription('');
     setDate(new Date());
     setSelectedCategory('');
     setIsSubmitting(false);
     onClose();
-  }, [type, isSubmitting, amount, description, selectedCategory, refreshIncomeData, refreshOutcomeData, refreshCategoryData, currentProfileId, onClose, shared, whoPaidIt, selectedSharedUser, date]);
+  }, [type, isSubmitting, amount, description, selectedCategory, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, currentProfileId, onClose, shared, whoPaidIt, selectedSharedUser, date]);
 
   const switchType = useCallback((newType: 'Income' | 'Outcome') => {
     setType(newType);
@@ -132,6 +138,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     </View>
   ), [bubbleInterpolation, switchType, getTextColor]);
 
+  const debouncedCategorize = useMemo(() => 
+    debounce(async (text: string) => {
+      if (text && categories.length > 0) {
+        const categorized = await categorizePurchase(text, categories.map(c => c.name));
+        if (categorized) {
+          const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
+          setSelectedCategory(categoryId ?? '');
+        }
+      }
+    }, 500),
+    [categories, currentProfileId]
+  );
+
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
       <View style={styles.modalBackground}>
@@ -146,7 +165,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             <TextInput
               style={styles.input}
               value={description}
-              onChangeText={setDescription}
+              onChangeText={handleDescriptionChange}
               placeholder="Descripción"
               placeholderTextColor="#AAAAAA"
             />
@@ -223,17 +242,6 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // const dummyUsers = [
-  //   'Alice Johnson',
-  //   'Bob Smith',
-  //   'Charlie Brown',
-  //   'Diana Prince',
-  //   'Ethan Hunt',
-  //   'Fiona Apple',
-  //   'George Clooney',
-  //   'Hannah Montana',
-  // ];
-
   const toggleUser = (user: string) => {
     setSelectedUsers(prev => {
       if (singleSelection) {
@@ -247,7 +255,6 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
   const handleDone = () => {
     onSelect(selectedUsers);
     setIsOpen(false);
-    //console.log({selectedUsers});
   };
 
   // Filter out whoPaidIt from sharedUsers when not in single selection mode
@@ -434,6 +441,7 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
+    borderStyle: 'dashed',
     borderColor: '#ddd',
     borderRadius: 4,
     marginBottom: 16,

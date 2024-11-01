@@ -8,7 +8,7 @@ const CategoriesScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient colors={['#4B00B8', '#20014E']} style={styles.gradientContainer}>
-                <BillyHeader title="Categorías" subtitle="Tus gastos divididos según su tipo."/>
+                <BillyHeader title="Categorías"/>
                 <View style={styles.contentContainer}>
                     <CategoryList layout="grid" showAddButton={true} showHeader={false}/>
                 </View>
@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        marginTop: 10,
         marginHorizontal: '2.5%',
     },
 });

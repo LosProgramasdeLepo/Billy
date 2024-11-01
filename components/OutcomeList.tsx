@@ -6,6 +6,7 @@ import { removeOutcome, OutcomeData } from '../api/api';
 import moment from 'moment';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { formatNumber } from '@/lib/utils';
 
 interface OutcomeListProps {
   category?: string;
@@ -86,7 +87,7 @@ export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSepa
             <ThemedText style={styles.description}>{item.description}</ThemedText>
             <ThemedText style={styles.date}>{moment(item.created_at ?? "").format('HH:mm')}</ThemedText>
           </View>
-          <ThemedText style={styles.amount}>- ${item.amount.toFixed(2)}</ThemedText>
+          <ThemedText style={styles.amount}>- ${formatNumber(item.amount)}</ThemedText>
         </View>
       </TouchableOpacity>
     );
@@ -99,20 +100,27 @@ export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSepa
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={showDateSeparators ? groupedOutcomeData?.flatMap(group => [{ date: group.date }, ...group.data]) : sortedOutcomeData}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        showsVerticalScrollIndicator={false}
-      />
+      {sortedOutcomeData.length > 0 ? (
+        <FlatList
+          data={showDateSeparators ? groupedOutcomeData?.flatMap(group => [{ date: group.date }, ...group.data]) : sortedOutcomeData}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>No hay información disponible.</ThemedText>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 20,
     paddingHorizontal: 16,
+    paddingVertical: 8,
+    minHeight: 100,
   },
   card: {
     flexDirection: 'row',
@@ -131,6 +139,12 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginRight: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   textContainer: {
     flex: 1,
@@ -151,12 +165,21 @@ const styles = StyleSheet.create({
     color: 'red',
   },
   dateHeader: {
-    paddingVertical: 8,
     paddingHorizontal: 8,
   },
   dateHeaderText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

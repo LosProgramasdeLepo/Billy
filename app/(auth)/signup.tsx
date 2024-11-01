@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, StyleSheet, Image, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { useNavigation } from '@react-navigation/native';
-import { signUp, addProfile, changeCurrentProfile } from '@/api/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signUp } from '@/api/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '@/hooks/useAppContext';
 
@@ -11,7 +10,7 @@ export default function Signup() {
   const navigation = useNavigation();
   const { setUser } = useAppContext();
   const [name, setName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -31,27 +30,31 @@ export default function Signup() {
       Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
     }
-
+  
     try {
-      const { error, session } = await signUp(email, password, name, lastName);
+      const { error } = await signUp(email, password, name, surname);
       if (error) Alert.alert('Error de registro', 'No se pudo crear la cuenta');
-      
       else {
-        await AsyncStorage.setItem('userSession', JSON.stringify(session));
-        setUser({ email });
-        const newProfile = await addProfile('Default', email);
-        await changeCurrentProfile(email, newProfile?.id ?? "");
-        navigation.navigate('(tabs)' as never);
+        Alert.alert(
+          'Registro exitoso',
+          'Se ha enviado un correo de verificación. Por favor, verifica tu correo antes de iniciar sesión.',
+          [{ text: 'OK', onPress: () => navigation.navigate('login' as never) }]
+        );
       }
-    } 
-    
+    }
+
     catch (error) {
+      console.error('Error during signup:', error);
       Alert.alert('Error de registro', 'Ocurrió un error durante el registro');
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0} // Ajusta este valor según sea necesario
+    >
       <Image source={require('../../assets/images/Billy/billy-signup.png')} style={styles.logo}/>
       <View style={styles.whiteContainer}>
         <View style={styles.headerContainer}>
@@ -64,7 +67,7 @@ export default function Signup() {
         
         <View style={styles.nameContainer}>
           <TextInput style={styles.miniInput} placeholder="Nombre" placeholderTextColor="#999" value={name} onChangeText={setName}/>
-          <TextInput style={styles.miniInput} placeholder="Apellido" placeholderTextColor="#999" value={lastName} onChangeText={setLastName}/>
+          <TextInput style={styles.miniInput} placeholder="Apellido" placeholderTextColor="#999" value={surname} onChangeText={setSurname}/>
         </View>
         
         <TextInput style={styles.input} placeholder="Mail" placeholderTextColor="#999" value={email} onChangeText={setEmail}/>
@@ -87,7 +90,7 @@ export default function Signup() {
           <ThemedText style={styles.buttonText}>Registrarme</ThemedText>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

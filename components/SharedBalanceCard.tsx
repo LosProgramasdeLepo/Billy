@@ -1,30 +1,35 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getDebtsToUser,getDebtsFromUser, getTotalToPayForUserInDateRange, DebtData, getProfileName, updateProfileName } from '@/api/api';
+import { getDebtsToUser,getDebtsFromUser, getTotalToPayForUserInDateRange, DebtData, getProfileName, updateProfileName, redistributeDebts, getUsers } from '@/api/api';
 import { useAppContext } from '@/hooks/useAppContext';
+import { formatNumber } from '@/lib/utils';
 
 interface DebtEntryProps {
   name1: string;
   name2: string;
   amount: number;
+  avatar1: string;
+  avatar2: string;
 }
 
 {/* Debts data component */}
-const useDebtsData = (profileEmail: string, currentProfileId: string) => {
+export const useDebtsData = () => {  
+  const { user, currentProfileId } = useAppContext();
+
   const [totalDebtsToUser, setTotalDebtsToUser] = useState(0);
   const [totalDebtsFromUser, setTotalDebtsFromUser] = useState(0);
   const [totalToPay, setTotalToPay] = useState(0);
   const [debtsToUser, setDebtsToUser] = useState<DebtData[]>([]); 
   const [debtsFromUser, setDebtsFromUser] = useState<DebtData[]>([]);
 
-  const fetchDebts = useCallback(async () => {
+  const refreshDebts = useCallback(async () => {
     try {
       const [debtsToUser, debtsFromUser, totalToPay] = await Promise.all([
-        getDebtsToUser(profileEmail, currentProfileId),
-        getDebtsFromUser(profileEmail, currentProfileId),
-        getTotalToPayForUserInDateRange(profileEmail, currentProfileId, new Date('2024-01-01'), new Date('2030-12-31'))
+        getDebtsToUser(user?.email ?? "", currentProfileId ?? ""),
+        getDebtsFromUser(user?.email ?? "", currentProfileId ?? ""),
+        getTotalToPayForUserInDateRange(user?.email ?? "", currentProfileId ?? "", new Date('2024-01-01'), new Date('2030-12-31'))
       ]);
 
       if (debtsToUser && debtsFromUser) {
@@ -36,41 +41,37 @@ const useDebtsData = (profileEmail: string, currentProfileId: string) => {
       setTotalToPay(totalToPay);
     } 
 
-    catch (error) {
-      console.error('Error fetching debts:', error);
-    }
-  }, [profileEmail, currentProfileId]);
+    catch (error) { console.error('Error fetching debts:', error); }
+  }, [user?.email, currentProfileId]);
 
-  useEffect(() => {
-    fetchDebts();
-  }, [fetchDebts]);
-
-  return { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts: fetchDebts };
+  return { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts };
 };
 
 {/* Debts entry component */}
-export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amount }) => {
+export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amount, avatar1, avatar2 }) => {
+  const defaultAvatar = require('@/assets/images/icons/UserIcon.png');
+
   return (
     <View style={styles.debtEntry}>
       <Text style={styles.debtText}>{name1} le debe(s) a {name2}</Text>
       <View style={styles.debtDetailsContainer}>
-        <Image source={require('@/assets/images/icons/UserIcon.png')} style={styles.avatar} />
-        <Text style={styles.userAmount}>$ {amount.toFixed(2)}</Text>
-        <Image source={require('@/assets/images/icons/UserIcon.png')} style={styles.avatar} />
+        <Image source={avatar1 != "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar}/>
+        <Text style={styles.userAmount}>$ {formatNumber(amount)}</Text>
+        <Image source={avatar2 != "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar}/>
       </View>
     </View>
   );
 };
 
 {/* Expense item component */}
-const ExpenseItem: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+const ExpenseItem = React.memo<{ label: string; value: number }>(({ label, value }) => (
   <View style={styles.expenseItem}>
     <Text style={styles.expenseLabel}>{label}</Text>
     <View style={styles.expenseValueContainer}>
-      <Text style={styles.expenseValue}>${value.toFixed(2)}</Text>
+      <Text style={styles.expenseValue}>${formatNumber(value)}</Text>
     </View>
   </View>
-);
+));
 
 {/* Shared balance card component */}
 export const SharedBalanceCard  = () => {
@@ -81,12 +82,27 @@ export const SharedBalanceCard  = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(profileName);
   const [isExpanded, setIsExpanded] = useState(false);
-  const { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts } = useDebtsData(user?.email ?? "", currentProfileId??"");
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userAvatars, setUserAvatars] = useState<Record<string, string>>({});
+  const { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts } = useDebtsData();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const emails = new Set([
+        ...debtsToUser.map(debt => debt.debtor),
+        ...debtsFromUser.flatMap(debt => [debt.paid_by, debt.debtor])
+      ]);
+      const userData = await getUsers(Array.from(emails));
+      setUserNames(prevNames => ({...prevNames, ...userData.names}));
+      setUserAvatars(prevAvatars => ({...prevAvatars, ...userData.avatars}));
+    };
+    fetchUserData();
+  }, [debtsToUser, debtsFromUser]);
 
   const { totalOutcome } = useMemo(() => {
     const outcome = outcomeData?.reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0) || 0;
     return { totalOutcome: outcome };
-}, [outcomeData]);
+  }, [outcomeData]);
 
   const fetchProfileName = useCallback(async () => {
     try {
@@ -94,12 +110,8 @@ export const SharedBalanceCard  = () => {
       const name = await getProfileName(currentProfileId??"");
       setProfileName(name || '');
     } 
-    catch (error) {
-      console.error('Error fetching profile name:', error);
-    } 
-    finally {
-      setIsLoading(false);
-    }
+    catch (error) { console.error('Error fetching profile name:', error); } 
+    finally { setIsLoading(false); }
   }, [currentProfileId]);
 
   useEffect(() => {
@@ -107,9 +119,7 @@ export const SharedBalanceCard  = () => {
   }, [fetchProfileName]);
   
   useEffect(() => {
-    if (!isLoading) {
-      setTitle(profileName);
-    }
+    if (!isLoading) setTitle(profileName);
   }, [profileName, isLoading]);
 
   useEffect(() => {
@@ -129,6 +139,18 @@ export const SharedBalanceCard  = () => {
     setTitle(newTitle);
   };
 
+  const handleRedistributeDebts = useCallback(async () => {
+    if (currentProfileId) {
+        const success = await redistributeDebts(currentProfileId);
+        if (success) {
+            Alert.alert("Operación exitosa", "Las deudas han sido redistribuidas.");
+            refreshDebts(); // Asegúrate de que las deudas se actualicen
+        } else {
+            Alert.alert("Error", "No se pudieron redistribuir las deudas. Por favor, inténtelo de nuevo.");
+        }
+    }
+}, [currentProfileId, refreshDebts]);
+
   const handleTitleSubmit = async () => {
     setIsEditing(false);
     try {
@@ -140,6 +162,10 @@ export const SharedBalanceCard  = () => {
       setTitle(profileName);
     }
   };
+
+  // En el renderizado de deudas, filtra las que ya han sido pagadas
+  const filteredDebtsToUser = debtsToUser.filter(debt => !debt.has_paid);
+  const filteredDebtsFromUser = debtsFromUser.filter(debt => !debt.has_paid);
 
   return (
     <LinearGradient colors={['#e8e0ff', '#d6c5fc']} start={[0, 0]} end={[1, 1]} style={styles.card}>
@@ -155,31 +181,35 @@ export const SharedBalanceCard  = () => {
       </View>
 
       <View style={styles.expensesContainer}>
-        <ExpenseItem label="Gastos totales:" value={totalOutcome} />
-        <ExpenseItem label="Mis Gastos:" value={totalToPay} />
+        <ExpenseItem label="Gastos totales:" value={totalOutcome}/>
+        <ExpenseItem label="Mis Gastos:" value={totalToPay}/>
       </View>
 
       <View style={styles.expensesContainer}>
-        <ExpenseItem label="Te deben:" value={totalDebtsToUser} />
-        <ExpenseItem label="Tu deuda:" value={totalDebtsFromUser} />
+        <ExpenseItem label="Te deben:" value={totalDebtsToUser}/>
+        <ExpenseItem label="Tu deuda:" value={totalDebtsFromUser}/>
       </View>
 
       <View style={styles.userDebtSection}>
-        {debtsToUser.length > 0 && (
-          <DebtEntryComponent name1="Tú" name2={debtsToUser[0].debtor} amount={debtsToUser[0].amount} />
+        {filteredDebtsToUser.length > 0 && (
+          <DebtEntryComponent name1="Tú" name2={userNames[filteredDebtsToUser[0].debtor]} amount={filteredDebtsToUser[0].amount} avatar1={userAvatars[user?.email ?? ""]} avatar2={userAvatars[filteredDebtsToUser[0].debtor]}/>
         )}
 
-        {isExpanded && debtsToUser.slice(1).map((debt, index) => (
-          <DebtEntryComponent key={debt.id || index} name1="Tú" name2={debt.debtor} amount={debt.amount} />
+        {isExpanded && filteredDebtsToUser.slice(1).map((debt, index) => (
+          <DebtEntryComponent key={debt.id || index} name1="Tú" name2={userNames[debt.debtor]} amount={debt.amount} avatar1={userAvatars[user?.email ?? ""]} avatar2={userAvatars[debt.debtor]}/>
         ))}
 
-        {isExpanded && debtsFromUser.map((debt, index) => (
-          <DebtEntryComponent key={debt.id || index} name1={debt.paid_by} name2={debt.debtor} amount={debt.amount} />
+        {isExpanded && filteredDebtsFromUser.map((debt, index) => (
+          <DebtEntryComponent key={debt.id || index} name1={userNames[debt.paid_by]} name2={userNames[debt.debtor]} amount={debt.amount} avatar1={userAvatars[debt.paid_by]} avatar2={userAvatars[debt.debtor]}/>
         ))}
       </View>
 
       <TouchableOpacity onPress={toggleExpanded}>
         <Text style={styles.viewAll}>{isExpanded ? 'Ver menos' : 'Ver todo'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.redistributeButton} onPress={handleRedistributeDebts}>
+        <Ionicons name="swap-horizontal" size={24} color="#fff" />
       </TouchableOpacity>
     </LinearGradient>
   );
@@ -289,5 +319,21 @@ const styles = StyleSheet.create({
     color: '#6200ee',
     fontSize: 16,
     marginTop: -16,
+  },
+  redistributeButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#6200ee',
+    borderRadius: 30,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
 });
