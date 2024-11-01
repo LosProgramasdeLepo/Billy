@@ -19,6 +19,7 @@ interface TransactionListProps {
   timeRange: "all" | "day" | "week" | "month" | "year" | "custom";
   customStartDate?: Date;
   customEndDate?: Date;
+  limit?: number;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({
@@ -28,6 +29,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   timeRange,
   customStartDate,
   customEndDate,
+  limit,
 }) => {
   const {
     incomeData,
@@ -68,6 +70,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     ];
     const sorted = sortTransactions(combined);
 
+    const limitedTransactions = limit ? sorted.slice(0, limit) : sorted;
+
     const filteredTransactions = sorted.filter((transaction) => {
       const transactionDate = moment(transaction.created_at).utc().startOf("day");
       switch (timeRange) {
@@ -103,7 +107,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }, {} as Record<string, (IncomeData | OutcomeData)[]>);
 
     return Object.entries(grouped).map(([date, transactions]) => ({ date, data: transactions }));
-  }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators]);
+  }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators, limit]);
 
   const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
     setSelectedTransaction(transaction);
