@@ -174,8 +174,8 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'flex-start',
-    paddingVertical: 10,
+    alignItems: 'center',
+    paddingVertical: 5,
   },
   emptyText: {
     fontSize: 16,

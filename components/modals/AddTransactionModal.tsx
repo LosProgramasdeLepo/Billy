@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addIncome, addOutcome, fetchCategories, CategoryData,isProfileShared, getSharedUsers, getCategoryIdByName, categorizePurchase } from '@/api/api';
 import moment from 'moment';
