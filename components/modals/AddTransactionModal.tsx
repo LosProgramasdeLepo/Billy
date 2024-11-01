@@ -269,7 +269,7 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
         <Text style={styles.selectButtonText}> 
           {singleSelection ? '¿Quién Pago?' : 'Participantes'}
         </Text>
-        <Icon name={isOpen ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={24} color="#000" />
+        <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={24} color="#000" />
       </TouchableOpacity>
       
       {isOpen && (
