@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getDebtsToUser,getDebtsFromUser, getTotalToPayForUserInDateRange, DebtData, getProfileName, updateProfileName, redistributeDebts, getUsers } from '@/api/api';
 import { useAppContext } from '@/hooks/useAppContext';
+import { formatNumber } from '@/lib/utils';
 
 interface DebtEntryProps {
   name1: string;
@@ -55,7 +56,7 @@ export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amo
       <Text style={styles.debtText}>{name1} le debe(s) a {name2}</Text>
       <View style={styles.debtDetailsContainer}>
         <Image source={avatar1 != "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar}/>
-        <Text style={styles.userAmount}>$ {amount.toFixed(2)}</Text>
+        <Text style={styles.userAmount}>$ {formatNumber(amount)}</Text>
         <Image source={avatar2 != "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar}/>
       </View>
     </View>
@@ -67,7 +68,7 @@ const ExpenseItem = React.memo<{ label: string; value: number }>(({ label, value
   <View style={styles.expenseItem}>
     <Text style={styles.expenseLabel}>{label}</Text>
     <View style={styles.expenseValueContainer}>
-      <Text style={styles.expenseValue}>${value.toFixed(2)}</Text>
+      <Text style={styles.expenseValue}>${formatNumber(value)}</Text>
     </View>
   </View>
 ));

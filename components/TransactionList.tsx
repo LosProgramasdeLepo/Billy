@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ExpenseDetailsModal } from './modals/ExpenseDetailsModal';
+import { formatNumber } from '@/lib/utils';
 
 moment.locale('es');
 
@@ -160,7 +161,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
           </ThemedText>
         </View>
         <ThemedText style={[(item as any).type === 'income' ? styles.incomeAmount : styles.outcomeAmount]}>
-          {(item as any).type === 'income' ? '+' : '-'} ${item.amount.toFixed(2)}
+          {(item as any).type === 'income' ? '+' : '-'} ${formatNumber(item.amount)}
         </ThemedText>
       </View>
     </TouchableOpacity>

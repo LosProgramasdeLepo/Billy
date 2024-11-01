@@ -3,6 +3,7 @@ import { View, Text, StyleSheet  } from "react-native";
 import { Svg, Circle } from "react-native-svg";
 import { getTotalToPayInDateRange, CategoryData, getSharedUsers, getOutcomesFromDateRangeAndCategory } from '../api/api';
 import { useAppContext } from '@/hooks/useAppContext';
+import { formatNumber } from '@/lib/utils';
 
 interface Expense {
   label: string;
@@ -123,7 +124,7 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
       </Svg>
 
       <View style={styles.valueContainer}>
-        <Text style={styles.valueText}>${total.toFixed(0)}</Text>
+        <Text style={styles.valueText}>${formatNumber(total)}</Text>
       </View>
     </View>
   );
@@ -140,7 +141,7 @@ const ExpenseItem = React.memo(({ expense, maxAmount }: { expense: Expense; maxA
           <View style={[styles.bar, { backgroundColor: color, width: `${barWidth}%` }]} />
         </View>
       </View>
-      <Text style={styles.expenseAmount}>${(amount ?? 0).toFixed(2)}</Text>
+      <Text style={styles.expenseAmount}>${formatNumber(amount ?? 0)}</Text>
     </View>
   );
 });

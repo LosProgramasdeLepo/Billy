@@ -4,6 +4,7 @@ import { StyleSheet, View, useColorScheme } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppContext } from '@/hooks/useAppContext';
+import { formatNumber } from '@/lib/utils';
 
 export const BalanceCard = () => {
     const { incomeData, outcomeData, balance } = useAppContext();
@@ -18,9 +19,9 @@ export const BalanceCard = () => {
         return { totalIncome: income, totalOutcome: outcome };
     }, [incomeData, outcomeData]);
 
-    const formattedBalance = useMemo(() => balance !== null ? balance.toFixed(2) : '0.00', [balance]);
-    const formattedIncomes = useMemo(() => totalIncome?.toFixed(2) ?? '0.00', [incomeData]);
-    const formattedOutcomes = useMemo(() => totalOutcome?.toFixed(2) ?? '0.00', [outcomeData]);
+    const formattedBalance = useMemo(() => balance !== null ? formatNumber(balance) : '0.00', [balance]);
+    const formattedIncomes = useMemo(() => totalIncome ? formatNumber(totalIncome) : '0.00', [incomeData]);
+    const formattedOutcomes = useMemo(() => totalOutcome ? formatNumber(totalOutcome) : '0.00', [outcomeData]);
 
     return (
         <View style={styles.box}>

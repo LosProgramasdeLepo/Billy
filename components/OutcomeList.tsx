@@ -6,6 +6,7 @@ import { removeOutcome, OutcomeData } from '../api/api';
 import moment from 'moment';
 import { useAppContext } from '@/hooks/useAppContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { formatNumber } from '@/lib/utils';
 
 interface OutcomeListProps {
   category?: string;
@@ -86,7 +87,7 @@ export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSepa
             <ThemedText style={styles.description}>{item.description}</ThemedText>
             <ThemedText style={styles.date}>{moment(item.created_at ?? "").format('HH:mm')}</ThemedText>
           </View>
-          <ThemedText style={styles.amount}>- ${item.amount.toFixed(2)}</ThemedText>
+          <ThemedText style={styles.amount}>- ${formatNumber(item.amount)}</ThemedText>
         </View>
       </TouchableOpacity>
     );

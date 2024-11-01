@@ -7,6 +7,7 @@ import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { useAppContext } from '@/hooks/useAppContext';
+import { formatNumber } from '@/lib/utils';
 
 interface ProfileListProps {
   onAddProfile: () => void;
@@ -74,7 +75,7 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile }) => {
       <View style={styles.profileContent}>
         <Ionicons name={isSharedProfile ? "globe-outline" : "person-circle-outline"} size={40} color="#4B00B8"/>
         <Text style={styles.profileName}>{item.name}</Text>
-        <Text style={styles.balanceText}>${item.balance?.toFixed(2)}</Text>
+        <Text style={styles.balanceText}>${formatNumber(item.balance ?? 0)}</Text>
       </View>
       {isSharedProfile && (
         <TouchableOpacity style={styles.shareButton} onPress={() => handleSharePress(item.id ?? "null")}>
