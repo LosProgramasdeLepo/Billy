@@ -199,13 +199,19 @@ export const TransactionList: React.FC<TransactionListProps> = ({ scrollEnabled 
           </TouchableOpacity>
         </View>
       )}
-      <FlatList
-        data={groupedTransactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => 'date' in item ? item.date : item.id?.toString() || ''}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={scrollEnabled}
-      />
+      {groupedTransactions.length > 0 ? (
+        <FlatList
+          data={groupedTransactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => 'date' in item ? item.date : item.id?.toString() || ''}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>No hay información disponible.</ThemedText>
+        </View>
+      )}
       {selectedTransaction && (
         <ExpenseDetailsModal
           isVisible={modalVisible}
@@ -302,5 +308,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

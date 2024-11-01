@@ -100,12 +100,18 @@ export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSepa
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={showDateSeparators ? groupedOutcomeData?.flatMap(group => [{ date: group.date }, ...group.data]) : sortedOutcomeData}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        showsVerticalScrollIndicator={false}
-      />
+      {sortedOutcomeData.length > 0 ? (
+        <FlatList
+          data={showDateSeparators ? groupedOutcomeData?.flatMap(group => [{ date: group.date }, ...group.data]) : sortedOutcomeData}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <ThemedText style={styles.emptyText}>No hay información disponible.</ThemedText>
+        </View>
+      )}
     </View>
   );
 };
@@ -114,6 +120,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    minHeight: 100,
   },
   card: {
     flexDirection: 'row',
@@ -164,5 +171,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
