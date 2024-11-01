@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Modal, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { ThemedText } from './../ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
+import { formatNumber } from '@/lib/utils';
 
 interface ExpenseDetailsModalProps {
   isVisible: boolean;
@@ -85,10 +86,10 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
         <LinearGradient colors={['#ffffff', '#f0f0f0']} style={styles.modalView}>
           <View style={styles.headerContainer}>
             <ThemedText style={styles.modalTitle}>{expense.description}</ThemedText>
-            <ThemedText style={styles.monto}>${expense.amount.toFixed(2)}</ThemedText>
+            <ThemedText style={styles.monto}>${formatNumber(expense.amount)}</ThemedText>
           </View>
           <Image source={expense.categoryIcon} style={styles.iconoCategoria} />
-          <ThemedText style={styles.label}>Quien Pagó:</ThemedText>
+          <ThemedText style={styles.label}>Quién Pagó:</ThemedText>
           <ThemedText style={styles.value}>{expense.paidBy}</ThemedText>
           <ThemedText style={styles.label}>Participantes:</ThemedText>
           {expense.sharedOutcomeData ? (
@@ -97,7 +98,7 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
               return (
                 <View key={index} style={styles.participantRow}>
                   <ThemedText style={styles.value}>{userName}</ThemedText>
-                  <ThemedText style={styles.value}>$ {amountPerParticipant.toFixed(2)}</ThemedText>
+                  <ThemedText style={styles.value}>$ {formatNumber(amountPerParticipant)}</ThemedText>
                   <ThemedText style={styles.value}>{isPaid ? 'Pagado' : 'Pendiente'}</ThemedText>
                 </View>
               );
