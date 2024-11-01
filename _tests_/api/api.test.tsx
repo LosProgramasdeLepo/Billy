@@ -81,9 +81,7 @@ describe("fetchData", () => {
   it("should return null when there is an error", async () => {
     const mockError = new Error("Test error");
     const mockSelect = jest.fn().mockReturnThis();
-    const mockEq = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockEq = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -102,10 +100,7 @@ describe("fetchData", () => {
 
     expect(result).toBeNull();
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      `Error fetching data from ${mockTable}:`,
-      mockError
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(`Error fetching data from ${mockTable}:`, mockError);
 
     consoleSpy.mockRestore();
   });
@@ -123,9 +118,7 @@ describe("getData", () => {
     const mockData = { id: mockId, name: "Test" };
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -151,9 +144,7 @@ describe("getData", () => {
     const mockData = { [mockColumnToCheck]: mockId, name: "Test" };
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -172,9 +163,7 @@ describe("getData", () => {
     const mockError = new Error("Test error");
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -188,10 +177,7 @@ describe("getData", () => {
 
     expect(result).toBeNull();
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      `Error getting ${mockTable.slice(0, -1)}:`,
-      mockError
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(`Error getting ${mockTable.slice(0, -1)}:`, mockError);
 
     consoleSpy.mockRestore();
   });
@@ -209,9 +195,7 @@ describe("addData", () => {
     const mockInsertedData = { id: "1", ...mockNewData };
     const mockInsert = jest.fn().mockReturnThis();
     const mockSelect = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockInsertedData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockInsertedData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       insert: mockInsert,
@@ -236,9 +220,7 @@ describe("addData", () => {
     const mockError = new Error("Insert failed");
     const mockInsert = jest.fn().mockReturnThis();
     const mockSelect = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       insert: mockInsert,
@@ -252,10 +234,7 @@ describe("addData", () => {
 
     expect(result).toBeNull();
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      `Error adding data to ${mockTable}:`,
-      mockError
-    );
+    expect(consoleSpy).toHaveBeenCalledWith(`Error adding data to ${mockTable}:`, mockError);
 
     consoleSpy.mockRestore();
   });
@@ -274,9 +253,7 @@ describe("removeData", () => {
     const mockDelete = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
     const mockSelect = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockRemovedData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockRemovedData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       delete: mockDelete,
@@ -305,9 +282,7 @@ describe("removeData", () => {
     const mockDelete = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
     const mockSelect = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       delete: mockDelete,
@@ -343,9 +318,7 @@ describe("updateData", () => {
     const mockUpdatedData = { id: mockId, name: mockUpdateValue };
     const mockUpdateFn = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockUpdatedData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockUpdatedData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       update: mockUpdateFn,
@@ -353,13 +326,7 @@ describe("updateData", () => {
       single: mockSingle,
     });
 
-    const result = await updateData(
-      mockTable,
-      mockColumnToUpdate,
-      mockUpdateValue,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await updateData(mockTable, mockColumnToUpdate, mockUpdateValue, mockColumnToCheck, mockId);
 
     expect(supabase.from).toHaveBeenCalledWith(mockTable);
 
@@ -378,9 +345,7 @@ describe("updateData", () => {
     const mockError = new Error("Update failed");
     const mockUpdate = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       update: mockUpdate,
@@ -390,13 +355,7 @@ describe("updateData", () => {
 
     const consoleSpy = jest.spyOn(console, "error").mockImplementation();
 
-    const result = await updateData(
-      mockTable,
-      mockColumnToUpdate,
-      mockUpdate,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await updateData(mockTable, mockColumnToUpdate, mockUpdate, mockColumnToCheck, mockId);
 
     expect(result).toBeNull();
 
@@ -423,9 +382,7 @@ describe("getValueFromData", () => {
     const mockData = { [mockColumnToReturn]: "testValue" };
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -433,12 +390,7 @@ describe("getValueFromData", () => {
       single: mockSingle,
     });
 
-    const result = await getValueFromData(
-      mockTable,
-      mockColumnToReturn,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await getValueFromData(mockTable, mockColumnToReturn, mockColumnToCheck, mockId);
 
     expect(supabase.from).toHaveBeenCalledWith(mockTable);
 
@@ -455,9 +407,7 @@ describe("getValueFromData", () => {
     const mockError = { code: "PGRST116", message: "No data found" };
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSingle = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -465,12 +415,7 @@ describe("getValueFromData", () => {
       single: mockSingle,
     });
 
-    const result = await getValueFromData(
-      mockTable,
-      mockColumnToReturn,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await getValueFromData(mockTable, mockColumnToReturn, mockColumnToCheck, mockId);
 
     expect(result).toBeNull();
   });
@@ -486,12 +431,7 @@ describe("getValueFromData", () => {
       single: mockSingle,
     });
 
-    const result = await getValueFromData(
-      mockTable,
-      mockColumnToReturn,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await getValueFromData(mockTable, mockColumnToReturn, mockColumnToCheck, mockId);
 
     expect(result).toBeNull();
   });
@@ -500,9 +440,7 @@ describe("getValueFromData", () => {
     const mockData = { otherColumn: "testValue" };
     const mockSelect = jest.fn().mockReturnThis();
     const mockEq = jest.fn().mockReturnThis();
-    const mockSingle = jest
-      .fn()
-      .mockResolvedValue({ data: mockData, error: null });
+    const mockSingle = jest.fn().mockResolvedValue({ data: mockData, error: null });
 
     (supabase.from as jest.Mock).mockReturnValue({
       select: mockSelect,
@@ -510,12 +448,7 @@ describe("getValueFromData", () => {
       single: mockSingle,
     });
 
-    const result = await getValueFromData(
-      mockTable,
-      mockColumnToReturn,
-      mockColumnToCheck,
-      mockId
-    );
+    const result = await getValueFromData(mockTable, mockColumnToReturn, mockColumnToCheck, mockId);
 
     expect(result).toBeNull();
   });
@@ -529,12 +462,8 @@ describe("addIncome", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest
-      .spyOn(apiModule, "updateBalance")
-      .mockImplementation(() => Promise.resolve(undefined));
-    jest
-      .spyOn(apiModule, "getValueFromData")
-      .mockImplementation(() => Promise.resolve(undefined));
+    jest.spyOn(apiModule, "updateBalance").mockImplementation(() => Promise.resolve(undefined));
+    jest.spyOn(apiModule, "getValueFromData").mockImplementation(() => Promise.resolve(undefined));
   });
 
   afterEach(() => {
@@ -554,9 +483,7 @@ describe("addIncome", () => {
 
     (supabase.from as jest.Mock).mockReturnValue({
       insert: jest.fn().mockReturnThis(),
-      select: jest
-        .fn()
-        .mockResolvedValue({ data: mockInsertData, error: null }),
+      select: jest.fn().mockResolvedValue({ data: mockInsertData, error: null }),
     });
 
     (supabase.rpc as jest.Mock).mockResolvedValue({
@@ -564,12 +491,7 @@ describe("addIncome", () => {
       error: null,
     });
 
-    const result = await addIncome(
-      mockProfile,
-      mockAmount,
-      mockDescription,
-      mockCreatedAt
-    );
+    const result = await addIncome(mockProfile, mockAmount, mockDescription, mockCreatedAt);
 
     expect(supabase.from).toHaveBeenCalledWith("Incomes");
 
@@ -607,18 +529,13 @@ describe("addIncome", () => {
 
     expect(insertCall.created_at).toBeInstanceOf(Date);
 
-    expect(insertCall.created_at.getTime()).toBeCloseTo(
-      new Date().getTime(),
-      -3
-    ); // Allow 1 second difference
+    expect(insertCall.created_at.getTime()).toBeCloseTo(new Date().getTime(), -3); // Allow 1 second difference
   });
 
   it("should return null and log error if insert fails", async () => {
     const mockError = new Error("Insert failed");
     const mockInsert = jest.fn().mockReturnThis();
-    const mockSelect = jest
-      .fn()
-      .mockResolvedValue({ data: null, error: mockError });
+    const mockSelect = jest.fn().mockResolvedValue({ data: null, error: mockError });
 
     (supabase.from as jest.Mock).mockReturnValue({
       insert: mockInsert,
@@ -696,9 +613,7 @@ describe("updateBalance", () => {
   });
 
   it("should return null if there is an unexpected error", async () => {
-    (supabase.rpc as jest.Mock).mockRejectedValue(
-      new Error("Unexpected error")
-    );
+    (supabase.rpc as jest.Mock).mockRejectedValue(new Error("Unexpected error"));
 
     const result = await updateBalance(mockProfile, mockBalance);
 
@@ -779,10 +694,7 @@ describe("logIn", () => {
       session: mockSession,
     });
 
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      "userSession",
-      JSON.stringify(mockSession)
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith("userSession", JSON.stringify(mockSession));
   });
 
   it("should return an error for invalid credentials", async () => {
@@ -820,9 +732,7 @@ describe("logIn", () => {
   });
 
   it("should handle unexpected errors", async () => {
-    (supabase.auth.signInWithPassword as jest.Mock).mockRejectedValue(
-      new Error("Unexpected error")
-    );
+    (supabase.auth.signInWithPassword as jest.Mock).mockRejectedValue(new Error("Unexpected error"));
 
     const result = await logIn("test@example.com", "password");
 

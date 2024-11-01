@@ -1,24 +1,54 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useAppContext } from '@/hooks/useAppContext';
-import { updateUserPassword, updateUserFullName, logOut, requestPasswordReset, verifyPasswordResetCode, uploadProfilePicture, getProfilePictureUrl} from '@/api/api';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { BillyHeader } from '@/components/BillyHeader';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ChangePasswordModal } from '@/components/modals/ChangePasswordModal';
-import { VerificationModal } from '@/components/modals/VerificationModal';
-import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, Alert } from "react-native";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { useAppContext } from "@/hooks/useAppContext";
+import {
+  updateUserPassword,
+  updateUserFullName,
+  logOut,
+  requestPasswordReset,
+  verifyPasswordResetCode,
+  uploadProfilePicture,
+  getProfilePictureUrl,
+} from "@/api/api";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { BillyHeader } from "@/components/BillyHeader";
+import { LinearGradient } from "expo-linear-gradient";
+import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
+import { VerificationModal } from "@/components/modals/VerificationModal";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 
-const EditableField = ({ label, value, isEditing, editingField, fieldName, onChangeText, onEditField }: { label: string, value: string, isEditing: boolean, editingField: string, fieldName: string, onChangeText: (text: string) => void, onEditField: (field: string | null) => void }) => (
+const EditableField = ({
+  label,
+  value,
+  isEditing,
+  editingField,
+  fieldName,
+  onChangeText,
+  onEditField,
+}: {
+  label: string;
+  value: string;
+  isEditing: boolean;
+  editingField: string;
+  fieldName: string;
+  onChangeText: (text: string) => void;
+  onEditField: (field: string | null) => void;
+}) => (
   <View style={styles.infoContainer}>
     <Text style={styles.label}>{label}: </Text>
     <View style={styles.editableField}>
       {isEditing && editingField === fieldName ? (
-        <TextInput style={[styles.input, styles.visibleInput]} value={value} onChangeText={onChangeText} onBlur={() => onEditField(null)} autoFocus/>
+        <TextInput
+          style={[styles.input, styles.visibleInput]}
+          value={value}
+          onChangeText={onChangeText}
+          onBlur={() => onEditField(null)}
+          autoFocus
+        />
       ) : (
-        <Text style={styles.value}>{value || 'N/A'}</Text>
+        <Text style={styles.value}>{value || "N/A"}</Text>
       )}
       {isEditing && (
         <TouchableOpacity onPress={() => onEditField(fieldName)}>
@@ -34,14 +64,14 @@ export default function UserProfileScreen() {
   const navigation = useNavigation();
   const router = useRouter();
 
-  const [userName, setUserName] = useState<string>('');
-  const [userSurname, setUserSurname] = useState<string>('');
-  const [userEmail, setUserEmail] = useState<string>('');
+  const [userName, setUserName] = useState<string>("");
+  const [userSurname, setUserSurname] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isVerificationModalVisible, setIsVerificationModalVisible] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationCode, setVerificationCode] = useState("");
   const [isPasswordChangeModalVisible, setIsPasswordChangeModalVisible] = useState(false);
   const [userIcon, setUserIcon] = useState<string | null>(null);
 
@@ -50,14 +80,13 @@ export default function UserProfileScreen() {
       try {
         await refreshUser();
         const profilePictureUrl = await getProfilePictureUrl(user.email);
-        setUserName(user.name || '');
-        setUserSurname(user.surname || '');
+        setUserName(user.name || "");
+        setUserSurname(user.surname || "");
         setUserEmail(user.email);
         setUserIcon(profilePictureUrl);
-      } 
-      catch (error) {
-        console.error('Error fetching user data:', error);
-        Alert.alert('Error', 'Failed to fetch user data. Please try again.');
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        Alert.alert("Error", "Failed to fetch user data. Please try again.");
       }
     }
   }, [user?.email]);
@@ -70,9 +99,9 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
     if (user) {
-      setUserName(user.name || '');
-      setUserSurname(user.surname || '');
-      setUserEmail(user.email || '');
+      setUserName(user.name || "");
+      setUserSurname(user.surname || "");
+      setUserEmail(user.email || "");
     }
   }, [user]);
 
@@ -80,73 +109,65 @@ export default function UserProfileScreen() {
     if (isEditing) {
       setIsUpdating(true);
       try {
-        await updateUserFullName(user?.email || '', userName, userSurname);
-        {/* TODO: falta chequear la parte de email que funcione bien */}
-        //   await updateUserEmail(user?.email || '', userEmail);
+        await updateUserFullName(user?.email || "", userName, userSurname);
         await refreshUser();
         setIsEditing(false);
         setEditingField(null);
         navigation.goBack();
-      }
-      catch (error) {
+      } catch (error) {
         setUserName(userName);
         setUserSurname(userSurname);
         setUserEmail(userEmail);
-        Alert.alert('Error', 'Failed to update user information. Please try again.');
-      } 
-      finally {
+        Alert.alert("Error", "Failed to update user information. Please try again.");
+      } finally {
         setIsUpdating(false);
       }
-    }
-    else setIsEditing(true);
+    } else setIsEditing(true);
   };
 
   const handleChangePassword = async () => {
     try {
-      const { success, error } = await requestPasswordReset(user?.email || '');
-      if (!success) throw new Error(error || 'Failed to request password reset.');
+      const { success, error } = await requestPasswordReset(user?.email || "");
+      if (!success) throw new Error(error || "Failed to request password reset.");
       setIsVerificationModalVisible(true);
-    } 
-    catch (error) {
-      console.error('Error requesting password reset:', error);
-      Alert.alert('Error', 'cambiar contraseña por ahora no se puede...');
+    } catch (error) {
+      console.error("Error requesting password reset:", error);
+      Alert.alert("Error", "cambiar contraseña por ahora no se puede...");
     }
   };
 
   const handleVerificationSubmit = async () => {
     try {
-      const { success, error } = await verifyPasswordResetCode(user?.email || '', verificationCode);
-      if (!success) throw new Error(error || 'Failed to verify password reset code.');
+      const { success, error } = await verifyPasswordResetCode(user?.email || "", verificationCode);
+      if (!success) throw new Error(error || "Failed to verify password reset code.");
       setIsVerificationModalVisible(false);
       setIsPasswordChangeModalVisible(true);
-    } 
-    catch (error) {
-      console.error('Error verifying reset code:', error);
-      Alert.alert('Error', 'Failed to verify reset code. Please try again.');
+    } catch (error) {
+      console.error("Error verifying reset code:", error);
+      Alert.alert("Error", "Failed to verify reset code. Please try again.");
     }
   };
 
   const handlePasswordSubmit = async (newPassword: string, confirmPassword: string) => {
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match. Please try again.');
+      Alert.alert("Error", "Passwords do not match. Please try again.");
       return;
     }
 
     try {
       const { success, error } = await updateUserPassword(newPassword);
-      if (!success) throw new Error(error || 'Failed to update password.');
+      if (!success) throw new Error(error || "Failed to update password.");
       setIsPasswordChangeModalVisible(false);
-      Alert.alert('Success', 'Your password has been updated.');
-    } 
-    catch (error) {
-      console.error('Error updating password:', error);
-      Alert.alert('Error', 'Failed to update password. Please try again.');
+      Alert.alert("Success", "Your password has been updated.");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      Alert.alert("Error", "Failed to update password. Please try again.");
     }
   };
 
   const handleChangeIcon = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (permissionResult.granted === false) {
       Alert.alert("Permission Required", "You need to grant camera roll permissions to change your icon.");
       return;
@@ -163,12 +184,11 @@ export default function UserProfileScreen() {
     if (!result.canceled && result.assets[0].base64) {
       setUserIcon(result.assets[0].uri);
       const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      const uploadedUrl = await uploadProfilePicture(user?.email || '', base64Image);
-      if (uploadedUrl) { 
+      const uploadedUrl = await uploadProfilePicture(user?.email || "", base64Image);
+      if (uploadedUrl) {
         setUserIcon(uploadedUrl);
         setUserProfilePicture(uploadedUrl);
-      }
-      else Alert.alert("Error", "Failed to upload profile picture. Please try again.");
+      } else Alert.alert("Error", "Failed to upload profile picture. Please try again.");
     }
   };
 
@@ -179,9 +199,9 @@ export default function UserProfileScreen() {
   const handleLogout = async () => {
     const result = await logOut();
     if (result.error) {
-      Alert.alert('Logout Error', result.error);
+      Alert.alert("Logout Error", result.error);
     } else {
-      router.replace('/(auth)/start');
+      router.replace("/(auth)/start");
     }
   };
 
@@ -191,78 +211,102 @@ export default function UserProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#4B00B8', '#20014E']} style={styles.gradientContainer}>
-        <BillyHeader title="Perfil de usuario"/>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-              <Icon name="arrow-back" size={30} color="#000000"/>
+      <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
+        <BillyHeader title="Perfil de usuario" />
+        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Icon name="arrow-back" size={30} color="#000000" />
+          </TouchableOpacity>
+
+          <View style={styles.contentContainer}>
+            <View style={styles.iconContainer}>
+              <Image source={userIcon ? { uri: userIcon } : require("@/assets/images/icons/UserIcon.png")} style={styles.userIcon} />
+
+              {isEditing && (
+                <TouchableOpacity style={styles.cameraIconButton} onPress={handleChangeIcon}>
+                  <Icon name="camera-alt" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <EditableField
+              label="Nombre"
+              value={userName}
+              isEditing={isEditing}
+              editingField={editingField || ""}
+              fieldName="name"
+              onChangeText={setUserName}
+              onEditField={handleEditField}
+            />
+
+            <EditableField
+              label="Apellido"
+              value={userSurname}
+              isEditing={isEditing}
+              editingField={editingField || ""}
+              fieldName="surname"
+              onChangeText={setUserSurname}
+              onEditField={handleEditField}
+            />
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.fieldValue}>
+                <Text style={styles.fieldLabel}>Email: </Text>
+                {userEmail}
+              </Text>
+            </View>
+
+            {/*<EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
+
+            <TouchableOpacity
+              style={[styles.button, isEditing ? styles.saveButton : null, isUpdating ? styles.disabledButton : null]}
+              onPress={handleEdit}
+              disabled={isUpdating}
+            >
+              <Text style={styles.buttonText}>{isEditing ? (isUpdating ? "Guardando..." : "Guardar") : "Editar"}</Text>
             </TouchableOpacity>
-            
-            <View style={styles.contentContainer}>
 
-              <View style={styles.iconContainer}>
-                <Image 
-                  source={userIcon ? { uri: userIcon } : require('@/assets/images/icons/UserIcon.png')} 
-                  style={styles.userIcon}
-                />
+            <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
+              <Text style={styles.buttonText}>Cambiar Contraseña</Text>
+            </TouchableOpacity>
 
-                {isEditing && (
-                  <TouchableOpacity style={styles.cameraIconButton} onPress={handleChangeIcon}>
-                    <Icon name="camera-alt" size={24} color="#FFFFFF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              
-              <EditableField label="Nombre" value={userName} isEditing={isEditing} editingField={editingField || ''} fieldName="name" onChangeText={setUserName} onEditField={handleEditField}/>
-              
-              <EditableField label="Apellido" value={userSurname} isEditing={isEditing} editingField={editingField || ''} fieldName="surname" onChangeText={setUserSurname} onEditField={handleEditField}/>
-
-              <View style={styles.fieldContainer}>
-                <Text style={styles.fieldValue}>
-                  <Text style={styles.fieldLabel}>Email: </Text>
-                  {userEmail}
-                </Text>
-              </View>
-
-              {/*<EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
-
-              <TouchableOpacity style={[ styles.button, isEditing ? styles.saveButton : null, isUpdating ? styles.disabledButton : null ]} onPress={handleEdit} disabled={isUpdating}>
-                <Text style={styles.buttonText}>
-                  {isEditing ? (isUpdating ? 'Guardando...' : 'Guardar') : 'Editar'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
-                <Text style={styles.buttonText}>Cambiar Contraseña</Text>
-              </TouchableOpacity>
-
-              {!isEditing && (
+            {!isEditing && (
               <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
                 <Text style={styles.buttonText}>Cerrar Sesión</Text>
               </TouchableOpacity>
-              )}
+            )}
 
-              <VerificationModal isVisible={isVerificationModalVisible} onClose={() => setIsVerificationModalVisible(false)} onSubmit={handleVerificationSubmit} verificationCode={verificationCode} setVerificationCode={setVerificationCode}/>
+            <VerificationModal
+              isVisible={isVerificationModalVisible}
+              onClose={() => setIsVerificationModalVisible(false)}
+              onSubmit={handleVerificationSubmit}
+              verificationCode={verificationCode}
+              setVerificationCode={setVerificationCode}
+            />
 
-              <ChangePasswordModal isVisible={isPasswordChangeModalVisible} onClose={() => setIsPasswordChangeModalVisible(false)} onSubmit={handlePasswordSubmit}/>
-            </View>
+            <ChangePasswordModal
+              isVisible={isPasswordChangeModalVisible}
+              onClose={() => setIsPasswordChangeModalVisible(false)}
+              onSubmit={handlePasswordSubmit}
+            />
           </View>
+        </View>
       </LinearGradient>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   gradientContainer: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 12,
   },
   iconContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 15,
   },
   userIcon: {
@@ -272,104 +316,104 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   changeIconButton: {
-    backgroundColor: '#370185',
+    backgroundColor: "#370185",
     borderRadius: 15,
     paddingVertical: 5,
     paddingHorizontal: 10,
   },
   changeIconText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    marginHorizontal: '2.5%',
+    marginHorizontal: "2.5%",
   },
   contentContainer: {
-    width: '100%',
+    width: "100%",
     padding: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     left: 10,
-    zIndex: 1
+    zIndex: 1,
   },
   infoContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 15,
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   value: {
     fontSize: 16,
     flex: 1,
   },
   button: {
-    backgroundColor: '#370185',
+    backgroundColor: "#370185",
     borderRadius: 24,
     padding: 12,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginTop: 15,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   disabledButton: {
     opacity: 0.5,
   },
   logoutButton: {
-    backgroundColor: '#D32F2F',
+    backgroundColor: "#D32F2F",
   },
   editableField: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   input: {
     flex: 1,
     fontSize: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#370185',
+    borderBottomColor: "#370185",
     marginRight: 10,
     padding: 5,
   },
   visibleInput: {
-    color: '#000000',
+    color: "#000000",
   },
   saveButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   modalWrapper: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: '50%',
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: "50%",
   },
   cameraIconButton: {
-    position: 'absolute',
-    top: '60%',
-    left: '53%',
-    backgroundColor: '#370185',
+    position: "absolute",
+    top: "60%",
+    left: "53%",
+    backgroundColor: "#370185",
     borderRadius: 15,
     padding: 5,
   },
-    fieldContainer: {
+  fieldContainer: {
     marginBottom: 20,
   },
   fieldLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
   },
   fieldValue: {

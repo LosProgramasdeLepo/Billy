@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 
 export const LoadingScreen = () => (
   <View style={styles.container}>
@@ -10,8 +10,8 @@ export const LoadingScreen = () => (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
   },
 });

@@ -1,6 +1,19 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { AppContext } from '../contexts/AppContext';
-import { fetchIncomes, fetchOutcomes, fetchCategories, fetchBalance, fetchProfiles, getUser, IncomeData, OutcomeData, CategoryData, ProfileData, UserData, getProfilePictureUrl } from '@/api/api';
+import React, { useState, useCallback, useEffect } from "react";
+import { AppContext } from "../contexts/AppContext";
+import {
+  fetchIncomes,
+  fetchOutcomes,
+  fetchCategories,
+  fetchBalance,
+  fetchProfiles,
+  getUser,
+  IncomeData,
+  OutcomeData,
+  CategoryData,
+  ProfileData,
+  UserData,
+  getProfilePictureUrl,
+} from "@/api/api";
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserData | null>(null);
@@ -12,22 +25,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profileData, setProfileData] = useState<ProfileData[] | null>(null);
   const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
 
-  const fetchData = useCallback(async (fetchFunction: (id: string) => Promise<any>, setStateFunction: React.Dispatch<React.SetStateAction<any>>, isProfile: boolean = false, isUser: boolean = false) => {
-    if (isProfile && user && user.email) {
-      const data = await fetchFunction(user.email);
-      setStateFunction(data);
-      if (!userProfilePicture) {
-        const profilePictureUrl = await getProfilePictureUrl(user.email);
-        setUserProfilePicture(profilePictureUrl);
+  const fetchData = useCallback(
+    async (
+      fetchFunction: (id: string) => Promise<any>,
+      setStateFunction: React.Dispatch<React.SetStateAction<any>>,
+      isProfile: boolean = false,
+      isUser: boolean = false
+    ) => {
+      if (isProfile && user && user.email) {
+        const data = await fetchFunction(user.email);
+        setStateFunction(data);
+        if (!userProfilePicture) {
+          const profilePictureUrl = await getProfilePictureUrl(user.email);
+          setUserProfilePicture(profilePictureUrl);
+        }
+      } else if (isUser && user && user.email) {
+        const data = await fetchFunction(user.email);
+        setStateFunction(data);
+      } else if (currentProfileId) {
+        const data = await fetchFunction(currentProfileId);
+        setStateFunction(data);
       }
-    } else if (isUser && user && user.email) {
-      const data = await fetchFunction(user.email);
-      setStateFunction(data);
-    } else if (currentProfileId) {
-      const data = await fetchFunction(currentProfileId);
-      setStateFunction(data);
-    }
-  }, [currentProfileId, user, userProfilePicture]);
+    },
+    [currentProfileId, user, userProfilePicture]
+  );
 
   const refreshIncomeData = useCallback(() => fetchData(fetchIncomes, setIncomeData), [fetchData]);
   const refreshOutcomeData = useCallback(() => fetchData(fetchOutcomes, setOutcomeData), [fetchData]);
@@ -36,7 +57,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshProfileData = useCallback(() => fetchData(fetchProfiles, setProfileData, true), [fetchData]);
   const refreshUser = useCallback(() => fetchData(getUser, setUser, false, true), [fetchData]);
 
-  const refreshAllData = useCallback(async () => {    
+  const refreshAllData = useCallback(async () => {
     if (!user || !currentProfileId) {
       setIncomeData(null);
       setOutcomeData(null);
@@ -45,13 +66,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setBalance(null);
       return;
     }
-    await Promise.all([
-      refreshIncomeData(),
-      refreshOutcomeData(),
-      refreshCategoryData(),
-      refreshBalanceData(),
-      refreshProfileData()
-    ]);
+    await Promise.all([refreshIncomeData(), refreshOutcomeData(), refreshCategoryData(), refreshBalanceData(), refreshProfileData()]);
   }, [currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, refreshProfileData]);
 
   useEffect(() => {
@@ -78,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshProfileData,
         userProfilePicture,
         setUserProfilePicture,
-        refreshAllData
+        refreshAllData,
       }}
     >
       {children}

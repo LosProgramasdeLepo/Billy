@@ -1,51 +1,50 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, TextInput, Modal, TouchableOpacity, Animated, Alert } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { addIncome, addOutcome, fetchCategories, CategoryData } from '../../api/api';
-import { styles } from '../estilos/calendarStyles';
-import { useAppContext } from '@/hooks/useAppContext';
-
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { View, Text, TextInput, Modal, TouchableOpacity, Animated, Alert } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { addIncome, addOutcome, fetchCategories, CategoryData } from "../../api/api";
+import { styles } from "../estilos/calendarStyles";
+import { useAppContext } from "@/hooks/useAppContext";
 
 interface CobroPagoPopUpProps {
   isVisible: boolean;
   onClose: () => void;
-  initialType: 'Income' | 'Outcome';
+  initialType: "Income" | "Outcome";
   refreshTransactions: () => void;
 }
 
 const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions }: CobroPagoPopUpProps) => {
   const { refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData, currentProfileId } = useAppContext();
 
-  const [type, setType] = useState<'Income' | 'Outcome'>(initialType);
-  const [amount, setAmount] = useState('');
+  const [type, setType] = useState<"Income" | "Outcome">(initialType);
+  const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [description, setDescription] = useState('');
-  const [bubbleAnimation] = useState(new Animated.Value(initialType === 'Outcome' ? 0 : 1));
+  const [description, setDescription] = useState("");
+  const [bubbleAnimation] = useState(new Animated.Value(initialType === "Outcome" ? 0 : 1));
   const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [dateType, setDateType] = useState('Fecha Exacta');
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [dateType, setDateType] = useState("Fecha Exacta");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [recurrence, setRecurrence] = useState('Nunca');
+  const [recurrence, setRecurrence] = useState("Nunca");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isVisible) fetchCategories(currentProfileId || "").then(categories => setCategories(categories || []));
+    if (isVisible) fetchCategories(currentProfileId || "").then((categories) => setCategories(categories || []));
   }, [isVisible, currentProfileId]);
 
   useEffect(() => {
     // Actualizar la posición del bubble cuando cambia initialType
     Animated.timing(bubbleAnimation, {
-      toValue: initialType === 'Income' ? 0 : 1,
+      toValue: initialType === "Income" ? 0 : 1,
       duration: 0, // Sin animación para el cambio inicial
       useNativeDriver: false,
     }).start();
-    setType(initialType === 'Income' ? 'Income' : 'Outcome');
+    setType(initialType === "Income" ? "Income" : "Outcome");
   }, [initialType]);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
@@ -66,12 +65,12 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
   async function handleSubmit(): Promise<void> {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    if (!selectedCategory && type === 'Outcome') {
+    if (!selectedCategory && type === "Outcome") {
       Alert.alert("Error de categoría", "Por favor, selecciona una categoría antes de continuar.", [{ text: "OK" }]);
       return;
     }
 
-    if (dateType === 'Periodo') {
+    if (dateType === "Periodo") {
       if (startDate >= endDate) {
         Alert.alert("Error de fecha", "La fecha 'Desde' debe ser anterior a la fecha 'Hasta'.", [{ text: "OK" }]);
         return;
@@ -84,12 +83,10 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
       return;
     }
 
-    if (type === 'Income') {
+    if (type === "Income") {
       await addIncome(currentProfileId || "", amountNumber, description, date);
       refreshIncomeData();
-    } 
-    
-    else {
+    } else {
       await addOutcome(currentProfileId || "", selectedCategory, amountNumber, description, date);
       refreshOutcomeData();
     }
@@ -97,59 +94,65 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
     refreshCategoryData();
     refreshBalanceData();
     refreshTransactions();
-    setAmount('');
-    setDescription('');
+    setAmount("");
+    setDescription("");
     setDate(new Date());
     setStartDate(new Date());
     setEndDate(new Date());
-    setSelectedCategory('');
-    setRecurrence('Nunca');
+    setSelectedCategory("");
+    setRecurrence("Nunca");
     setIsSubmitting(false);
     onClose();
   }
 
-  const switchType = useCallback((newType: 'Income' | 'Outcome') => {
-    setType(newType);
-    Animated.timing(bubbleAnimation, {
-      toValue: newType === 'Outcome' ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [bubbleAnimation]);
-  
+  const switchType = useCallback(
+    (newType: "Income" | "Outcome") => {
+      setType(newType);
+      Animated.timing(bubbleAnimation, {
+        toValue: newType === "Outcome" ? 1 : 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    },
+    [bubbleAnimation]
+  );
+
   const bubbleInterpolation = bubbleAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['2%', '48%'],
+    outputRange: ["2%", "48%"],
   });
 
-  const getTextColor = (buttonType: 'Income' | 'Outcome') => {
-    return type === buttonType ? '#000000' : '#FFFFFF';
+  const getTextColor = (buttonType: "Income" | "Outcome") => {
+    return type === buttonType ? "#000000" : "#FFFFFF";
   };
 
-  const renderTypeSelector = useMemo(() => (
-    <View style={styles.typeSelector}>
-      <View style={[styles.bubbleBackground, { backgroundColor: '#B39CD4' }]}>
-        <Animated.View style={[styles.bubble, { left: bubbleInterpolation }]}/>
+  const renderTypeSelector = useMemo(
+    () => (
+      <View style={styles.typeSelector}>
+        <View style={[styles.bubbleBackground, { backgroundColor: "#B39CD4" }]}>
+          <Animated.View style={[styles.bubble, { left: bubbleInterpolation }]} />
+        </View>
+
+        <TouchableOpacity style={styles.typeButton} onPress={() => switchType("Income")}>
+          <Text style={[styles.typeButtonText, { color: getTextColor("Income") }]}>Ingreso</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.typeButton} onPress={() => switchType("Outcome")}>
+          <Text style={[styles.typeButtonText, { color: getTextColor("Outcome") }]}>Gasto</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.typeButton} onPress={() => switchType('Income')}>
-        <Text style={[styles.typeButtonText, { color: getTextColor('Income') }]}>Ingreso</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.typeButton} onPress={() => switchType('Outcome')}>
-        <Text style={[styles.typeButtonText, { color: getTextColor('Outcome') }]}>Gasto</Text>
-      </TouchableOpacity>
-    </View>
-  ), [bubbleInterpolation, switchType, getTextColor]);
+    ),
+    [bubbleInterpolation, switchType, getTextColor]
+  );
 
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Icon name="close" size={30} color="#000000"/>
+            <Icon name="close" size={30} color="#000000" />
           </TouchableOpacity>
-          
+
           <View style={styles.contentContainer}>
             {renderTypeSelector}
 
@@ -170,15 +173,15 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
               placeholderTextColor="#AAAAAA"
             />
 
-            {type === 'Outcome' && (
+            {type === "Outcome" && (
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={selectedCategory}
                   onValueChange={(itemValue) => setSelectedCategory(itemValue)}
                   style={styles.picker}
                   itemStyle={styles.pickerItem}
-                  >
-                  <Picker.Item label="Selecciona una categoría" value=""/>
+                >
+                  <Picker.Item label="Selecciona una categoría" value="" />
                   {categories.map((category) => (
                     <Picker.Item key={category.id} label={category.name} value={category.id} />
                   ))}
@@ -198,59 +201,36 @@ const CalendarAddModal = ({ isVisible, onClose, initialType, refreshTransactions
               </Picker>
             </View>
 
-            {dateType === 'Fecha Exacta' ? (
+            {dateType === "Fecha Exacta" ? (
               <>
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-                  <Text style={[styles.datePickerText, !date && styles.placeholderText]}>
-                    {date ? date.toDateString() : 'Fecha'}
-                  </Text>
-                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon}/>
+                  <Text style={[styles.datePickerText, !date && styles.placeholderText]}>{date ? date.toDateString() : "Fecha"}</Text>
+                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon} />
                 </TouchableOpacity>
-                
-                {showDatePicker && (
-                  <DateTimePicker 
-                    value={date} 
-                    mode="date" 
-                    display="default" 
-                    onChange={handleDateChange}
-                  />
-                )}
+
+                {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
               </>
             ) : (
               <>
                 <Text style={styles.dateLabel}>Desde:</Text>
                 <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.datePickerButton}>
                   <Text style={[styles.datePickerText, !startDate && styles.placeholderText]}>
-                    {startDate ? startDate.toDateString() : 'Fecha de inicio'}
+                    {startDate ? startDate.toDateString() : "Fecha de inicio"}
                   </Text>
-                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon}/>
+                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon} />
                 </TouchableOpacity>
-                
-                {showStartDatePicker && (
-                  <DateTimePicker 
-                    value={startDate} 
-                    mode="date" 
-                    display="default" 
-                    onChange={handleStartDateChange}
-                  />
-                )}
+
+                {showStartDatePicker && <DateTimePicker value={startDate} mode="date" display="default" onChange={handleStartDateChange} />}
 
                 <Text style={styles.dateLabel}>Hasta:</Text>
                 <TouchableOpacity onPress={() => setShowEndDatePicker(true)} style={styles.datePickerButton}>
                   <Text style={[styles.datePickerText, !endDate && styles.placeholderText]}>
-                    {endDate ? endDate.toDateString() : 'Fecha de fin'}
+                    {endDate ? endDate.toDateString() : "Fecha de fin"}
                   </Text>
-                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon}/>
+                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon} />
                 </TouchableOpacity>
-                
-                {showEndDatePicker && (
-                  <DateTimePicker 
-                    value={endDate} 
-                    mode="date" 
-                    display="default" 
-                    onChange={handleEndDateChange}
-                  />
-                )}
+
+                {showEndDatePicker && <DateTimePicker value={endDate} mode="date" display="default" onChange={handleEndDateChange} />}
               </>
             )}
 
