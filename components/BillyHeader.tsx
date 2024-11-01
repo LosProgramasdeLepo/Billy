@@ -3,7 +3,7 @@ import { StyleSheet, View, Image, TouchableOpacity, Text, ImageStyle } from 'rea
 import { Platform, StatusBar } from 'react-native';
 import { getProfilePictureUrl } from '@/api/api';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAppContext } from '@/hooks/useAppContext';
 
 interface BillyHeaderProps {
