@@ -78,15 +78,19 @@ export const StatsComponent = React.memo(({ month, year, mode }: { month: number
     return color;
   };
 
-  const getCategoryTotal = async (profileId: string, categoryId: string, month: number, year: number): Promise<number> => {
-    const OutcomeFromCategory = await getOutcomesFromDateRangeAndCategory(
-      profileId,
-      parseDate(month, year, 1),
-      parseDate(month, year, 30),
-      categoryId
-    );
-    return Array.isArray(OutcomeFromCategory) ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) : 0;
-  };
+  const getCategoryTotal = useMemo(
+    () =>
+      async (profileId: string, categoryId: string, month: number, year: number): Promise<number> => {
+        const OutcomeFromCategory = await getOutcomesFromDateRangeAndCategory(
+          profileId,
+          parseDate(month, year, 1),
+          parseDate(month, year, 30),
+          categoryId
+        );
+        return Array.isArray(OutcomeFromCategory) ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) : 0;
+      },
+    []
+  );
 
   const maxAmount = useMemo(() => expenses.reduce((sum, expense) => sum + (expense.amount ?? 0), 0), [expenses]);
 
