@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from "react-native";
 
 interface VerificationModalProps {
   isVisible: boolean;
@@ -9,10 +9,16 @@ interface VerificationModalProps {
   setVerificationCode: (code: string) => void;
 }
 
-export const VerificationModal: React.FC<VerificationModalProps> = ({isVisible, onClose, onSubmit, verificationCode, setVerificationCode}) => {
+export const VerificationModal: React.FC<VerificationModalProps> = ({
+  isVisible,
+  onClose,
+  onSubmit,
+  verificationCode,
+  setVerificationCode,
+}) => {
   const handleSubmit = () => {
     onSubmit(verificationCode);
-    setVerificationCode('');
+    setVerificationCode("");
   };
 
   return (
@@ -20,7 +26,13 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({isVisible, 
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <Text style={styles.title}>Ingrese el código de verificación</Text>
-          <TextInput style={styles.input} value={verificationCode} onChangeText={setVerificationCode} placeholder="Ingrese el código" keyboardType="number-pad"/>
+          <TextInput
+            style={styles.input}
+            value={verificationCode}
+            onChangeText={setVerificationCode}
+            placeholder="Ingrese el código"
+            keyboardType="number-pad"
+          />
           <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Verificar</Text>
           </TouchableOpacity>
@@ -36,17 +48,17 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({isVisible, 
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContainer: {
-    width: '85%',
+    width: "85%",
     maxWidth: 400,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 15,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -55,34 +67,34 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#370185',
+    backgroundColor: "#370185",
     borderRadius: 24,
     padding: 12,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
     marginTop: 20,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cancelText: {
-    color: '#370185',
+    color: "#370185",
     marginTop: 10,
     fontSize: 16,
   },

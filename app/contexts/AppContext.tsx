@@ -1,5 +1,5 @@
-import { createContext } from 'react';
-import { IncomeData, OutcomeData, CategoryData, ProfileData, UserData } from '@/api/api';
+import { createContext } from "react";
+import { IncomeData, OutcomeData, CategoryData, ProfileData, UserData } from "@/api/api";
 
 export interface AppContextType {
   user: UserData | null;

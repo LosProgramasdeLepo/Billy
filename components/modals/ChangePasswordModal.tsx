@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from "react-native";
 
 interface ChangePasswordModalProps {
   isVisible: boolean;
@@ -8,13 +8,13 @@ interface ChangePasswordModalProps {
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisible, onClose, onSubmit }) => {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = () => {
     onSubmit(newPassword, confirmPassword);
-    setNewPassword('');
-    setConfirmPassword('');
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   return (
@@ -22,13 +22,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>Cambiar Contraseña</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="New Password"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
+          <TextInput style={styles.input} placeholder="New Password" secureTextEntry value={newPassword} onChangeText={setNewPassword} />
           <Text style={styles.title}>Confirmar Contraseña</Text>
           <TextInput
             style={styles.input}
@@ -54,51 +48,51 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isVisi
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    width: '80%',
+    width: "80%",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 20,
   },
   button: {
-    backgroundColor: '#370185',
+    backgroundColor: "#370185",
     borderRadius: 24,
     padding: 12,
-    width: '45%',
-    alignItems: 'center',
+    width: "45%",
+    alignItems: "center",
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
     borderRadius: 24,
     padding: 12,
-    width: '45%',
-    alignItems: 'center',
+    width: "45%",
+    alignItems: "center",
   },
 });
