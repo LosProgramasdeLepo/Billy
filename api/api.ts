@@ -942,31 +942,39 @@ export async function getUserNames(emails: string[]): Promise<Record<string, str
 export async function uploadProfilePicture(email: string, base64Image: string): Promise<string | null> {
   try {
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    
     const fileName = `${email}_${Date.now()}.png`;
     const bucketName = 'profile_pictures';
+    
+    const previousUrl = await getProfilePictureUrl(email);
+    if (previousUrl) {
+      const previousFileName = previousUrl.split('/').pop();
+      if (previousFileName) {
+        await supabase.storage
+          .from(bucketName)
+          .remove([previousFileName]);
+      }
+    }
 
-    const { error } = await supabase.storage
+    const { data, error: uploadError } = await supabase.storage
       .from(bucketName)
-      .upload(fileName, decode(base64Data), {
+      .upload(`${fileName}`, decode(base64Data), {
         contentType: 'image/png',
         upsert: true
       });
 
-    if (error) {
-      console.error("Error uploading profile picture:", error);
+    if (uploadError) {
+      console.error("Error uploading profile picture:", uploadError);
       return null;
     }
 
     const { data: { publicUrl } } = supabase.storage
       .from(bucketName)
-      .getPublicUrl(fileName);
+      .getPublicUrl(`${fileName}`);
 
     await updateProfilePictureUrl(email, publicUrl);
-
     return publicUrl;
-  } 
-  
+  }
+
   catch (error) {
     console.error("Unexpected error uploading profile picture:", error);
     return null;

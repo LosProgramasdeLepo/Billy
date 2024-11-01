@@ -13,7 +13,7 @@ interface BillyHeaderProps {
 }
 
 export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon }) => {
-  const { user, profileData, currentProfileId } = useAppContext();
+  const { user, profileData, currentProfileId, userProfilePicture } = useAppContext();
   const navigation = useNavigation();
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
@@ -47,7 +47,7 @@ export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon 
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('UserProfileScreen' as never)}>
             <Image 
-              source={profilePicture ? { uri: profilePicture } : require('../assets/images/icons/UserIcon.png')} 
+              source={userProfilePicture ? { uri: userProfilePicture } : require('../assets/images/icons/UserIcon.png')} 
               style={styles.usuario} 
             />
           </TouchableOpacity>

@@ -30,7 +30,7 @@ const EditableField = ({ label, value, isEditing, editingField, fieldName, onCha
 );
 
 export default function UserProfileScreen() {
-  const { user, refreshUser } = useAppContext();
+  const { user, refreshUser, setUserProfilePicture } = useAppContext();
   const navigation = useNavigation();
   const router = useRouter();
 
@@ -164,7 +164,10 @@ export default function UserProfileScreen() {
       setUserIcon(result.assets[0].uri);
       const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
       const uploadedUrl = await uploadProfilePicture(user?.email || '', base64Image);
-      if (uploadedUrl) setUserIcon(uploadedUrl);
+      if (uploadedUrl) { 
+        setUserIcon(uploadedUrl);
+        setUserProfilePicture(uploadedUrl);
+      }
       else Alert.alert("Error", "Failed to upload profile picture. Please try again.");
     }
   };
