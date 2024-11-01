@@ -59,7 +59,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
   const handleDescriptionChange = (text: string) => {
     setDescription(text);
-    debouncedCategorize(text); // Llama a la función debounced
+    debouncedCategorize(text);
   };
 
   const handleDateChange = useCallback((event: any, selectedDate?: Date) => {
@@ -96,7 +96,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       refreshCategoryData();
     }
     refreshBalanceData();
-    // Reset form
     setAmount('');
     setDescription('');
     setDate(new Date());
@@ -139,7 +138,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     </View>
   ), [bubbleInterpolation, switchType, getTextColor]);
 
-  // Agregado: función debounced
   const debouncedCategorize = useMemo(() => 
     debounce(async (text: string) => {
       if (text && categories.length > 0) {
@@ -149,7 +147,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           setSelectedCategory(categoryId ?? '');
         }
       }
-    }, 500), // Espera 300 ms después de que el usuario deja de escribir
+    }, 500),
     [categories, currentProfileId]
   );
 
@@ -167,7 +165,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             <TextInput
               style={styles.input}
               value={description}
-              onChangeText={handleDescriptionChange} // Llama a la función que categoriza
+              onChangeText={handleDescriptionChange}
               placeholder="Descripción"
               placeholderTextColor="#AAAAAA"
             />
@@ -244,17 +242,6 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // const dummyUsers = [
-  //   'Alice Johnson',
-  //   'Bob Smith',
-  //   'Charlie Brown',
-  //   'Diana Prince',
-  //   'Ethan Hunt',
-  //   'Fiona Apple',
-  //   'George Clooney',
-  //   'Hannah Montana',
-  // ];
-
   const toggleUser = (user: string) => {
     setSelectedUsers(prev => {
       if (singleSelection) {
@@ -268,8 +255,8 @@ const ParticipantSelect = ({ sharedUsers, onSelect, singleSelection, whoPaidIt }
   const handleDone = () => {
     onSelect(selectedUsers);
     setIsOpen(false);
-    //console.log({selectedUsers});
   };
+
   // Filter out whoPaidIt from sharedUsers when not in single selection mode
   const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter(user => user !== whoPaidIt) || [];
 
@@ -454,6 +441,7 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
+    borderStyle: 'dashed',
     borderColor: '#ddd',
     borderRadius: 4,
     marginBottom: 16,
