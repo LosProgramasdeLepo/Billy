@@ -110,8 +110,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators, limit]);
 
   const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
-    setSelectedTransaction(transaction);
     if ((transaction as OutcomeData).shared_outcome) {
+      setSelectedTransaction(transaction);
       const sharedOutcome = (transaction as OutcomeData).shared_outcome;
       if (sharedOutcome) {
         const sharedOutcomeData = await getSharedOutcomeWithNames(sharedOutcome);
@@ -178,7 +178,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   const renderTransactionItem = useCallback(
     ({ item }: { item: IncomeData | OutcomeData }) => (
-      <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
+      <TouchableOpacity
+        onPress={() => ((item as OutcomeData).shared_outcome ? handlePress(item) : null)}
+        onLongPress={() => handleLongPress(item)}
+      >
         <View style={styles.card}>
           <View style={styles.iconContainer}>
             {(item as any).type === "income" ? (
