@@ -332,7 +332,7 @@ const ParticipantSelect = ({
   sharedUsers: string[] | null;
   onSelect: (users: string[]) => void;
   singleSelection: boolean;
-  whoPaidIt?: string;
+  whoPaidIt?: string; 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -550,14 +550,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: "#ddd",
+    backgroundColor: "#f9f9f9",
+    minHeight: 48,
   },
   selectButtonText: {
     fontSize: 16,
-    color: "#000",
+    flex: 1,
+    marginRight: 8,
   },
   modalOverlay: {
     flex: 1,
