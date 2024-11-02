@@ -186,24 +186,6 @@ export const SharedBalanceCard = () => {
 
   return (
     <LinearGradient colors={["#e8e0ff", "#d6c5fc"]} start={[0, 0]} end={[1, 1]} style={styles.card}>
-      <View style={styles.titleContainer}>
-        <TouchableOpacity onPress={handleEditPress} style={styles.editButton}>
-          <Ionicons name="pencil" size={20} color="#666" />
-        </TouchableOpacity>
-        {isEditing ? (
-          <TextInput
-            style={styles.titleInput}
-            value={title}
-            onChangeText={handleTitleChange}
-            onBlur={handleTitleSubmit}
-            onSubmitEditing={handleTitleSubmit}
-            autoFocus
-          />
-        ) : (
-          <Text style={styles.title}>{title}</Text>
-        )}
-      </View>
-
       <View style={styles.expensesContainer}>
         <ExpenseItem label="Gastos totales:" value={totalOutcome} />
         <ExpenseItem label="Mis Gastos:" value={totalToPay} />

@@ -38,19 +38,17 @@ export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon 
 
   return (
     <View style={styles.headerContainer}>
-      <View>
-        <View style={styles.overlapGroup}>
-          <View>
-            <Image source={require("../assets/images/Billy/logo2.png")} style={styles.logoBilly as ImageStyle} />
-            <Text style={styles.profileName}>{profileName}</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.navigate("UserProfileScreen" as never)}>
-            <Image
-              source={userProfilePicture ? { uri: userProfilePicture } : require("../assets/images/icons/UserIcon.png")}
-              style={styles.usuario}
-            />
-          </TouchableOpacity>
+      <View style={styles.overlapGroup}>
+        <Text style={styles.profileName}>{profileName}</Text>
+        <View style={styles.logoContainer}>
+          <Image source={require("../assets/images/Billy/logo1.png")} style={styles.logoBilly as ImageStyle} />
         </View>
+        <TouchableOpacity onPress={() => navigation.navigate("UserProfileScreen" as never)}>
+          <Image
+            source={userProfilePicture ? { uri: userProfilePicture } : require("../assets/images/icons/UserIcon.png")}
+            style={styles.usuario}
+          />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.textIconContainer}>
@@ -72,34 +70,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   overlapGroup: {
-    backgroundColor: "#ffffff",
-    borderRadius: 30,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 5,
-    height: 65,
-    position: "relative",
-    paddingHorizontal: 22,
+    height: 55,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  logoContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: -3,
+    alignItems: "center",
+  },
   logoBilly: {
-    width: 80,
-    height: 40,
+    width: 100,
+    height: 50,
+    resizeMode: "contain",
   },
   profileName: {
-    color: "#3d2b7e",
-    fontSize: 20,
+    color: "#ffffff",
+    fontSize: 22,
     fontWeight: "bold",
-    marginTop: -15,
     fontFamily: "ArialRoundedMTBold",
+    maxWidth: 120,
+    lineHeight: 26,
   },
   usuario: {
-    width: 47,
-    height: 47,
+    width: 50,
+    height: 50,
     borderRadius: 23.5,
     resizeMode: "cover",
   },
