@@ -224,7 +224,7 @@ export default function UserProfileScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-        <BillyHeader title="Perfil de usuario" />
+        <BillyHeader />
         <View style={styles.modalContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Icon name="arrow-back" size={30} color="#000000" />
@@ -313,9 +313,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradientContainer: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 12,
+    flex: 1,  
   },
   iconContainer: {
     alignItems: "center",
@@ -344,6 +342,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginHorizontal: "2.5%",
+    marginTop: 10,
   },
   contentContainer: {
     width: "100%",
