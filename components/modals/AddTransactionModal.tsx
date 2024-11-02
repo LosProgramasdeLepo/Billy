@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView } from "react-native";
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -16,6 +16,7 @@ import {
 import moment from "moment";
 import { useAppContext } from "@/hooks/useAppContext";
 import { debounce } from "lodash";
+import * as ImagePicker from "expo-image-picker";
 
 interface AddTransactionModalProps {
   isVisible: boolean;
@@ -90,6 +91,31 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     setShowDatePicker(false);
     if (selectedDate) setDate(selectedDate);
   }, []);
+
+  const handleScanTicket = async () => {
+    // Pido permisos para usar la camara
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permisos requerido', 'Necesitamos permisos para escanear tickets.');
+      return;
+    }
+  
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+  
+      if (!result.canceled && result.assets[0]) {
+        // Acá se le debería enviar la imagen a la IA 
+        setDescription('Ticket scanned - Processing...');
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      Alert.alert('Error', 'Failed to access camera. Please try again.');
+    }
+  };
 
   const handleSubmit = useCallback(async () => {
     const newErrors = {
@@ -277,7 +303,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
 
             {type === "Outcome" && (
-              <TouchableOpacity style={styles.scanButton}>
+              <TouchableOpacity style={styles.scanButton} onPress={handleScanTicket}>
                 <Text style={styles.scanButtonText}>Escanear ticket</Text>
               </TouchableOpacity>
             )}
