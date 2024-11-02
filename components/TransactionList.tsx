@@ -70,8 +70,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     ];
     const sorted = sortTransactions(combined);
 
-    const limitedTransactions = limit ? sorted.slice(0, limit) : sorted;
-
     const filteredTransactions = sorted.filter((transaction) => {
       const transactionDate = moment(transaction.created_at).utc().startOf("day");
       switch (timeRange) {
@@ -95,11 +93,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       }
     });
 
+    const limitedTransactions = limit ? filteredTransactions.slice(0, limit) : filteredTransactions;
+
     if (!showDateSeparators) {
-      return filteredTransactions;
+      return limitedTransactions;
     }
 
-    const grouped = filteredTransactions.reduce((acc, transaction) => {
+    const grouped = limitedTransactions.reduce((acc, transaction) => {
       const date = moment(transaction.created_at).utc().format("YYYY-MM-DD");
       if (!acc[date]) acc[date] = [];
       acc[date].push(transaction);
