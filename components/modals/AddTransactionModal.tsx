@@ -109,7 +109,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   
       if (!result.canceled && result.assets[0]) {
         // Acá se le debería enviar la imagen a la IA 
-        setDescription('Ticket escaneado - Procesando...');
+        // setDescription('Ticket escaneado - Procesando...');
+        // setAmount('Ticket escaneado - Procesando...');
+        // setSelectedCategory('Ticket escaneado - Procesando...');
       }
     } catch (error) {
       console.error('Error accediendo a la cámara:', error);
