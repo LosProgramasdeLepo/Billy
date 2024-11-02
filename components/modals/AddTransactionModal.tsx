@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAppContext } from "@/hooks/useAppContext";
+import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
+import { debounce } from "lodash";
+import moment from "moment";
 import {
   addIncome,
   addOutcome,
@@ -13,10 +17,6 @@ import {
   getCategoryIdByName,
   categorizePurchase,
 } from "@/api/api";
-import moment from "moment";
-import { useAppContext } from "@/hooks/useAppContext";
-import { debounce } from "lodash";
-import * as ImagePicker from "expo-image-picker";
 
 interface AddTransactionModalProps {
   isVisible: boolean;
@@ -26,18 +26,22 @@ interface AddTransactionModalProps {
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
 
+  const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [shared, setShared] = useState<boolean | null>(null);
+
+  const [bubbleAnimation] = useState(new Animated.Value(0));
+
   const [type, setType] = useState<"Income" | "Outcome">("Income");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [description, setDescription] = useState("");
-  const [bubbleAnimation] = useState(new Animated.Value(0));
-  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [shared, setShared] = useState<boolean | null>(null);
-  const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
+
   const [selectedSharedUser, setSelectedSharedUser] = useState<string[] | null>(null);
   const [whoPaidIt, setWhoPaidIt] = useState<string[] | null>(null);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({ description: false, amount: false });
@@ -95,27 +99,27 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   const handleScanTicket = async () => {
     // Pido permisos para usar la camara
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permisos requerido', 'Necesitamos permisos para escanear tickets.');
+
+    if (status !== "granted") {
+      Alert.alert("Permisos requerido", "Necesitamos permisos para escanear tickets.");
       return;
     }
-  
+
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
       });
-  
+
       if (!result.canceled && result.assets[0]) {
-        // Acá se le debería enviar la imagen a la IA 
+        // Acá se le debería enviar la imagen a la IA
         // setDescription('Ticket escaneado - Procesando...');
         // setAmount('Ticket escaneado - Procesando...');
         // setSelectedCategory('Ticket escaneado - Procesando...');
       }
     } catch (error) {
-      console.error('Error accediendo a la cámara:', error);
-      Alert.alert('Error', 'No se pudo acceder a la cámara. Por favor, intenta de nuevo.');
+      console.error("Error accediendo a la cámara:", error);
+      Alert.alert("Error", "No se pudo acceder a la cámara. Por favor, intenta de nuevo.");
     }
   };
 
@@ -281,7 +285,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
               </View>
             )}
 
-            {/* no me la quiero complicar, voy a copiar codigo. Despues optmizo */}
             {type === "Outcome" && shared && (
               <ParticipantSelect sharedUsers={sharedUsers} onSelect={(users: string[]) => setWhoPaidIt(users)} singleSelection={true} />
             )}
@@ -348,13 +351,26 @@ const ParticipantSelect = ({
     setIsOpen(false);
   };
 
-  // Filter out whoPaidIt from sharedUsers when not in single selection mode
+  const getButtonText = () => {
+    if (singleSelection) {
+      if (selectedUsers.length > 0) {
+        return `${selectedUsers[0]}`;
+      }
+      return "¿Quién Pagó?";
+    }
+    if (selectedUsers.length > 0) {
+      const count = selectedUsers.length;
+      return `${count} ${count === 1 ? "Participante" : "Participantes"}`;
+    }
+    return "Seleccionar Participantes";
+  };
+
   const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter((user) => user !== whoPaidIt) || [];
 
   return (
     <View style={styles.selectContainer}>
       <TouchableOpacity style={styles.selectButton} onPress={() => setIsOpen(!isOpen)}>
-        <Text style={styles.selectButtonText}>{singleSelection ? "¿Quién Pago?" : "Participantes"}</Text>
+        <Text style={styles.selectButtonText}>{getButtonText()}</Text>
         <Icon name={isOpen ? "chevron-up" : "chevron-down"} size={24} color="#000" />
       </TouchableOpacity>
 
@@ -578,7 +594,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 5, // Adjust as needed
+    paddingVertical: 5,
   },
   checkedBox: {
     backgroundColor: "#370185",
@@ -599,15 +615,6 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: "#FF0000",
     borderWidth: 1,
-  },
-  pickerWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  loadingIconContainer: {
-    position: "absolute",
-    right: 40,
-    paddingRight: 10,
   },
 });
 
