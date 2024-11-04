@@ -58,7 +58,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       rotationLoop = Animated.loop(
         Animated.timing(rotationAnimation, {
           toValue: -8,
-          duration: 300, // Faster animation
+          duration: 300,
           useNativeDriver: true,
         })
       );
@@ -313,7 +313,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
                     onValueChange={(itemValue) => setSelectedCategory(itemValue)}
                     style={[styles.picker, { flex: 1 }]}
                     itemStyle={styles.pickerItem}
-                    enabled={!isCategorizing} // Disable picker while categorizing
+                    enabled={!isCategorizing}
                   >
                     <Picker.Item label={isCategorizing ? "Categorizando..." : "Selecciona una categoría"} value="" />
                     {categories.map((category) => (
