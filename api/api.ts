@@ -39,6 +39,8 @@ export interface OutcomeData {
   description: string;
   created_at?: Date;
   shared_outcome?: string;
+  categorized_by_ia?: boolean;
+  ticket_scanned?: boolean;
 }
 
 export interface SharedOutcomeData {
@@ -277,7 +279,9 @@ export async function addOutcome(
   description: string,
   created_at?: Date,
   paid_by?: string,
-  debtors?: string[]
+  debtors?: string[],
+  categorized_by_ia?: boolean,
+  ticket_scanned?: boolean
 ) {
   try {
     if (category === "") {
@@ -291,6 +295,8 @@ export async function addOutcome(
       category,
       description,
       created_at: created_at || new Date(),
+      ticket_scanned: ticket_scanned,
+      categorized_by_ia: categorized_by_ia,
     };
 
     // Verificar si se ha alcanzado el límite y añadir el outcome en paralelo
@@ -416,6 +422,14 @@ export async function fetchOutcomesByCategory(category: string): Promise<IncomeD
     console.error("Unexpected error fetching outcomes by category:", error);
     return null;
   }
+}
+
+export async function setCategorizedByIA(outcome: string, value: boolean) {
+  return await updateData(OUTCOMES_TABLE, "categorized_by_ia", value, "id", outcome);
+}
+
+export async function setTicketScanned(outcome: string, value: boolean) {
+  return await updateData(OUTCOMES_TABLE, "ticket_scanned", value, "id", outcome);
 }
 
 /* Categories */

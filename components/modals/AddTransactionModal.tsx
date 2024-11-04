@@ -16,6 +16,7 @@ import {
   getSharedUsers,
   getCategoryIdByName,
   categorizePurchase,
+  setCategorizedByIA,
 } from "@/api/api";
 
 interface AddTransactionModalProps {
@@ -37,6 +38,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [ticketScanned, setTicketScanned] = useState<boolean>(false);
+  const [categorizedByIA, setCategorizedByIA] = useState<boolean>(false);
 
   const [selectedSharedUser, setSelectedSharedUser] = useState<string[] | null>(null);
   const [whoPaidIt, setWhoPaidIt] = useState<string[] | null>(null);
@@ -116,6 +119,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
         // setDescription('Ticket escaneado - Procesando...');
         // setAmount('Ticket escaneado - Procesando...');
         // setSelectedCategory('Ticket escaneado - Procesando...');
+        setTicketScanned(true);
       }
     } catch (error) {
       console.error("Error accediendo a la cámara:", error);
@@ -151,7 +155,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           description,
           date,
           whoPaidIt[0],
-          selectedSharedUser || []
+          selectedSharedUser || [],
+          categorizedByIA,
+          ticketScanned
         );
       } else {
         await addOutcome(currentProfileId ?? "", categoryToUse || "", parseFloat(amount), description, date);
@@ -235,6 +241,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           if (categorized) {
             const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
             setSelectedCategory(categoryId ?? "");
+            setCategorizedByIA(true);
           }
         }
       }, 500),
@@ -332,7 +339,7 @@ const ParticipantSelect = ({
   sharedUsers: string[] | null;
   onSelect: (users: string[]) => void;
   singleSelection: boolean;
-  whoPaidIt?: string; 
+  whoPaidIt?: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
