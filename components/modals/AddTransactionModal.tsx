@@ -16,7 +16,6 @@ import {
   getSharedUsers,
   getCategoryIdByName,
   categorizePurchase,
-  setCategorizedByIA,
 } from "@/api/api";
 
 interface AddTransactionModalProps {
@@ -26,6 +25,8 @@ interface AddTransactionModalProps {
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
+
+  const [rotationAnimation] = useState(new Animated.Value(0));
 
   const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
   const [categories, setCategories] = useState<CategoryData[]>([]);
@@ -46,8 +47,30 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
 
   const [errors, setErrors] = useState({ description: false, amount: false });
+
+  useEffect(() => {
+    let rotationLoop: Animated.CompositeAnimation;
+
+    if (isCategorizing) {
+      rotationLoop = Animated.loop(
+        Animated.timing(rotationAnimation, {
+          toValue: -8,
+          duration: 300, // Faster animation
+          useNativeDriver: true,
+        })
+      );
+      rotationLoop.start();
+    } else {
+      rotationAnimation.setValue(0);
+    }
+
+    return () => {
+      if (rotationLoop) rotationLoop.stop();
+    };
+  }, [isCategorizing]);
 
   const fetchProfileData = useCallback(async () => {
     if (currentProfileId) {
@@ -234,14 +257,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     () =>
       debounce(async (text: string) => {
         if (text && categories.length > 0) {
-          const categorized = await categorizePurchase(
-            text,
-            categories.map((c) => c.name)
-          );
-          if (categorized) {
-            const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
-            setSelectedCategory(categoryId ?? "");
-            setCategorizedByIA(true);
+          setIsCategorizing(true);
+          try {
+            const categorized = await categorizePurchase(
+              text,
+              categories.map((c) => c.name)
+            );
+            if (categorized) {
+              const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
+              setSelectedCategory(categoryId ?? "");
+              setCategorizedByIA(true);
+            }
+          } finally {
+            setIsCategorizing(false);
           }
         }
       }, 500),
@@ -278,17 +306,32 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
             {type === "Outcome" && (
               <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedCategory}
-                  onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                  style={styles.picker}
-                  itemStyle={styles.pickerItem}
-                >
-                  <Picker.Item label="Selecciona una categoría" value="" />
-                  {categories.map((category) => (
-                    <Picker.Item key={category.id} label={category.name} value={category.id} />
-                  ))}
-                </Picker>
+                {isCategorizing && <Animated.View style={[styles.dashedBorder, { transform: [{ translateX: rotationAnimation }] }]} />}
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedCategory}
+                    onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                    style={[styles.picker, { flex: 1 }]}
+                    itemStyle={styles.pickerItem}
+                    enabled={!isCategorizing} // Disable picker while categorizing
+                  >
+                    <Picker.Item label={isCategorizing ? "Categorizando..." : "Selecciona una categoría"} value="" />
+                    {categories.map((category) => (
+                      <Picker.Item key={category.id} label={category.name} value={category.id} />
+                    ))}
+                  </Picker>
+                  {isCategorizing && (
+                    <TouchableOpacity
+                      style={styles.cancelCategorization}
+                      onPress={() => {
+                        debouncedCategorize.cancel();
+                        setIsCategorizing(false);
+                      }}
+                    >
+                      <Icon name="close" size={20} color="#000000" />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             )}
 
@@ -386,7 +429,6 @@ const ParticipantSelect = ({
           <TouchableOpacity style={styles.modalOverlay} activeOpacity={1}>
             <View style={styles.dropdown}>
               <ScrollView>
-                {/* Usar dummyUsers para testear.  */}
                 {displayedUsers?.map((user: string) => (
                   <TouchableOpacity key={user} style={styles.option} onPress={() => toggleUser(user)}>
                     <View style={styles.userRow}>
@@ -535,7 +577,9 @@ const styles = StyleSheet.create({
     color: "#6A1B9A",
     fontSize: 16,
   },
-  picker: {},
+  picker: {
+    marginLeft: -5,
+  },
   pickerContainer: {
     borderWidth: 1,
     borderStyle: "dashed",
@@ -547,7 +591,6 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     fontSize: 16,
-    height: 50,
   },
   selectContainer: {
     marginBottom: 16,
@@ -624,6 +667,28 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: "#FF0000",
     borderWidth: 1,
+  },
+  pickerWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
+  cancelCategorization: {
+    position: "absolute",
+    right: 30,
+    padding: 5,
+  },
+  dashedBorder: {
+    position: "absolute",
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#370185",
+    width: "200%",
   },
 });
 
