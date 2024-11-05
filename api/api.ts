@@ -1342,6 +1342,8 @@ async function removeAllDebts(profileId: string): Promise<void> {
 }
 
 async function updateDebt(profileId: string, paidBy: string, debtor: string, amount: number): Promise<void> {
+  const finalAmount = Math.max(0, amount);
+
   const { data: existingDebt, error: debtError } = await supabase
     .from(DEBTS_TABLE)
     .select("*")
@@ -1357,18 +1359,22 @@ async function updateDebt(profileId: string, paidBy: string, debtor: string, amo
   }
 
   if (existingDebt) {
-    await supabase
-      .from(DEBTS_TABLE)
-      .update({ amount: amount })
-      .eq("profile", existingDebt.profile)
-      .eq("paid_by", paidBy)
-      .eq("debtor", debtor);
-  } else {
+    if (finalAmount > 0) {
+      await supabase
+        .from(DEBTS_TABLE)
+        .update({ amount: finalAmount })
+        .eq("profile", existingDebt.profile)
+        .eq("paid_by", paidBy)
+        .eq("debtor", debtor);
+    } else {
+      await removeDebt(profileId, paidBy, debtor);
+    }
+  } else if (finalAmount > 0) {
     await supabase.from(DEBTS_TABLE).insert({
       profile: profileId,
       paid_by: paidBy,
       debtor: debtor,
-      amount: amount,
+      amount: finalAmount,
       has_paid: false,
     });
   }
