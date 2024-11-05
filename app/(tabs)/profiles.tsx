@@ -7,10 +7,12 @@ import BillyHeader from "@/components/BillyHeader";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRoute, useNavigation } from "@react-navigation/native";
 import { useAppContext } from "@/hooks/useAppContext";
+import PaymentModal from "@/components/modals/PaymentModal";
 
 export default function Profiles() {
   const { user, setCurrentProfileId, refreshBalanceData, profileData, refreshProfileData } = useAppContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const route = useRoute();
   const navigation = useNavigation();
 
@@ -50,8 +52,20 @@ export default function Profiles() {
     }, [refreshBalanceData, refreshProfileData])
   );
 
+  const showPaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(true);
+  }, []);
+
+  const handleClosePaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(false);
+  }, []);
+
   const handleAddProfile = useCallback(() => {
-    setIsModalVisible(true);
+    if (profileData && profileData.length >= 3) {
+      showPaymentModal();
+    } else {
+      setIsModalVisible(true);
+    }
   }, []);
 
   const handleCloseModal = useCallback(() => {
@@ -75,6 +89,7 @@ export default function Profiles() {
         <View style={styles.contentContainer}>{memoizedProfileList}</View>
       </LinearGradient>
       <AddProfileModal isVisible={isModalVisible} onClose={handleCloseModal} onProfileAdded={handleProfileAdded} />
+      <PaymentModal isVisible={isPaymentModalVisible} onClose={handleClosePaymentModal} />
     </View>
   );
 }
