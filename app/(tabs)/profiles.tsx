@@ -66,7 +66,7 @@ export default function Profiles() {
     } else {
       setIsModalVisible(true);
     }
-  }, []);
+  }, [profileData]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalVisible(false);
