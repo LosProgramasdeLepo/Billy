@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useCallback, useState } from "react";
 import { Text, StyleSheet, TouchableOpacity, FlatList, View } from "react-native";
-import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink, isUserPro } from "@/api/api";
+import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink} from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
