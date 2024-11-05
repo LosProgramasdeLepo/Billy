@@ -76,7 +76,7 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile }) => {
       const isSharedProfile = item !== "add" && item.is_shared === true;
 
       if (item === "add") {
-        const isProfileLimitReached = profileData ? profileData.length >= 3 : false;
+        const isProfileLimitReached = profileData ? profileData.length >= 10 : false;
 
         return (
           <TouchableOpacity
