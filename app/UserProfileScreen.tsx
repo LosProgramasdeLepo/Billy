@@ -10,6 +10,7 @@ import {
   verifyPasswordResetCode,
   uploadProfilePicture,
   getProfilePictureUrl,
+  updateUserSharedApp,
 } from "@/api/api";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { BillyHeader } from "@/components/BillyHeader";
@@ -213,8 +214,11 @@ export default function UserProfileScreen() {
   const handleRecommendApp = async () => {
     try {
       await Share.share({
-        message: "¡Descubre Billy! Una app increíble para gestionar tus finanzas. ¡Pruébala ahora! https://billyapp.online",
+        message: "¡Descubrí Billy! Una app para gestionar tus finanzas individuales y grupales https://billyapp.online",
+        title: "Billy - Tu app de finanzas personales y grupales",
+        url: "https://billyapp.online",
       });
+      await updateUserSharedApp(user?.email || "");
     } catch (error) {
       console.error("Error sharing app:", error);
       Alert.alert("Error", "No se pudo compartir la aplicación. Por favor, intente nuevamente.");
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradientContainer: {
-    flex: 1,  
+    flex: 1,
   },
   iconContainer: {
     alignItems: "center",

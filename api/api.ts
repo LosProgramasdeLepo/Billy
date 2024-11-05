@@ -22,6 +22,7 @@ export interface UserData {
   my_profiles?: string[];
   profile_picture?: string;
   is_pro?: boolean;
+  shared_app?: number;
 }
 
 export interface IncomeData {
@@ -935,6 +936,22 @@ export async function getProfilePictureUrl(email: string) {
 
 export async function updateUserIsPro(email: string, isPro: boolean) {
   return await updateData(USERS_TABLE, "is_pro", isPro, "email", email);
+}
+
+export async function updateUserSharedApp(email: string) {
+  try {
+    const { data, error } = await supabase.rpc("increment_shared_app", { user_email: email });
+
+    if (error) {
+      console.error("Error incrementing shared_app:", error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Unexpected error incrementing shared_app:", error);
+    return null;
+  }
 }
 
 export async function isUserPro(email: string) {
