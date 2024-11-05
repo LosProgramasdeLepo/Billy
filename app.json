@@ -4,7 +4,7 @@
     "slug": "sistema-contable",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Billy/icon.png",
+    "icon": "./assets/images/Billy/billy-icon-padded.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/Billy/icon.png",
+        "foregroundImage": "./assets/images/Billy/billy-icon-padded.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.billy"
@@ -26,7 +26,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/Billy/icon.png"
+      "favicon": "./assets/images/Billy/billy-icon-padded.png"
     },
     "plugins": [
       "expo-router",
