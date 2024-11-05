@@ -10,6 +10,7 @@ import {
   verifyPasswordResetCode,
   uploadProfilePicture,
   getProfilePictureUrl,
+  updateUserSharedApp,
 } from "@/api/api";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { BillyHeader } from "@/components/BillyHeader";
@@ -18,6 +19,7 @@ import { ChangePasswordModal } from "@/components/modals/ChangePasswordModal";
 import { VerificationModal } from "@/components/modals/VerificationModal";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
+import { Share } from "react-native";
 
 const EditableField = ({
   label,
@@ -209,10 +211,24 @@ export default function UserProfileScreen() {
     navigation.goBack();
   };
 
+  const handleRecommendApp = async () => {
+    try {
+      await Share.share({
+        message: "¡Descubrí Billy! Una app para gestionar tus finanzas individuales y grupales https://billyapp.online",
+        title: "Billy - Tu app de finanzas personales y grupales",
+        url: "https://billyapp.online",
+      });
+      await updateUserSharedApp(user?.email || "");
+    } catch (error) {
+      console.error("Error sharing app:", error);
+      Alert.alert("Error", "No se pudo compartir la aplicación. Por favor, intente nuevamente.");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-        <BillyHeader title="Perfil de usuario" />
+        <BillyHeader />
         <View style={styles.modalContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Icon name="arrow-back" size={30} color="#000000" />
@@ -221,12 +237,6 @@ export default function UserProfileScreen() {
           <View style={styles.contentContainer}>
             <View style={styles.iconContainer}>
               <Image source={userIcon ? { uri: userIcon } : require("@/assets/images/icons/UserIcon.png")} style={styles.userIcon} />
-
-              {isEditing && (
-                <TouchableOpacity style={styles.cameraIconButton} onPress={handleChangeIcon}>
-                  <Icon name="camera-alt" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-              )}
             </View>
 
             <EditableField
@@ -255,8 +265,6 @@ export default function UserProfileScreen() {
                 {userEmail}
               </Text>
             </View>
-
-            {/*<EditableField label="Mail" value={userEmail} isEditing={isEditing} editingField={editingField || ''} fieldName="email" onChangeText={setUserEmail} onEditField={handleEditField}/> */}
 
             <TouchableOpacity
               style={[styles.button, isEditing ? styles.saveButton : null, isUpdating ? styles.disabledButton : null]}
@@ -290,6 +298,14 @@ export default function UserProfileScreen() {
               onSubmit={handlePasswordSubmit}
             />
           </View>
+
+          {!isEditing && (
+            <View style={styles.bottomButtonContainer}>
+              <TouchableOpacity style={[styles.button, styles.recommendButton]} onPress={handleRecommendApp}>
+                <Text style={styles.buttonText}>Recomendar App</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -301,9 +317,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradientContainer: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 12,
+    flex: 1,
   },
   iconContainer: {
     alignItems: "center",
@@ -332,6 +346,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginHorizontal: "2.5%",
+    marginTop: 10,
   },
   contentContainer: {
     width: "100%",
@@ -418,5 +433,14 @@ const styles = StyleSheet.create({
   },
   fieldValue: {
     fontSize: 16,
+  },
+  bottomButtonContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  recommendButton: {
+    backgroundColor: "#4CAF50",
   },
 });

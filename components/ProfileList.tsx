@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useCallback, useState } from "react";
 import { Text, StyleSheet, TouchableOpacity, FlatList, View } from "react-native";
-import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink } from "@/api/api";
+import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink} from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -11,9 +11,10 @@ import { formatNumber } from "@/lib/utils";
 
 interface ProfileListProps {
   onAddProfile: () => void;
+  isPro: boolean;
 }
 
-export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile }) => {
+export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile, isPro }) => {
   const { profileData, currentProfileId, refreshProfileData, user } = useAppContext();
 
   const navigation = useNavigation();
@@ -73,12 +74,27 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile }) => {
   const renderItem = useCallback(
     ({ item }: { item: ProfileData | "add" }) => {
       const isCurrentProfile = item !== "add" && item.id === localCurrentProfileId;
-      const isSharedProfile = item !== "add" && item.is_shared == true;
+      const isSharedProfile = item !== "add" && item.is_shared === true;
+
       if (item === "add") {
+        
+        const isProfileLimitReached = profileData ? profileData.length >= 3 && !isPro : false;
+
         return (
-          <TouchableOpacity style={[styles.profileItem, styles.addButton]} onPress={onAddProfile}>
-            <Ionicons name="add-circle-outline" size={40} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Agregar Perfil</Text>
+          <TouchableOpacity
+            style={[styles.profileItem, styles.addButton]}
+            onPress={onAddProfile}
+          >
+            <View style={styles.addButtonContent}>
+              <Ionicons name="add-circle-outline" size={40} color="#FFFFFF" />
+              <Text style={styles.addButtonText}>Agregar Perfil</Text>
+              {isProfileLimitReached && (
+                <View style={styles.lockIconContainer}>
+                  {/* TODO: cambiar el tamano del candado a gusto. */}
+                  <Ionicons name="lock-closed-outline" size={28} color="#FFFFFF" />
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         );
       }
@@ -101,7 +117,7 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile }) => {
         </TouchableOpacity>
       );
     },
-    [onAddProfile, handleProfilePress, handleLongPress, localCurrentProfileId, handleSharePress]
+    [onAddProfile, handleProfilePress, handleLongPress, localCurrentProfileId, handleSharePress, profileData]
   );
 
   const sortedData = useMemo(() => {
@@ -175,5 +191,17 @@ const styles = StyleSheet.create({
     top: 5,
     right: 5,
     padding: 5,
+  },
+  addButtonContent: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    height: 60,
+  },
+  lockIconContainer: {
+    position: "absolute",
+    top: -40,
+    right: -10,
   },
 });

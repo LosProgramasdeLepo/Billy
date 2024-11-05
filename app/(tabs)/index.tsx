@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { TransactionList } from "@/components/TransactionList";
 import { BalanceCard } from "@/components/BalanceCard";
 import { CategoryList } from "@/components/CategoryList";
@@ -16,6 +16,8 @@ export default function HomeScreen() {
 
   const [shared, setShared] = useState<boolean | null>(null);
   const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchProfile = useCallback(async () => {
     if (!user?.email) return false;
@@ -55,6 +57,18 @@ export default function HomeScreen() {
     return profileChanged;
   }, [user?.email, setCurrentProfileId, currentProfileId, shared, sharedUsers]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const profileChanged = await fetchProfile();
+      if (profileChanged) {
+        await refreshAllData();
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchProfile, refreshAllData]);
+
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
@@ -76,7 +90,9 @@ export default function HomeScreen() {
       <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
         <BillyHeader />
         <View style={styles.contentContainer}>
-          <ScrollView>
+          <ScrollView
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#4B00B8"]} tintColor="#4B00B8" />}
+          >
             {!shared && <BalanceCard />}
 
             {shared && (
@@ -95,7 +111,7 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.sectionContainer}>
-              <TransactionList scrollEnabled={false} showHeader={true} showDateSeparators={false} timeRange="month" />
+              <TransactionList scrollEnabled={false} showHeader={true} showDateSeparators={false} timeRange="all" limit={5} />
             </View>
           </ScrollView>
         </View>

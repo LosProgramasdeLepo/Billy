@@ -1,18 +1,27 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { StyleSheet, View, Alert } from "react-native";
 import { ProfileList } from "@/components/ProfileList";
-import { processInvitation } from "@/api/api";
+import { processInvitation, isUserPro } from "@/api/api";
 import AddProfileModal from "@/components/modals/AddProfileModal";
 import BillyHeader from "@/components/BillyHeader";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRoute, useNavigation } from "@react-navigation/native";
 import { useAppContext } from "@/hooks/useAppContext";
+import PaymentModal from "@/components/modals/PaymentModal";
 
 export default function Profiles() {
   const { user, setCurrentProfileId, refreshBalanceData, profileData, refreshProfileData } = useAppContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const route = useRoute();
   const navigation = useNavigation();
+  const [isPro, setIsPro] = useState(false);
+
+  const isProfileLimitReached = useCallback(async () => {
+    const isPro = await isUserPro(user?.email || "");
+    setIsPro(isPro);
+    return (profileData && profileData.length >= 3) && !isPro;
+  }, [profileData, isUserPro, user?.email]);
 
   const processInvitationLink = useCallback(async () => {
     const params = route.params as { invitationId?: string } | undefined;
@@ -50,9 +59,24 @@ export default function Profiles() {
     }, [refreshBalanceData, refreshProfileData])
   );
 
-  const handleAddProfile = useCallback(() => {
-    setIsModalVisible(true);
+  const showPaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(true);
   }, []);
+
+  const handleClosePaymentModal = useCallback(() => {
+    setIsPaymentModalVisible(false);
+  }, []);
+
+  const handleAddProfile = useCallback(() => {
+    isProfileLimitReached().then((isLimitReached) => {
+      if (isLimitReached) {
+        showPaymentModal();
+      } else {
+        setIsModalVisible(true);
+      }
+      return isLimitReached;
+    });
+  }, [isProfileLimitReached, showPaymentModal]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalVisible(false);
@@ -64,8 +88,8 @@ export default function Profiles() {
   }, [refreshProfileData, handleCloseModal]);
 
   const memoizedProfileList = useMemo(
-    () => <ProfileList onAddProfile={handleAddProfile} />,
-    [profileData, refreshProfileData, handleAddProfile]
+    () => <ProfileList onAddProfile={handleAddProfile} isPro={isPro} />,
+    [profileData, refreshProfileData, handleAddProfile, isPro]
   );
 
   return (
@@ -75,6 +99,7 @@ export default function Profiles() {
         <View style={styles.contentContainer}>{memoizedProfileList}</View>
       </LinearGradient>
       <AddProfileModal isVisible={isModalVisible} onClose={handleCloseModal} onProfileAdded={handleProfileAdded} />
+      <PaymentModal isVisible={isPaymentModalVisible} onClose={handleClosePaymentModal} />
     </View>
   );
 }

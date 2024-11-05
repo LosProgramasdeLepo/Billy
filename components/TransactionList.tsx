@@ -19,6 +19,7 @@ interface TransactionListProps {
   timeRange: "all" | "day" | "week" | "month" | "year" | "custom";
   customStartDate?: Date;
   customEndDate?: Date;
+  limit?: number;
 }
 
 export const TransactionList: React.FC<TransactionListProps> = ({
@@ -28,6 +29,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   timeRange,
   customStartDate,
   customEndDate,
+  limit,
 }) => {
   const {
     incomeData,
@@ -91,11 +93,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       }
     });
 
+    const limitedTransactions = limit ? filteredTransactions.slice(0, limit) : filteredTransactions;
+
     if (!showDateSeparators) {
-      return filteredTransactions;
+      return limitedTransactions;
     }
 
-    const grouped = filteredTransactions.reduce((acc, transaction) => {
+    const grouped = limitedTransactions.reduce((acc, transaction) => {
       const date = moment(transaction.created_at).utc().format("YYYY-MM-DD");
       if (!acc[date]) acc[date] = [];
       acc[date].push(transaction);
@@ -103,11 +107,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }, {} as Record<string, (IncomeData | OutcomeData)[]>);
 
     return Object.entries(grouped).map(([date, transactions]) => ({ date, data: transactions }));
-  }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators]);
+  }, [incomeData, outcomeData, sortTransactions, timeRange, customStartDate, customEndDate, showDateSeparators, limit]);
 
   const handlePress = useCallback(async (transaction: IncomeData | OutcomeData) => {
-    setSelectedTransaction(transaction);
     if ((transaction as OutcomeData).shared_outcome) {
+      setSelectedTransaction(transaction);
       const sharedOutcome = (transaction as OutcomeData).shared_outcome;
       if (sharedOutcome) {
         const sharedOutcomeData = await getSharedOutcomeWithNames(sharedOutcome);
@@ -174,7 +178,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
   const renderTransactionItem = useCallback(
     ({ item }: { item: IncomeData | OutcomeData }) => (
-      <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
+      <TouchableOpacity
+        onPress={() => ((item as OutcomeData).shared_outcome ? handlePress(item) : null)}
+        onLongPress={() => handleLongPress(item)}
+      >
         <View style={styles.card}>
           <View style={styles.iconContainer}>
             {(item as any).type === "income" ? (

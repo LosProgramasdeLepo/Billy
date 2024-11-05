@@ -1,8 +1,12 @@
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert } from "react-native";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAppContext } from "@/hooks/useAppContext";
+import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
+import { debounce } from "lodash";
+import moment from "moment";
 import {
   addIncome,
   addOutcome,
@@ -13,9 +17,6 @@ import {
   getCategoryIdByName,
   categorizePurchase,
 } from "@/api/api";
-import moment from "moment";
-import { useAppContext } from "@/hooks/useAppContext";
-import { debounce } from "lodash";
 
 interface AddTransactionModalProps {
   isVisible: boolean;
@@ -25,21 +26,51 @@ interface AddTransactionModalProps {
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
 
+  const [rotationAnimation] = useState(new Animated.Value(0));
+
+  const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
+  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [shared, setShared] = useState<boolean | null>(null);
+
+  const [bubbleAnimation] = useState(new Animated.Value(0));
+
   const [type, setType] = useState<"Income" | "Outcome">("Income");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [description, setDescription] = useState("");
-  const [bubbleAnimation] = useState(new Animated.Value(0));
-  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [shared, setShared] = useState<boolean | null>(null);
-  const [sharedUsers, setSharedUsers] = useState<string[] | null>(null);
+  const [ticketScanned, setTicketScanned] = useState<boolean>(false);
+  const [categorizedByIA, setCategorizedByIA] = useState<boolean>(false);
+
   const [selectedSharedUser, setSelectedSharedUser] = useState<string[] | null>(null);
   const [whoPaidIt, setWhoPaidIt] = useState<string[] | null>(null);
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
 
   const [errors, setErrors] = useState({ description: false, amount: false });
+
+  useEffect(() => {
+    let rotationLoop: Animated.CompositeAnimation;
+
+    if (isCategorizing) {
+      rotationLoop = Animated.loop(
+        Animated.timing(rotationAnimation, {
+          toValue: -8,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      );
+      rotationLoop.start();
+    } else {
+      rotationAnimation.setValue(0);
+    }
+
+    return () => {
+      if (rotationLoop) rotationLoop.stop();
+    };
+  }, [isCategorizing]);
 
   const fetchProfileData = useCallback(async () => {
     if (currentProfileId) {
@@ -91,6 +122,34 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     if (selectedDate) setDate(selectedDate);
   }, []);
 
+  const handleScanTicket = async () => {
+    // Pido permisos para usar la camara
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert("Permisos requerido", "Necesitamos permisos para escanear tickets.");
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        // Acá se le debería enviar la imagen a la IA
+        // setDescription('Ticket escaneado - Procesando...');
+        // setAmount('Ticket escaneado - Procesando...');
+        // setSelectedCategory('Ticket escaneado - Procesando...');
+        setTicketScanned(true);
+      }
+    } catch (error) {
+      console.error("Error accediendo a la cámara:", error);
+      Alert.alert("Error", "No se pudo acceder a la cámara. Por favor, intenta de nuevo.");
+    }
+  };
+
   const handleSubmit = useCallback(async () => {
     const newErrors = {
       description: !description.trim(),
@@ -119,7 +178,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           description,
           date,
           whoPaidIt[0],
-          selectedSharedUser || []
+          selectedSharedUser || [],
+          categorizedByIA,
+          ticketScanned
         );
       } else {
         await addOutcome(currentProfileId ?? "", categoryToUse || "", parseFloat(amount), description, date);
@@ -196,13 +257,19 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     () =>
       debounce(async (text: string) => {
         if (text && categories.length > 0) {
-          const categorized = await categorizePurchase(
-            text,
-            categories.map((c) => c.name)
-          );
-          if (categorized) {
-            const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
-            setSelectedCategory(categoryId ?? "");
+          setIsCategorizing(true);
+          try {
+            const categorized = await categorizePurchase(
+              text,
+              categories.map((c) => c.name)
+            );
+            if (categorized) {
+              const categoryId = await getCategoryIdByName(currentProfileId ?? "", categorized);
+              setSelectedCategory(categoryId ?? "");
+              setCategorizedByIA(true);
+            }
+          } finally {
+            setIsCategorizing(false);
           }
         }
       }, 500),
@@ -239,21 +306,35 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
             {type === "Outcome" && (
               <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedCategory}
-                  onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                  style={styles.picker}
-                  itemStyle={styles.pickerItem}
-                >
-                  <Picker.Item label="Selecciona una categoría" value="" />
-                  {categories.map((category) => (
-                    <Picker.Item key={category.id} label={category.name} value={category.id} />
-                  ))}
-                </Picker>
+                {isCategorizing && <Animated.View style={[styles.dashedBorder, { transform: [{ translateX: rotationAnimation }] }]} />}
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedCategory}
+                    onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                    style={[styles.picker, { flex: 1 }]}
+                    itemStyle={styles.pickerItem}
+                    enabled={!isCategorizing}
+                  >
+                    <Picker.Item label={isCategorizing ? "Categorizando..." : "Selecciona una categoría"} value="" />
+                    {categories.map((category) => (
+                      <Picker.Item key={category.id} label={category.name} value={category.id} />
+                    ))}
+                  </Picker>
+                  {isCategorizing && (
+                    <TouchableOpacity
+                      style={styles.cancelCategorization}
+                      onPress={() => {
+                        debouncedCategorize.cancel();
+                        setIsCategorizing(false);
+                      }}
+                    >
+                      <Icon name="close" size={20} color="#000000" />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             )}
 
-            {/* no me la quiero complicar, voy a copiar codigo. Despues optmizo */}
             {type === "Outcome" && shared && (
               <ParticipantSelect sharedUsers={sharedUsers} onSelect={(users: string[]) => setWhoPaidIt(users)} singleSelection={true} />
             )}
@@ -277,7 +358,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
 
             {type === "Outcome" && (
-              <TouchableOpacity style={styles.scanButton}>
+              <TouchableOpacity style={styles.scanButton} onPress={handleScanTicket}>
                 <Text style={styles.scanButtonText}>Escanear ticket</Text>
               </TouchableOpacity>
             )}
@@ -320,13 +401,26 @@ const ParticipantSelect = ({
     setIsOpen(false);
   };
 
-  // Filter out whoPaidIt from sharedUsers when not in single selection mode
+  const getButtonText = () => {
+    if (singleSelection) {
+      if (selectedUsers.length > 0) {
+        return `${selectedUsers[0]}`;
+      }
+      return "¿Quién Pagó?";
+    }
+    if (selectedUsers.length > 0) {
+      const count = selectedUsers.length;
+      return `${count} ${count === 1 ? "Participante" : "Participantes"}`;
+    }
+    return "Seleccionar Participantes";
+  };
+
   const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter((user) => user !== whoPaidIt) || [];
 
   return (
     <View style={styles.selectContainer}>
       <TouchableOpacity style={styles.selectButton} onPress={() => setIsOpen(!isOpen)}>
-        <Text style={styles.selectButtonText}>{singleSelection ? "¿Quién Pago?" : "Participantes"}</Text>
+        <Text style={styles.selectButtonText}>{getButtonText()}</Text>
         <Icon name={isOpen ? "chevron-up" : "chevron-down"} size={24} color="#000" />
       </TouchableOpacity>
 
@@ -335,7 +429,6 @@ const ParticipantSelect = ({
           <TouchableOpacity style={styles.modalOverlay} activeOpacity={1}>
             <View style={styles.dropdown}>
               <ScrollView>
-                {/* Usar dummyUsers para testear.  */}
                 {displayedUsers?.map((user: string) => (
                   <TouchableOpacity key={user} style={styles.option} onPress={() => toggleUser(user)}>
                     <View style={styles.userRow}>
@@ -484,7 +577,9 @@ const styles = StyleSheet.create({
     color: "#6A1B9A",
     fontSize: 16,
   },
-  picker: {},
+  picker: {
+    marginLeft: -5,
+  },
   pickerContainer: {
     borderWidth: 1,
     borderStyle: "dashed",
@@ -496,7 +591,6 @@ const styles = StyleSheet.create({
   },
   pickerItem: {
     fontSize: 16,
-    height: 50,
   },
   selectContainer: {
     marginBottom: 16,
@@ -506,14 +600,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: "#ddd",
+    backgroundColor: "#f9f9f9",
+    minHeight: 48,
   },
   selectButtonText: {
     fontSize: 16,
-    color: "#000",
+    flex: 1,
+    marginRight: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -550,7 +646,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 5, // Adjust as needed
+    paddingVertical: 5,
   },
   checkedBox: {
     backgroundColor: "#370185",
@@ -575,11 +671,24 @@ const styles = StyleSheet.create({
   pickerWrapper: {
     flexDirection: "row",
     alignItems: "center",
+    position: "relative",
   },
-  loadingIconContainer: {
+  cancelCategorization: {
     position: "absolute",
-    right: 40,
-    paddingRight: 10,
+    right: 30,
+    padding: 5,
+  },
+  dashedBorder: {
+    position: "absolute",
+    top: -1,
+    left: -1,
+    right: -1,
+    bottom: -1,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#370185",
+    width: "200%",
   },
 });
 
