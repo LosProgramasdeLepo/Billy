@@ -61,7 +61,7 @@ export default function Profiles() {
   }, []);
 
   const handleAddProfile = useCallback(() => {
-    if (profileData && profileData.length >= 3) {
+    if (profileData && profileData.length >= 10) {
       showPaymentModal();
     } else {
       setIsModalVisible(true);
