@@ -162,7 +162,7 @@ export const SharedBalanceCard = () => {
       const success = await redistributeDebts(currentProfileId);
       if (success) {
         Alert.alert("Operación exitosa", "Las deudas han sido redistribuidas.");
-        refreshDebts(); // Asegúrate de que las deudas se actualicen
+        refreshDebts();
       } else {
         Alert.alert("Error", "No se pudieron redistribuir las deudas. Por favor, inténtelo de nuevo.");
       }
@@ -180,9 +180,9 @@ export const SharedBalanceCard = () => {
     }
   };
 
-  // En el renderizado de deudas, filtra las que ya han sido pagadas
   const filteredDebtsToUser = debtsToUser.filter((debt) => !debt.has_paid);
   const filteredDebtsFromUser = debtsFromUser.filter((debt) => !debt.has_paid);
+  const hasMoreDebts = filteredDebtsToUser.length + filteredDebtsFromUser.length > 1;
 
   return (
     <LinearGradient colors={["#e8e0ff", "#d6c5fc"]} start={[0, 0]} end={[1, 1]} style={styles.card}>
@@ -225,36 +225,40 @@ export const SharedBalanceCard = () => {
           />
         )}
 
-        {isExpanded &&
-          filteredDebtsToUser
-            .slice(1)
-            .map((debt, index) => (
+        {isExpanded && (
+          <>
+            {filteredDebtsToUser
+              .slice(1)
+              .map((debt, index) => (
+                <DebtEntryComponent
+                  key={debt.id || index}
+                  name1="Tú"
+                  name2={userNames[debt.debtor]}
+                  amount={debt.amount}
+                  avatar1={userAvatars[user?.email ?? ""]}
+                  avatar2={userAvatars[debt.debtor]}
+                />
+              ))}
+
+            {filteredDebtsFromUser.map((debt, index) => (
               <DebtEntryComponent
                 key={debt.id || index}
-                name1="Tú"
+                name1={userNames[debt.paid_by]}
                 name2={userNames[debt.debtor]}
                 amount={debt.amount}
-                avatar1={userAvatars[user?.email ?? ""]}
+                avatar1={userAvatars[debt.paid_by]}
                 avatar2={userAvatars[debt.debtor]}
               />
             ))}
-
-        {isExpanded &&
-          filteredDebtsFromUser.map((debt, index) => (
-            <DebtEntryComponent
-              key={debt.id || index}
-              name1={userNames[debt.paid_by]}
-              name2={userNames[debt.debtor]}
-              amount={debt.amount}
-              avatar1={userAvatars[debt.paid_by]}
-              avatar2={userAvatars[debt.debtor]}
-            />
-          ))}
+          </>
+        )}
       </View>
 
-      <TouchableOpacity onPress={toggleExpanded}>
-        <Text style={styles.viewAll}>{isExpanded ? "Ver menos" : "Ver todo"}</Text>
-      </TouchableOpacity>
+      {hasMoreDebts && (
+        <TouchableOpacity onPress={toggleExpanded}>
+          <Text style={styles.viewAll}>{isExpanded ? "Ver menos" : "Ver todo"}</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.redistributeButton} onPress={handleRedistributeDebts}>
         <Ionicons name="swap-horizontal" size={24} color="#fff" />
