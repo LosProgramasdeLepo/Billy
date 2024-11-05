@@ -24,9 +24,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isVisible, onClose }) => {
             <Ionicons name="star-outline" size={24} color="#FFD700" style={styles.crownIcon} />
           </View>
           <Text style={styles.message}>
-            Obtene perfiles ilimitados, colores de customización, y mucho más!
+            Obtene perfiles ilimitados, colores de customización y mucho más!
           </Text>
           <Button color="#4B00B8" title="Me sumo ahora mismo" onPress={handlePayment} />
+          <View style={{ marginVertical: 5 }} />
           <Button color="#4B00B8" title="No gracias" onPress={onClose} />
         </View>
       </View>
