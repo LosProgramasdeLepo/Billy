@@ -21,6 +21,7 @@ export interface UserData {
   currentProfile?: string;
   my_profiles?: string[];
   profile_picture?: string;
+  is_pro?: boolean;
 }
 
 export interface IncomeData {
@@ -930,6 +931,14 @@ async function updateProfilePictureUrl(email: string, profilePictureUrl: string)
 
 export async function getProfilePictureUrl(email: string) {
   return await getValueFromData(USERS_TABLE, "profile_picture_url", "email", email);
+}
+
+export async function updateUserIsPro(email: string, isPro: boolean) {
+  return await updateData(USERS_TABLE, "is_pro", isPro, "email", email);
+}
+
+export async function isUserPro(email: string) {
+  return await getValueFromData(USERS_TABLE, "is_pro", "email", email);
 }
 
 /* Stats */
