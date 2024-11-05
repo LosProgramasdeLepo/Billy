@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { StyleSheet, View, Alert } from "react-native";
 import { ProfileList } from "@/components/ProfileList";
-import { processInvitation } from "@/api/api";
+import { processInvitation, isUserPro } from "@/api/api";
 import AddProfileModal from "@/components/modals/AddProfileModal";
 import BillyHeader from "@/components/BillyHeader";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +15,13 @@ export default function Profiles() {
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const route = useRoute();
   const navigation = useNavigation();
+  const [isPro, setIsPro] = useState(false);
+
+  const isProfileLimitReached = useCallback(async () => {
+    const isPro = await isUserPro(user?.email || "");
+    setIsPro(isPro);
+    return (profileData && profileData.length >= 3) && !isPro;
+  }, [profileData, isUserPro, user?.email]);
 
   const processInvitationLink = useCallback(async () => {
     const params = route.params as { invitationId?: string } | undefined;
@@ -61,12 +68,15 @@ export default function Profiles() {
   }, []);
 
   const handleAddProfile = useCallback(() => {
-    if (profileData && profileData.length >= 10) {
-      showPaymentModal();
-    } else {
-      setIsModalVisible(true);
-    }
-  }, [profileData]);
+    isProfileLimitReached().then((isLimitReached) => {
+      if (isLimitReached) {
+        showPaymentModal();
+      } else {
+        setIsModalVisible(true);
+      }
+      return isLimitReached;
+    });
+  }, [isProfileLimitReached, showPaymentModal]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalVisible(false);
@@ -78,8 +88,8 @@ export default function Profiles() {
   }, [refreshProfileData, handleCloseModal]);
 
   const memoizedProfileList = useMemo(
-    () => <ProfileList onAddProfile={handleAddProfile} />,
-    [profileData, refreshProfileData, handleAddProfile]
+    () => <ProfileList onAddProfile={handleAddProfile} isPro={isPro} />,
+    [profileData, refreshProfileData, handleAddProfile, isPro]
   );
 
   return (
