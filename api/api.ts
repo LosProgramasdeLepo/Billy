@@ -1,9 +1,12 @@
-import { supabase } from "../lib/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createURL } from "expo-linking";
-import { Alert } from "react-native";
-import { decode } from "base64-arraybuffer";
-import { AuthError } from "@supabase/supabase-js";
+import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createURL } from 'expo-linking';
+import { Alert } from 'react-native';
+import { decode } from 'base64-arraybuffer';
+import { AuthError } from '@supabase/supabase-js';
+import { HfInference } from '@huggingface/inference';
+import * as http from 'http';
+
 
 const INCOMES_TABLE = "Incomes";
 const OUTCOMES_TABLE = "Outcomes";
@@ -1719,25 +1722,26 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
 
 /* AI */
 
-export const categorizePurchase = async (description: string, categories: string[]): Promise<string | null> => {
+export async function categorizePurchase(text: string, categories: string[]): Promise<string> {
+  const hf = new HfInference('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'); // Reemplaza con tu token de Hugging Face
   try {
-    const response = await fetch("http://10.9.67.45:3000/categorize", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ description, categories }),
+    // Llamar a la función zeroShotClassification con el texto y las categorías
+    const result = await hf.zeroShotClassification({
+      model: 'facebook/bart-large-mnli', // Modelo que estás utilizando
+      inputs: [text], // El texto a clasificar
+      parameters: { candidate_labels: categories }, // Categorías posibles
     });
 
-    if (!response.ok) {
-      const errorText = await response.text(); // Agregado para obtener más información
-      throw new Error(`Error en la solicitud: ${response.status} ${errorText}`);
-    }
+    // Devolver la categoría con la puntuación más alta
+    const highestScoreIndex = result[0].scores.indexOf(Math.max(...result[0].scores));
+    const category = result[0].labels[highestScoreIndex];
 
-    const data = await response.json();
-    return data.category;
+    console.log('Categoría:', category);
+
+    return category; // Devolver la categoría con la puntuación más alta
+
   } catch (error) {
-    console.error("Error al categorizar la compra:", error);
-    return null;
+    console.error('Error en la clasificación:', error);
+    throw new Error('Hubo un error al clasificar el texto.');
   }
-};
+}
