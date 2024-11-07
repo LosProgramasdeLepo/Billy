@@ -170,35 +170,35 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       total: null as number | null,
       description: "" as string,
     };
-  
+
     // Convert OCR result to plain text and split into lines
     const lines = ocrResult.map((block: any) => block.text.trim());
     const fullText = lines.join(" ").toLowerCase();
-  
+
     console.log("OCR Full Text:", fullText); // Debug log
-  
+
     // Array to store all found amounts
     const foundAmounts: number[] = [];
-  
+
     // Function to parse amount string to number
     const parseAmount = (amountStr: string): number | null => {
-      const cleaned = amountStr.replace(/[^0-9.,]/g, '');
-      
+      const cleaned = amountStr.replace(/[^0-9.,]/g, "");
+
       let amount: number;
-      if (cleaned.includes(',') && cleaned.includes('.')) {
+      if (cleaned.includes(",") && cleaned.includes(".")) {
         // Format: 1,234.56
-        amount = parseFloat(cleaned.replace(/,/g, ''));
-      } else if (cleaned.includes(',')) {
+        amount = parseFloat(cleaned.replace(/,/g, ""));
+      } else if (cleaned.includes(",")) {
         // Format: 1234,56
-        amount = parseFloat(cleaned.replace(',', '.'));
+        amount = parseFloat(cleaned.replace(",", "."));
       } else {
         // Format: 1234.56 or 1234
         amount = parseFloat(cleaned);
       }
-  
+
       return !isNaN(amount) && amount > 0 ? amount : null;
     };
-  
+
     // Look for amounts with common total patterns first
     const totalPatterns = [
       /total[\s:]*\$\s*([\d,.]+)/i,
@@ -206,7 +206,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       /importe total[\s:]*\$\s*([\d,.]+)/i,
       /\btotal\b[\s:]*\$\s*([\d,.]+)/i,
     ];
-  
+
     // Check for amounts with total patterns
     for (const pattern of totalPatterns) {
       const match = fullText.match(pattern);
@@ -218,46 +218,44 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
         }
       }
     }
-  
+
     // Look for all dollar amounts in the text
     const dollarPattern = /(?:\$\s*)?([\d,.]+)/g;
     let match;
     while ((match = dollarPattern.exec(fullText)) !== null) {
       const amountStr = match[1];
       // Only process if it looks like a price (has decimal points)
-      if (amountStr.includes('.')) {
+      if (amountStr.includes(".")) {
         const amount = parseAmount(match[1]);
-        if (amount !== null && amount < 1000000) { // Avoid unreasonably large numbers
+        if (amount !== null && amount < 1000000) {
+          // Avoid unreasonably large numbers
           console.log("Found dollar amount:", amount);
           foundAmounts.push(amount);
         }
       }
     }
-  
-    // If we found any amounts, use the largest one
+
+    // If it found any amounts, use the largest one
     if (foundAmounts.length > 0) {
       extractedData.total = Math.max(...foundAmounts);
       console.log("Selected largest amount:", extractedData.total);
     }
-  
+
     // Function to clean and truncate description
     const cleanDescription = (text: string): string => {
       return text
         .trim()
-        .replace(/[^\w\s]/g, '') // Remove special characters
-        .replace(/\s+/g, ' ')    // Replace multiple spaces with single space
-        .slice(0, 20)            // Limit to 20 characters
+        .replace(/[^\w\s]/g, "") // Remove special characters
+        .replace(/\s+/g, " ") // Replace multiple spaces with single space
+        .slice(0, 20) // Limit to 20 characters
         .trim();
     };
-  
+
     // Extract business name or description
-    const businessPatterns = [
-      /(?:razon social|empresa|negocio)[\s:]+([^\n]+)/i,
-      /^([A-Z][A-Za-z\s]+(?:S\.?A\.?|S\.?R\.?L\.?))/m,
-    ];
-  
+    const businessPatterns = [/(?:razon social|empresa|negocio)[\s:]+([^\n]+)/i, /^([A-Z][A-Za-z\s]+(?:S\.?A\.?|S\.?R\.?L\.?))/m];
+
     let possibleDescriptions: string[] = [];
-  
+
     // Try business patterns first
     for (const pattern of businessPatterns) {
       const match = fullText.match(pattern);
@@ -265,32 +263,34 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
         possibleDescriptions.push(cleanDescription(match[1]));
       }
     }
-  
+
     // If no matches from patterns, look at first few lines
     if (possibleDescriptions.length === 0) {
-      for (const line of lines.slice(0, 5)) { // Only look at first 5 lines
+      for (const line of lines.slice(0, 5)) {
+        // Only look at first 5 lines
         const trimmedLine = line.trim();
-        if (trimmedLine && 
-            trimmedLine.length > 3 && 
-            !trimmedLine.match(/^[\d.,\s$]+$/) &&     // Avoid lines with just numbers
-            !trimmedLine.toLowerCase().includes('total') && // Avoid total lines
-            !trimmedLine.match(/^[0-9-]+$/) &&        // Avoid invoice numbers
-            !trimmedLine.match(/^\d{2}\/\d{2}\/\d{2,4}$/) // Avoid dates
+        if (
+          trimmedLine &&
+          trimmedLine.length > 3 &&
+          !trimmedLine.match(/^[\d.,\s$]+$/) && // Avoid lines with just numbers
+          !trimmedLine.toLowerCase().includes("total") && // Avoid total lines
+          !trimmedLine.match(/^[0-9-]+$/) && // Avoid invoice numbers
+          !trimmedLine.match(/^\d{2}\/\d{2}\/\d{2,4}$/) // Avoid dates
         ) {
           possibleDescriptions.push(cleanDescription(trimmedLine));
         }
       }
     }
-  
+
     // Select the shortest non-empty description
     if (possibleDescriptions.length > 0) {
       extractedData.description = possibleDescriptions
-        .filter(desc => desc.length >= 3) // Must be at least 3 chars
+        .filter((desc) => desc.length >= 3) // Must be at least 3 chars
         .sort((a, b) => a.length - b.length)[0]; // Get shortest valid description
     } else {
       extractedData.description = "Ticket";
     }
-  
+
     console.log("Final extracted data:", extractedData);
     return extractedData;
   };
