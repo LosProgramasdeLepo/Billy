@@ -131,3 +131,7 @@ fabric.properties
 # https://plugins.jetbrains.com/plugin/8053-azure-toolkit-for-intellij
 .idea/**/azureSettings.xml
 yarn.lock
+
+# Android
+android/app/build
+
