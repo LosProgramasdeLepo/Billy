@@ -16,7 +16,6 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
   const [sharedUsers, setSharedUsers] = useState("");
   const [emailBlocks, setEmailBlocks] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [errors, setErrors] = useState({ name: false });
 
   const handleNameChange = (text: string) => {
@@ -26,9 +25,10 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
   const handleSharedUsersChange = (text: string) => {
     setSharedUsers(text);
-    if (text.endsWith(" ")) {
+    // Check for space or newline to add email
+    if (text.endsWith(" ") || text.endsWith("\n")) {
       const email = text.trim();
-      if (email && !emailBlocks.includes(email)) {
+      if (email && !emailBlocks.includes(email) && email.includes("@")) {
         setEmailBlocks([...emailBlocks, email]);
         setSharedUsers("");
       }
@@ -43,20 +43,32 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
     if (isSubmitting) return;
     setIsSubmitting(true);
-    if (profileName.trim()) {
+
+    try {
+      console.log("Creating profile with name:", profileName, "and email:", user?.email);
+      // Create the profile
       const newProfile = await addProfile(profileName, user?.email ?? "");
+      console.log("New profile created:", newProfile);
+
+      // Add default category
       await addCategory(newProfile?.id ?? "", "Otros", JSON.stringify(["#AAAAAA", "#AAAAAA"]), "shape");
-      
-      if (emailBlocks.length > 0) {
-        await addSharedUsers(newProfile?.id ?? "", emailBlocks);
+
+      // Add shared users if there are any
+      if (emailBlocks.length > 0 && newProfile?.id) {
+        console.log("Adding shared users:", emailBlocks, "to profile:", newProfile.id);
+        const result = await addSharedUsers(newProfile.id, emailBlocks);
+        console.log("Result of adding shared users:", result);
       }
-      
+
       setProfileName("");
       setSharedUsers("");
       setEmailBlocks([]);
       onProfileAdded();
-      setIsSubmitting(false);
       onClose();
+    } catch (error) {
+      console.error("Error in handleAddProfile:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -78,9 +90,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
               {emailBlocks.map((email, index) => (
                 <View key={index} style={styles.emailBlock}>
                   <Text style={styles.emailText}>{email}</Text>
-                  <TouchableOpacity
-                    onPress={() => setEmailBlocks(emailBlocks.filter((_, i) => i !== index))}
-                  >
+                  <TouchableOpacity onPress={() => setEmailBlocks(emailBlocks.filter((_, i) => i !== index))}>
                     <Text style={styles.removeEmail}>×</Text>
                   </TouchableOpacity>
                 </View>
@@ -90,6 +100,12 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
                 placeholder={emailBlocks.length === 0 ? "Correos (separados por espacios)" : ""}
                 value={sharedUsers}
                 onChangeText={handleSharedUsersChange}
+                onSubmitEditing={() => {
+                  if (sharedUsers.trim() && !emailBlocks.includes(sharedUsers.trim()) && sharedUsers.includes("@")) {
+                    setEmailBlocks([...emailBlocks, sharedUsers.trim()]);
+                    setSharedUsers("");
+                  }
+                }}
               />
             </View>
           </View>
@@ -148,24 +164,24 @@ const styles = StyleSheet.create({
     minHeight: 45,
   },
   emailBlocksContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   emailBlock: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: "#E8E8E8",
     borderRadius: 15,
     paddingVertical: 5,
     paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   emailText: {
     marginRight: 5,
   },
   removeEmail: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
   },
   emailInput: {
     flex: 1,
