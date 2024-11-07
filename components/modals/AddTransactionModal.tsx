@@ -424,6 +424,25 @@ const ParticipantSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
+  if (singleSelection) {
+    return (
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedUsers[0] || ""}
+          onValueChange={(value) => {
+            setSelectedUsers([value]);
+            onSelect([value]);
+          }}
+          style={styles.picker}
+        >
+          {sharedUsers?.map((user) => (
+            <Picker.Item key={user} label={user} value={user} />
+          ))}
+        </Picker>
+      </View>
+    );
+  }
+
   const toggleUser = (user: string) => {
     setSelectedUsers((prev) => {
       if (singleSelection) {
