@@ -20,7 +20,7 @@ export default function Profiles() {
   const isProfileLimitReached = useCallback(async () => {
     const isPro = await isUserPro(user?.email || "");
     setIsPro(isPro);
-    return (profileData && profileData.length >= 3) && !isPro;
+    return profileData && profileData.length >= 3 && !isPro;
   }, [profileData, isUserPro, user?.email]);
 
   const processInvitationLink = useCallback(async () => {

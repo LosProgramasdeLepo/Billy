@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useCallback, useState } from "react";
 import { Text, StyleSheet, TouchableOpacity, FlatList, View } from "react-native";
-import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink} from "@/api/api";
+import { ProfileData, removeProfile, changeCurrentProfile, generateInvitationLink } from "@/api/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -77,14 +77,10 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile, isPro })
       const isSharedProfile = item !== "add" && item.is_shared === true;
 
       if (item === "add") {
-        
         const isProfileLimitReached = profileData ? profileData.length >= 3 && !isPro : false;
-
+        
         return (
-          <TouchableOpacity
-            style={[styles.profileItem, styles.addButton]}
-            onPress={onAddProfile}
-          >
+          <TouchableOpacity style={[styles.profileItem, styles.addButton]} onPress={onAddProfile}>
             <View style={styles.addButtonContent}>
               <Ionicons name="add-circle-outline" size={40} color="#FFFFFF" />
               <Text style={styles.addButtonText}>Agregar Perfil</Text>
