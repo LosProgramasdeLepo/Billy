@@ -197,7 +197,7 @@ export default function CalendarScreen() {
         <BillyHeader />
         <View style={styles.contentContainer}>
           <View style={styles.calendarContainer}>{viewMode === "month" ? memoizedCalendar : renderYearPicker()}</View>
-          <View style={styles.buttonContainer}>
+          {/*           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.buttonCobro} onPress={() => openModal("Income")}>
               <Ionicons name="add-circle-outline" size={24} color="#FFFFFF" />
               <Text style={styles.buttonTextCobro}>Agregar cobro</Text>
@@ -206,7 +206,8 @@ export default function CalendarScreen() {
               <Ionicons name="remove-circle-outline" size={24} color="#370185" />
               <Text style={styles.buttonTextPago}>Agregar pago</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
+          <View style={styles.separator} />
           {selectedRange && (
             <View style={styles.transactionListContainer}>
               <TransactionList
@@ -377,5 +378,11 @@ const styles = StyleSheet.create({
     color: "#370185",
     fontSize: 14,
     marginLeft: 10,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 20,
+    marginVertical: 10,
   },
 });
