@@ -14,6 +14,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
   const [profileName, setProfileName] = useState("");
   const [sharedUsers, setSharedUsers] = useState("");
+  const [emailBlocks, setEmailBlocks] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({ name: false });
@@ -21,6 +22,17 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
   const handleNameChange = (text: string) => {
     setProfileName(text);
     setErrors((prev) => ({ ...prev, name: !text.trim() }));
+  };
+
+  const handleSharedUsersChange = (text: string) => {
+    setSharedUsers(text);
+    if (text.endsWith(" ")) {
+      const email = text.trim();
+      if (email && !emailBlocks.includes(email)) {
+        setEmailBlocks([...emailBlocks, email]);
+        setSharedUsers("");
+      }
+    }
   };
 
   const handleAddProfile = async () => {
@@ -34,17 +46,14 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
     if (profileName.trim()) {
       const newProfile = await addProfile(profileName, user?.email ?? "");
       await addCategory(newProfile?.id ?? "", "Otros", JSON.stringify(["#AAAAAA", "#AAAAAA"]), "shape");
-      if (sharedUsers.trim()) {
-        const emails = [
-          ...sharedUsers
-            .split(",")
-            .map((e) => e.trim())
-            .filter((e) => e),
-        ];
-        await addSharedUsers(newProfile?.id ?? "", emails);
+      
+      if (emailBlocks.length > 0) {
+        await addSharedUsers(newProfile?.id ?? "", emailBlocks);
       }
+      
       setProfileName("");
       setSharedUsers("");
+      setEmailBlocks([]);
       onProfileAdded();
       setIsSubmitting(false);
       onClose();
@@ -64,13 +73,26 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
             onChangeText={handleNameChange}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Correos (separados por comas)"
-            value={sharedUsers}
-            onChangeText={setSharedUsers}
-            multiline
-          />
+          <View style={[styles.inputContainer, styles.expandableInput]}>
+            <View style={styles.emailBlocksContainer}>
+              {emailBlocks.map((email, index) => (
+                <View key={index} style={styles.emailBlock}>
+                  <Text style={styles.emailText}>{email}</Text>
+                  <TouchableOpacity
+                    onPress={() => setEmailBlocks(emailBlocks.filter((_, i) => i !== index))}
+                  >
+                    <Text style={styles.removeEmail}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <TextInput
+                style={styles.emailInput}
+                placeholder={emailBlocks.length === 0 ? "Correos (separados por espacios)" : ""}
+                value={sharedUsers}
+                onChangeText={handleSharedUsersChange}
+              />
+            </View>
+          </View>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={onClose}>
@@ -113,6 +135,42 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 20,
     width: "100%",
+  },
+  inputContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  expandableInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 5,
+    padding: 10,
+    minHeight: 45,
+  },
+  emailBlocksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  emailBlock: {
+    backgroundColor: '#E8E8E8',
+    borderRadius: 15,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emailText: {
+    marginRight: 5,
+  },
+  removeEmail: {
+    fontSize: 18,
+    color: '#666',
+  },
+  emailInput: {
+    flex: 1,
+    minWidth: 100,
+    padding: 0,
   },
   buttonContainer: {
     flexDirection: "row",
