@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
+import MlkitOcr from "react-native-mlkit-ocr";
 import { debounce } from "lodash";
 import moment from "moment";
 import {
@@ -138,16 +139,160 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       });
 
       if (!result.canceled && result.assets[0]) {
-        // Acá se le debería enviar la imagen a la IA
-        // setDescription('Ticket escaneado - Procesando...');
-        // setAmount('Ticket escaneado - Procesando...');
-        // setSelectedCategory('Ticket escaneado - Procesando...');
+        setDescription("Escaneando ticket...");
+        setAmount("");
+
+        const ocrResult = await MlkitOcr.detectFromUri(result.assets[0].uri);
+
+        const extractedData = processOcrResults(ocrResult);
+
         setTicketScanned(true);
+
+        if (extractedData.total) {
+          setAmount(extractedData.total.toString());
+        }
+        if (extractedData.description) {
+          setDescription(extractedData.description);
+          debouncedCategorize(extractedData.description);
+        }
       }
     } catch (error) {
       console.error("Error accediendo a la cámara:", error);
       Alert.alert("Error", "No se pudo acceder a la cámara. Por favor, intenta de nuevo.");
+      setTicketScanned(false);
+      setDescription("");
+      setAmount("");
     }
+  };
+
+  const processOcrResults = (ocrResult: any) => {
+    const extractedData = {
+      total: null as number | null,
+      description: "" as string,
+    };
+  
+    // Convert OCR result to plain text and split into lines
+    const lines = ocrResult.map((block: any) => block.text.trim());
+    const fullText = lines.join(" ").toLowerCase();
+  
+    console.log("OCR Full Text:", fullText); // Debug log
+  
+    // Array to store all found amounts
+    const foundAmounts: number[] = [];
+  
+    // Function to parse amount string to number
+    const parseAmount = (amountStr: string): number | null => {
+      const cleaned = amountStr.replace(/[^0-9.,]/g, '');
+      
+      let amount: number;
+      if (cleaned.includes(',') && cleaned.includes('.')) {
+        // Format: 1,234.56
+        amount = parseFloat(cleaned.replace(/,/g, ''));
+      } else if (cleaned.includes(',')) {
+        // Format: 1234,56
+        amount = parseFloat(cleaned.replace(',', '.'));
+      } else {
+        // Format: 1234.56 or 1234
+        amount = parseFloat(cleaned);
+      }
+  
+      return !isNaN(amount) && amount > 0 ? amount : null;
+    };
+  
+    // Look for amounts with common total patterns first
+    const totalPatterns = [
+      /total[\s:]*\$\s*([\d,.]+)/i,
+      /total a pagar[\s:]*\$\s*([\d,.]+)/i,
+      /importe total[\s:]*\$\s*([\d,.]+)/i,
+      /\btotal\b[\s:]*\$\s*([\d,.]+)/i,
+    ];
+  
+    // Check for amounts with total patterns
+    for (const pattern of totalPatterns) {
+      const match = fullText.match(pattern);
+      if (match) {
+        const amount = parseAmount(match[1]);
+        if (amount !== null) {
+          console.log("Found amount with total pattern:", amount);
+          foundAmounts.push(amount);
+        }
+      }
+    }
+  
+    // Look for all dollar amounts in the text
+    const dollarPattern = /(?:\$\s*)?([\d,.]+)/g;
+    let match;
+    while ((match = dollarPattern.exec(fullText)) !== null) {
+      const amountStr = match[1];
+      // Only process if it looks like a price (has decimal points)
+      if (amountStr.includes('.')) {
+        const amount = parseAmount(match[1]);
+        if (amount !== null && amount < 1000000) { // Avoid unreasonably large numbers
+          console.log("Found dollar amount:", amount);
+          foundAmounts.push(amount);
+        }
+      }
+    }
+  
+    // If we found any amounts, use the largest one
+    if (foundAmounts.length > 0) {
+      extractedData.total = Math.max(...foundAmounts);
+      console.log("Selected largest amount:", extractedData.total);
+    }
+  
+    // Function to clean and truncate description
+    const cleanDescription = (text: string): string => {
+      return text
+        .trim()
+        .replace(/[^\w\s]/g, '') // Remove special characters
+        .replace(/\s+/g, ' ')    // Replace multiple spaces with single space
+        .slice(0, 20)            // Limit to 20 characters
+        .trim();
+    };
+  
+    // Extract business name or description
+    const businessPatterns = [
+      /(?:razon social|empresa|negocio)[\s:]+([^\n]+)/i,
+      /^([A-Z][A-Za-z\s]+(?:S\.?A\.?|S\.?R\.?L\.?))/m,
+    ];
+  
+    let possibleDescriptions: string[] = [];
+  
+    // Try business patterns first
+    for (const pattern of businessPatterns) {
+      const match = fullText.match(pattern);
+      if (match) {
+        possibleDescriptions.push(cleanDescription(match[1]));
+      }
+    }
+  
+    // If no matches from patterns, look at first few lines
+    if (possibleDescriptions.length === 0) {
+      for (const line of lines.slice(0, 5)) { // Only look at first 5 lines
+        const trimmedLine = line.trim();
+        if (trimmedLine && 
+            trimmedLine.length > 3 && 
+            !trimmedLine.match(/^[\d.,\s$]+$/) &&     // Avoid lines with just numbers
+            !trimmedLine.toLowerCase().includes('total') && // Avoid total lines
+            !trimmedLine.match(/^[0-9-]+$/) &&        // Avoid invoice numbers
+            !trimmedLine.match(/^\d{2}\/\d{2}\/\d{2,4}$/) // Avoid dates
+        ) {
+          possibleDescriptions.push(cleanDescription(trimmedLine));
+        }
+      }
+    }
+  
+    // Select the shortest non-empty description
+    if (possibleDescriptions.length > 0) {
+      extractedData.description = possibleDescriptions
+        .filter(desc => desc.length >= 3) // Must be at least 3 chars
+        .sort((a, b) => a.length - b.length)[0]; // Get shortest valid description
+    } else {
+      extractedData.description = "Ticket";
+    }
+  
+    console.log("Final extracted data:", extractedData);
+    return extractedData;
   };
 
   const handleSubmit = useCallback(async () => {
