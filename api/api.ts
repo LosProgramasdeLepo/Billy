@@ -1732,8 +1732,6 @@ export async function categorizePurchase(text: string, categories: string[]): Pr
     const highestScoreIndex = result[0].scores.indexOf(Math.max(...result[0].scores));
     const category = result[0].labels[highestScoreIndex];
 
-    console.log("Categoría:", category);
-
     return category;
   } catch (error) {
     console.error("Error en la clasificación:", error);
