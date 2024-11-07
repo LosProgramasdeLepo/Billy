@@ -227,18 +227,16 @@ export const SharedBalanceCard = () => {
 
         {isExpanded && (
           <>
-            {filteredDebtsToUser
-              .slice(1)
-              .map((debt, index) => (
-                <DebtEntryComponent
-                  key={debt.id || index}
-                  name1="Tú"
-                  name2={userNames[debt.debtor]}
-                  amount={debt.amount}
-                  avatar1={userAvatars[user?.email ?? ""]}
-                  avatar2={userAvatars[debt.debtor]}
-                />
-              ))}
+            {filteredDebtsToUser.slice(1).map((debt, index) => (
+              <DebtEntryComponent
+                key={debt.id || index}
+                name1="Tú"
+                name2={userNames[debt.debtor]}
+                amount={debt.amount}
+                avatar1={userAvatars[user?.email ?? ""]}
+                avatar2={userAvatars[debt.debtor]}
+              />
+            ))}
 
             {filteredDebtsFromUser.map((debt, index) => (
               <DebtEntryComponent

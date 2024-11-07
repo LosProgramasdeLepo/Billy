@@ -1,12 +1,11 @@
-import { supabase } from '../lib/supabase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createURL } from 'expo-linking';
-import { Alert } from 'react-native';
-import { decode } from 'base64-arraybuffer';
-import { AuthError } from '@supabase/supabase-js';
-import { HfInference } from '@huggingface/inference';
-import * as http from 'http';
-
+import { supabase } from "../lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createURL } from "expo-linking";
+import { Alert } from "react-native";
+import { decode } from "base64-arraybuffer";
+import { AuthError } from "@supabase/supabase-js";
+import { HfInference } from "@huggingface/inference";
+import * as http from "http";
 
 const INCOMES_TABLE = "Incomes";
 const OUTCOMES_TABLE = "Outcomes";
@@ -1723,11 +1722,11 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
 /* AI */
 
 export async function categorizePurchase(text: string, categories: string[]): Promise<string> {
-  const hf = new HfInference('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'); // Reemplaza con tu token de Hugging Face
+  const hf = new HfInference("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"); // Reemplaza con tu token de Hugging Face
   try {
     // Llamar a la función zeroShotClassification con el texto y las categorías
     const result = await hf.zeroShotClassification({
-      model: 'facebook/bart-large-mnli', // Modelo que estás utilizando
+      model: "facebook/bart-large-mnli", // Modelo que estás utilizando
       inputs: [text], // El texto a clasificar
       parameters: { candidate_labels: categories }, // Categorías posibles
     });
@@ -1736,12 +1735,11 @@ export async function categorizePurchase(text: string, categories: string[]): Pr
     const highestScoreIndex = result[0].scores.indexOf(Math.max(...result[0].scores));
     const category = result[0].labels[highestScoreIndex];
 
-    console.log('Categoría:', category);
+    console.log("Categoría:", category);
 
     return category; // Devolver la categoría con la puntuación más alta
-
   } catch (error) {
-    console.error('Error en la clasificación:', error);
-    throw new Error('Hubo un error al clasificar el texto.');
+    console.error("Error en la clasificación:", error);
+    throw new Error("Hubo un error al clasificar el texto.");
   }
 }
