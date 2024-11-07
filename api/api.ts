@@ -5,7 +5,6 @@ import { Alert } from "react-native";
 import { decode } from "base64-arraybuffer";
 import { AuthError } from "@supabase/supabase-js";
 import { HfInference } from "@huggingface/inference";
-import * as http from "http";
 
 const INCOMES_TABLE = "Incomes";
 const OUTCOMES_TABLE = "Outcomes";
