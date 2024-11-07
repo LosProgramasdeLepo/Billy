@@ -9,12 +9,17 @@ interface AddProfileModalProps {
   onProfileAdded: () => void;
 }
 
+const isValidEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, onProfileAdded }) => {
   const { user } = useAppContext();
 
   const [profileName, setProfileName] = useState("");
   const [sharedUsers, setSharedUsers] = useState("");
-  const [emailBlocks, setEmailBlocks] = useState<string[]>([]);
+  const [emailBlocks, setEmailBlocks] = useState<Array<{ email: string; isValid: boolean }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({ name: false });
 
@@ -25,11 +30,10 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
   const handleSharedUsersChange = (text: string) => {
     setSharedUsers(text);
-    // Check for space or newline to add email
     if (text.endsWith(" ") || text.endsWith("\n")) {
       const email = text.trim();
-      if (email && !emailBlocks.includes(email) && email.includes("@")) {
-        setEmailBlocks([...emailBlocks, email]);
+      if (email && !emailBlocks.some((block) => block.email === email)) {
+        setEmailBlocks([...emailBlocks, { email, isValid: isValidEmail(email) }]);
         setSharedUsers("");
       }
     }
@@ -41,23 +45,17 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
       return;
     }
 
+    const validEmails = emailBlocks.filter((block) => block.isValid).map((block) => block.email);
+
     if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
-      console.log("Creating profile with name:", profileName, "and email:", user?.email);
-      // Create the profile
       const newProfile = await addProfile(profileName, user?.email ?? "");
-      console.log("New profile created:", newProfile);
-
-      // Add default category
       await addCategory(newProfile?.id ?? "", "Otros", JSON.stringify(["#AAAAAA", "#AAAAAA"]), "shape");
 
-      // Add shared users if there are any
-      if (emailBlocks.length > 0 && newProfile?.id) {
-        console.log("Adding shared users:", emailBlocks, "to profile:", newProfile.id);
-        const result = await addSharedUsers(newProfile.id, emailBlocks);
-        console.log("Result of adding shared users:", result);
+      if (validEmails.length > 0 && newProfile?.id) {
+        await addSharedUsers(newProfile.id, validEmails);
       }
 
       setProfileName("");
@@ -87,9 +85,9 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
           <View style={[styles.inputContainer, styles.expandableInput]}>
             <View style={styles.emailBlocksContainer}>
-              {emailBlocks.map((email, index) => (
-                <View key={index} style={styles.emailBlock}>
-                  <Text style={styles.emailText}>{email}</Text>
+              {emailBlocks.map((block, index) => (
+                <View key={index} style={[styles.emailBlock, !block.isValid && styles.invalidEmailBlock]}>
+                  <Text style={[styles.emailText, !block.isValid && styles.invalidEmailText]}>{block.email}</Text>
                   <TouchableOpacity onPress={() => setEmailBlocks(emailBlocks.filter((_, i) => i !== index))}>
                     <Text style={styles.removeEmail}>×</Text>
                   </TouchableOpacity>
@@ -101,8 +99,14 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
                 value={sharedUsers}
                 onChangeText={handleSharedUsersChange}
                 onSubmitEditing={() => {
-                  if (sharedUsers.trim() && !emailBlocks.includes(sharedUsers.trim()) && sharedUsers.includes("@")) {
-                    setEmailBlocks([...emailBlocks, sharedUsers.trim()]);
+                  if (sharedUsers.trim() && !emailBlocks.some((block) => block.email === sharedUsers.trim())) {
+                    setEmailBlocks([
+                      ...emailBlocks,
+                      {
+                        email: sharedUsers.trim(),
+                        isValid: isValidEmail(sharedUsers.trim()),
+                      },
+                    ]);
                     setSharedUsers("");
                   }
                 }}
@@ -176,8 +180,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  invalidEmailBlock: {
+    backgroundColor: "#FFE8E8",
+    borderColor: "#FF0000",
+    borderWidth: 1,
+  },
   emailText: {
     marginRight: 5,
+  },
+  invalidEmailText: {
+    color: "#FF0000",
   },
   removeEmail: {
     fontSize: 18,
