@@ -1748,8 +1748,6 @@ export const processOcrResults = async (ocrResult: any) => {
   const lines = ocrResult.map((block: any) => block.text.trim());
   const fullText = lines.join(" ");
 
-  console.log("Full text:", fullText);
-
   const foundAmounts: number[] = [];
 
   const parseAmount = (amountStr: string): number | null => {
@@ -1818,7 +1816,6 @@ export const processOcrResults = async (ocrResult: any) => {
     });
 
     const classificationResult = await classificationResponse.json();
-    console.log("Classification response:", classificationResult);
 
     if (classificationResult.labels && classificationResult.labels.length > 0) {
       extractedData.description = classificationResult.labels[0];
@@ -1839,7 +1836,6 @@ export const processOcrResults = async (ocrResult: any) => {
     });
 
     const qaResult = await qaResponse.json();
-    console.log("QA response:", qaResult);
 
     if (qaResult.answer && qaResult.answer.trim()) {
       extractedData.description = qaResult.answer.trim();
@@ -1861,11 +1857,9 @@ export const processOcrResults = async (ocrResult: any) => {
       }
     }
   } catch (error) {
-    console.error("Error getting AI description:", error);
     extractedData.description = "Ticket";
   }
 
-  console.log("Final extracted data:", extractedData);
   return extractedData;
 };
 

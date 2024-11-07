@@ -1,5 +1,5 @@
 import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert } from "react-native";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -35,6 +35,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   const [shared, setShared] = useState<boolean | null>(null);
 
   const [bubbleAnimation] = useState(new Animated.Value(0));
+  const [loadingDots, setLoadingDots] = useState(0);
+  const loadingInterval = useRef<NodeJS.Timeout>();
 
   const [type, setType] = useState<"Income" | "Outcome">("Income");
   const [description, setDescription] = useState("");
@@ -73,6 +75,25 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       if (rotationLoop) rotationLoop.stop();
     };
   }, [isCategorizing]);
+
+  useEffect(() => {
+    if (description === "Escaneando ticket") {
+      loadingInterval.current = setInterval(() => {
+        setLoadingDots((prev) => (prev + 1) % 4);
+      }, 500);
+
+      return () => {
+        if (loadingInterval.current) {
+          clearInterval(loadingInterval.current);
+        }
+      };
+    } else {
+      setLoadingDots(0);
+      if (loadingInterval.current) {
+        clearInterval(loadingInterval.current);
+      }
+    }
+  }, [description]);
 
   const fetchProfileData = useCallback(async () => {
     if (currentProfileId) {
@@ -140,7 +161,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       });
 
       if (!result.canceled && result.assets[0]) {
-        setDescription("Escaneando ticket...");
+        setDescription("Escaneando ticket");
         setAmount("");
 
         const ocrResult = await MlkitOcr.detectFromUri(result.assets[0].uri);
@@ -305,7 +326,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
             <TextInput
               style={[styles.input, errors.description && styles.inputError]}
-              value={description}
+              value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
               onChangeText={handleDescriptionChange}
               placeholder="Descripción (obligatorio)"
               placeholderTextColor="#AAAAAA"
