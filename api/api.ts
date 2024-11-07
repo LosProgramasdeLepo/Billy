@@ -1803,22 +1803,19 @@ export const processOcrResults = async (ocrResult: any) => {
   }
 
   try {
-    const classificationResponse = await fetch(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer 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",
-          "Content-Type": "application/json",
+    const classificationResponse = await fetch("https://api-inference.huggingface.co/models/facebook/bart-large-mnli", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer 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",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: fullText,
+        parameters: {
+          candidate_labels: ["restaurante", "ropa", "supermercado", "farmacia", "tecnología"],
         },
-        body: JSON.stringify({
-          inputs: fullText,
-          parameters: {
-            candidate_labels: ["restaurante", "ropa", "supermercado", "farmacia", "tecnología"],
-          },
-        }),
-      }
-    );
+      }),
+    });
 
     const classificationResult = await classificationResponse.json();
     console.log("Classification response:", classificationResult);
@@ -1827,26 +1824,23 @@ export const processOcrResults = async (ocrResult: any) => {
       extractedData.description = classificationResult.labels[0];
     }
 
-    const qaResponse = await fetch(
-      "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer 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",
-          "Content-Type": "application/json",
+    const qaResponse = await fetch("https://api-inference.huggingface.co/models/deepset/roberta-base-squad2", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer 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",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: {
+          question: "What is the name of the business or category?",
+          context: fullText,
         },
-        body: JSON.stringify({
-          inputs: {
-            question: "What is the name of the business or category?",
-            context: fullText,
-          },
-        }),
-      }
-    );
+      }),
+    });
 
     const qaResult = await qaResponse.json();
     console.log("QA response:", qaResult);
-    
+
     if (qaResult.answer && qaResult.answer.trim()) {
       extractedData.description = qaResult.answer.trim();
     } else if (!extractedData.description) {
