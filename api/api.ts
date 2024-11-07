@@ -4,6 +4,7 @@ import { createURL } from "expo-linking";
 import { Alert } from "react-native";
 import { decode } from "base64-arraybuffer";
 import { AuthError } from "@supabase/supabase-js";
+import { HfInference } from "@huggingface/inference";
 
 const INCOMES_TABLE = "Incomes";
 const OUTCOMES_TABLE = "Outcomes";
@@ -1719,25 +1720,155 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
 
 /* AI */
 
-export const categorizePurchase = async (description: string, categories: string[]): Promise<string | null> => {
+export async function categorizePurchase(text: string, categories: string[]): Promise<string> {
+  const hf = new HfInference("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");
   try {
-    const response = await fetch("http://10.9.67.45:3000/categorize", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ description, categories }),
+    const result = await hf.zeroShotClassification({
+      model: "facebook/bart-large-mnli",
+      inputs: [text],
+      parameters: { candidate_labels: categories },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text(); // Agregado para obtener más información
-      throw new Error(`Error en la solicitud: ${response.status} ${errorText}`);
+    const highestScoreIndex = result[0].scores.indexOf(Math.max(...result[0].scores));
+    const category = result[0].labels[highestScoreIndex];
+
+    return category;
+  } catch (error) {
+    console.error("Error en la clasificación:", error);
+    throw new Error("Hubo un error al clasificar el texto.");
+  }
+}
+
+export const processOcrResults = async (ocrResult: any) => {
+  const extractedData = {
+    total: null as number | null,
+    description: "" as string,
+  };
+
+  const lines = ocrResult.map((block: any) => block.text.trim());
+  const fullText = lines.join(" ");
+
+  console.log("Full text:", fullText);
+
+  const foundAmounts: number[] = [];
+
+  const parseAmount = (amountStr: string): number | null => {
+    const cleaned = amountStr.replace(/[^0-9.,]/g, "");
+
+    let amount: number;
+    if (cleaned.includes(",") && cleaned.includes(".")) {
+      amount = parseFloat(cleaned.replace(/,/g, ""));
+    } else if (cleaned.includes(",")) {
+      amount = parseFloat(cleaned.replace(",", "."));
+    } else {
+      amount = parseFloat(cleaned);
     }
 
-    const data = await response.json();
-    return data.category;
-  } catch (error) {
-    console.error("Error al categorizar la compra:", error);
-    return null;
+    return !isNaN(amount) && amount > 0 ? amount : null;
+  };
+
+  const totalPatterns = [
+    /total[\s:]*\s*([\d,.]+)/i,
+    /total a pagar[\s:]*\s*([\d,.]+)/i,
+    /importe total[\s:]*\s*([\d,.]+)/i,
+    /\btotal\b[\s:]*\s*([\d,.]+)/i,
+  ];
+
+  for (const pattern of totalPatterns) {
+    const match = fullText.toLowerCase().match(pattern);
+    if (match) {
+      const amount = parseAmount(match[1]);
+      if (amount !== null && amount < 1000000) {
+        foundAmounts.push(amount);
+      }
+    }
   }
+
+  if (foundAmounts.length === 0) {
+    const numberPattern = /([\d,.]+)/g;
+    let match;
+    while ((match = numberPattern.exec(fullText)) !== null) {
+      const amountStr = match[1];
+      if (amountStr.includes(".")) {
+        const amount = parseAmount(match[1]);
+        if (amount !== null && amount < 1000000) {
+          foundAmounts.push(amount);
+        }
+      }
+    }
+  }
+
+  if (foundAmounts.length > 0) {
+    extractedData.total = Math.max(...foundAmounts);
+  }
+
+  try {
+    const classificationResponse = await fetch("https://api-inference.huggingface.co/models/facebook/bart-large-mnli", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer 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",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: fullText,
+        parameters: {
+          candidate_labels: ["restaurante", "ropa", "supermercado", "farmacia", "tecnología"],
+        },
+      }),
+    });
+
+    const classificationResult = await classificationResponse.json();
+    console.log("Classification response:", classificationResult);
+
+    if (classificationResult.labels && classificationResult.labels.length > 0) {
+      extractedData.description = classificationResult.labels[0];
+    }
+
+    const qaResponse = await fetch("https://api-inference.huggingface.co/models/deepset/roberta-base-squad2", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer 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",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: {
+          question: "What is the name of the business or category?",
+          context: fullText,
+        },
+      }),
+    });
+
+    const qaResult = await qaResponse.json();
+    console.log("QA response:", qaResult);
+
+    if (qaResult.answer && qaResult.answer.trim()) {
+      extractedData.description = qaResult.answer.trim();
+    } else if (!extractedData.description) {
+      for (const line of lines.slice(0, 3)) {
+        const cleanedLine = line
+          .trim()
+          .replace(/[^\w\s]/g, "")
+          .replace(/\s+/g, " ");
+
+        if (cleanedLine && cleanedLine.length > 3 && !cleanedLine.match(/^[\d.,\s$]+$/) && !cleanedLine.toLowerCase().includes("total")) {
+          extractedData.description = capitalizeFirstLetter(cleanedLine.slice(0, 20));
+          break;
+        }
+      }
+
+      if (!extractedData.description) {
+        extractedData.description = "Ticket";
+      }
+    }
+  } catch (error) {
+    console.error("Error getting AI description:", error);
+    extractedData.description = "Ticket";
+  }
+
+  console.log("Final extracted data:", extractedData);
+  return extractedData;
 };
+
+function capitalizeFirstLetter(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}

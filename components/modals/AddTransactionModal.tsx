@@ -5,6 +5,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
+import MlkitOcr from "react-native-mlkit-ocr";
 import { debounce } from "lodash";
 import moment from "moment";
 import {
@@ -16,6 +17,7 @@ import {
   getSharedUsers,
   getCategoryIdByName,
   categorizePurchase,
+  processOcrResults,
 } from "@/api/api";
 
 interface AddTransactionModalProps {
@@ -138,15 +140,29 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
       });
 
       if (!result.canceled && result.assets[0]) {
-        // Acá se le debería enviar la imagen a la IA
-        // setDescription('Ticket escaneado - Procesando...');
-        // setAmount('Ticket escaneado - Procesando...');
-        // setSelectedCategory('Ticket escaneado - Procesando...');
+        setDescription("Escaneando ticket...");
+        setAmount("");
+
+        const ocrResult = await MlkitOcr.detectFromUri(result.assets[0].uri);
+
+        const extractedData = processOcrResults(ocrResult);
+
         setTicketScanned(true);
+
+        if ((await extractedData).total) {
+          setAmount((await extractedData).total?.toString() ?? "");
+        }
+        if ((await extractedData).description) {
+          setDescription((await extractedData).description);
+          debouncedCategorize((await extractedData).description);
+        }
       }
     } catch (error) {
       console.error("Error accediendo a la cámara:", error);
       Alert.alert("Error", "No se pudo acceder a la cámara. Por favor, intenta de nuevo.");
+      setTicketScanned(false);
+      setDescription("");
+      setAmount("");
     }
   };
 
