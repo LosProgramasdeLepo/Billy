@@ -1740,3 +1740,119 @@ export async function categorizePurchase(text: string, categories: string[]): Pr
     throw new Error("Hubo un error al clasificar el texto.");
   }
 }
+
+export const processOcrResults = async (ocrResult: any) => {
+  const extractedData = {
+    total: null as number | null,
+    description: "" as string,
+  };
+
+  const lines = ocrResult.map((block: any) => block.text.trim());
+  const fullText = lines.join(" ");
+
+  const foundAmounts: number[] = [];
+
+  const parseAmount = (amountStr: string): number | null => {
+    const cleaned = amountStr.replace(/[^0-9.,]/g, "");
+
+    let amount: number;
+    if (cleaned.includes(",") && cleaned.includes(".")) {
+      amount = parseFloat(cleaned.replace(/,/g, ""));
+    } else if (cleaned.includes(",")) {
+      amount = parseFloat(cleaned.replace(",", "."));
+    } else {
+      amount = parseFloat(cleaned);
+    }
+
+    return !isNaN(amount) && amount > 0 ? amount : null;
+  };
+
+  const totalPatterns = [
+    /total[\s:]*\s*([\d,.]+)/i,
+    /total a pagar[\s:]*\s*([\d,.]+)/i,
+    /importe total[\s:]*\s*([\d,.]+)/i,
+    /\btotal\b[\s:]*\s*([\d,.]+)/i,
+  ];
+
+  for (const pattern of totalPatterns) {
+    const match = fullText.toLowerCase().match(pattern);
+    if (match) {
+      const amount = parseAmount(match[1]);
+      if (amount !== null && amount < 1000000) {
+        foundAmounts.push(amount);
+      }
+    }
+  }
+
+  if (foundAmounts.length === 0) {
+    const numberPattern = /([\d,.]+)/g;
+    let match;
+    while ((match = numberPattern.exec(fullText)) !== null) {
+      const amountStr = match[1];
+      if (amountStr.includes(".")) {
+        const amount = parseAmount(match[1]);
+        if (amount !== null && amount < 1000000) {
+          foundAmounts.push(amount);
+        }
+      }
+    }
+  }
+
+  if (foundAmounts.length > 0) {
+    extractedData.total = Math.max(...foundAmounts);
+  }
+
+  try {
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/mrm8488/bert-base-spanish-wwm-cased-finetuned-spa-squad2-es",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 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",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: {
+            question:
+              "¿Cuál es el nombre del negocio o el artículo principal comprado en el siguiente texto del recibo? Reconocer marcas famosas o artículos repetidos. Si eso falla, usar una descripción general como supermercado. Devolver una descripción breve y específica; debe ser una categoría, producto o nombre de negocio, nada más.",
+            context: fullText,
+          },
+        }),
+      }
+    );
+
+    const result = await response.json();
+    console.log("Hugging Face response:", result);
+
+    if (result.answer && result.answer.trim()) {
+      extractedData.description = result.answer
+        .trim()
+        .replace(/[^\w\s]/g, "")
+        .replace(/\s+/g, " ")
+        .slice(0, 20)
+        .trim();
+    } else {
+      for (const line of lines.slice(0, 3)) {
+        const cleanedLine = line
+          .trim()
+          .replace(/[^\w\s]/g, "")
+          .replace(/\s+/g, " ");
+
+        if (cleanedLine && cleanedLine.length > 3 && !cleanedLine.match(/^[\d.,\s$]+$/) && !cleanedLine.toLowerCase().includes("total")) {
+          extractedData.description = cleanedLine.slice(0, 20);
+          break;
+        }
+      }
+
+      if (!extractedData.description) {
+        extractedData.description = "Ticket";
+      }
+    }
+  } catch (error) {
+    console.error("Error getting AI description:", error);
+    extractedData.description = "Ticket";
+  }
+
+  console.log("Final extracted data:", extractedData);
+  return extractedData;
+};
