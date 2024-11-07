@@ -1748,6 +1748,8 @@ export const processOcrResults = async (ocrResult: any) => {
   const lines = ocrResult.map((block: any) => block.text.trim());
   const fullText = lines.join(" ");
 
+  console.log("Full text:", fullText);
+
   const foundAmounts: number[] = [];
 
   const parseAmount = (amountStr: string): number | null => {
@@ -1801,8 +1803,32 @@ export const processOcrResults = async (ocrResult: any) => {
   }
 
   try {
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/mrm8488/bert-base-spanish-wwm-cased-finetuned-spa-squad2-es",
+    const classificationResponse = await fetch(
+      "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer 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",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: fullText,
+          parameters: {
+            candidate_labels: ["restaurante", "ropa", "supermercado", "farmacia", "tecnología"],
+          },
+        }),
+      }
+    );
+
+    const classificationResult = await classificationResponse.json();
+    console.log("Classification response:", classificationResult);
+
+    if (classificationResult.labels && classificationResult.labels.length > 0) {
+      extractedData.description = classificationResult.labels[0];
+    }
+
+    const qaResponse = await fetch(
+      "https://api-inference.huggingface.co/models/deepset/roberta-base-squad2",
       {
         method: "POST",
         headers: {
@@ -1811,25 +1837,19 @@ export const processOcrResults = async (ocrResult: any) => {
         },
         body: JSON.stringify({
           inputs: {
-            question:
-              "¿Cuál es el nombre del negocio o el artículo principal comprado en el siguiente texto del recibo? Reconocer marcas famosas o artículos repetidos. Si eso falla, usar una descripción general como supermercado. Devolver una descripción breve y específica; debe ser una categoría, producto o nombre de negocio, nada más.",
+            question: "What is the name of the business or category?",
             context: fullText,
           },
         }),
       }
     );
 
-    const result = await response.json();
-    console.log("Hugging Face response:", result);
-
-    if (result.answer && result.answer.trim()) {
-      extractedData.description = result.answer
-        .trim()
-        .replace(/[^\w\s]/g, "")
-        .replace(/\s+/g, " ")
-        .slice(0, 20)
-        .trim();
-    } else {
+    const qaResult = await qaResponse.json();
+    console.log("QA response:", qaResult);
+    
+    if (qaResult.answer && qaResult.answer.trim()) {
+      extractedData.description = qaResult.answer.trim();
+    } else if (!extractedData.description) {
       for (const line of lines.slice(0, 3)) {
         const cleanedLine = line
           .trim()
@@ -1837,7 +1857,7 @@ export const processOcrResults = async (ocrResult: any) => {
           .replace(/\s+/g, " ");
 
         if (cleanedLine && cleanedLine.length > 3 && !cleanedLine.match(/^[\d.,\s$]+$/) && !cleanedLine.toLowerCase().includes("total")) {
-          extractedData.description = cleanedLine.slice(0, 20);
+          extractedData.description = capitalizeFirstLetter(cleanedLine.slice(0, 20));
           break;
         }
       }
@@ -1854,3 +1874,7 @@ export const processOcrResults = async (ocrResult: any) => {
   console.log("Final extracted data:", extractedData);
   return extractedData;
 };
+
+function capitalizeFirstLetter(string: string) {
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
