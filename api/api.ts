@@ -1722,22 +1722,20 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
 /* AI */
 
 export async function categorizePurchase(text: string, categories: string[]): Promise<string> {
-  const hf = new HfInference("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"); // Reemplaza con tu token de Hugging Face
+  const hf = new HfInference("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");
   try {
-    // Llamar a la función zeroShotClassification con el texto y las categorías
     const result = await hf.zeroShotClassification({
-      model: "facebook/bart-large-mnli", // Modelo que estás utilizando
-      inputs: [text], // El texto a clasificar
-      parameters: { candidate_labels: categories }, // Categorías posibles
+      model: "facebook/bart-large-mnli",
+      inputs: [text],
+      parameters: { candidate_labels: categories },
     });
 
-    // Devolver la categoría con la puntuación más alta
     const highestScoreIndex = result[0].scores.indexOf(Math.max(...result[0].scores));
     const category = result[0].labels[highestScoreIndex];
 
     console.log("Categoría:", category);
 
-    return category; // Devolver la categoría con la puntuación más alta
+    return category;
   } catch (error) {
     console.error("Error en la clasificación:", error);
     throw new Error("Hubo un error al clasificar el texto.");
