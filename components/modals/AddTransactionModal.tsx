@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     padding: 12,
     width: "100%",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   acceptButtonText: {
     color: "#FFFFFF",

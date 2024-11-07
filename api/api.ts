@@ -1810,7 +1810,7 @@ export const processOcrResults = async (ocrResult: any) => {
       body: JSON.stringify({
         inputs: fullText,
         parameters: {
-          candidate_labels: ["restaurante", "ropa", "supermercado", "farmacia", "tecnología"],
+          candidate_labels: ["Restaurante", "Ropa", "Supermercado", "Farmacia", "Tecnología"],
         },
       }),
     });
