@@ -133,5 +133,5 @@ fabric.properties
 yarn.lock
 
 # Android
-android/app/build/*
+/android/.gradle
 
