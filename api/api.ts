@@ -1718,6 +1718,82 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
   return null;
 }
 
+export async function getUserDebtsInBill(billId: string, participant: string) {
+  try {
+    const { data: debtsAsDebtor, error: debtorError } = await supabase
+      .from("BillDebts")
+      .select("*")
+      .eq("bill", billId)
+      .eq("debtor", participant);
+
+    if (debtorError) {
+      console.error("Error al obtener las deudas donde el usuario es deudor:", debtorError);
+      return null;
+    }
+
+    const { data: debtsAsCreditor, error: creditorError } = await supabase
+      .from("BillDebts")
+      .select("*")
+      .eq("bill", billId)
+      .eq("creditor", participant);
+
+    if (creditorError) {
+      console.error("Error al obtener las deudas donde el usuario es acreedor:", creditorError);
+      return null;
+    }
+
+    return {
+      asDebtor: debtsAsDebtor || [],
+      asCreditor: debtsAsCreditor || [],
+    };
+  } catch (error) {
+    console.error("Error inesperado al obtener las deudas del usuario:", error);
+    return null;
+  }
+}
+
+export async function markUserPaymentAsCompleted(billId: string, participant: string): Promise<boolean> {
+  try {
+    // Obtener los datos del participante en la factura
+    const { data, error } = await supabase
+      .from("BillParticipants")
+      .select("has_paid")
+      .eq("bill", billId)
+      .eq("email", participant)
+      .single();
+
+    if (error) {
+      console.error("Error al obtener el estado del pago para el participante:", error);
+      return false;
+    }
+
+    // Verificar si el pago ya ha sido marcado como completado
+    if (data && data.has_paid) {
+      console.log("El participante ya ha realizado el pago.");
+      return false;
+    }
+
+    // Actualizar el estado de has_paid a true para marcar el pago como realizado
+    const { error: updateError } = await supabase
+      .from("BillParticipants")
+      .update({ has_paid: true })
+      .eq("bill", billId)
+      .eq("email", participant)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Error al marcar el pago como completado:", updateError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error inesperado al marcar el pago como completado:", error);
+    return false;
+  }
+}
+
 /* AI */
 
 export async function categorizePurchase(text: string, categories: string[]): Promise<string> {
