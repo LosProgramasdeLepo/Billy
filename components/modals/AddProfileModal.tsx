@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, SafeAreaView } from "react-native";
 import { addProfile, addSharedUsers, addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
 
@@ -72,7 +72,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
   return (
     <Modal visible={isVisible} transparent={true} animationType="slide">
-      <View style={styles.modalBackground}>
+      <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <Text style={styles.title}>Crear nuevo perfil</Text>
 
@@ -124,7 +124,7 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

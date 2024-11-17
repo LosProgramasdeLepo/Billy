@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from "react-native";
 import { addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -126,7 +126,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
 
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
-      <View style={styles.modalBackground}>
+      <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <Text style={styles.title}>Crear una categoría</Text>
 
@@ -167,7 +167,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

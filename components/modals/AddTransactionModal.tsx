@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, ScrollView, Alert, SafeAreaView } from "react-native";
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -315,7 +315,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
-      <View style={styles.modalBackground}>
+      <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Icon name="close" size={30} color="#000000" />
@@ -405,7 +405,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
