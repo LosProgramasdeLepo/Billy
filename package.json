@@ -49,6 +49,7 @@
     "expo-web-browser": "~13.0.3",
     "lodash": "^4.17.21",
     "lucide-react": "^0.441.0",
+    "mercadopago": "^2.0.15",
     "nodemailer": "^6.9.15",
     "ollama": "^0.5.9",
     "pg": "^8.12.0",

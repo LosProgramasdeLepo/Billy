@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, SafeAreaView } from "react-native";
 import { addProfile, addSharedUsers, addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 interface AddProfileModalProps {
   isVisible: boolean;
@@ -72,9 +73,14 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
   return (
     <Modal visible={isVisible} transparent={true} animationType="slide">
-      <View style={styles.modalBackground}>
+      <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Crear nuevo perfil</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Crear nuevo perfil</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <TextInput
             style={[styles.input, errors.name && styles.inputError]}
@@ -114,17 +120,11 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
             </View>
           </View>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button} onPress={handleAddProfile}>
-              <Text style={styles.buttonText}>Crear</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.acceptButton} onPress={handleAddProfile}>
+            <Text style={styles.acceptButtonText}>Aceptar</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
@@ -143,17 +143,25 @@ const styles = StyleSheet.create({
     width: "80%",
     alignItems: "center",
   },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 16,
+  },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
     width: "100%",
   },
   inputContainer: {
@@ -219,6 +227,21 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: "#FF0000",
     borderWidth: 1,
+  },
+  acceptButton: {
+    backgroundColor: "#370185",
+    borderRadius: 24,
+    padding: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  acceptButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    
   },
 });
 

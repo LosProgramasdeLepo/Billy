@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from "react-native";
 import { addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -126,19 +126,32 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
 
   return (
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
-      <View style={styles.modalBackground}>
+      <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Crear una categoría</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Crear nueva categoría</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <TextInput
             style={[styles.input, errors.name && styles.inputError]}
             value={name}
             onChangeText={handleNameChange}
             placeholder="Nombre (obligatorio)"
+            placeholderTextColor="#AAAAAA"
           />
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-          <TextInput style={styles.input} keyboardType="numeric" value={limit} onChangeText={setLimit} placeholder="Ingresar límite" />
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={limit}
+            onChangeText={setLimit}
+            placeholder="Límite"
+            placeholderTextColor="#AAAAAA"
+          />
 
           <FlatList
             data={icons}
@@ -158,20 +171,14 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
             style={styles.gradientList}
           />
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleAddCategory}>
-              <Text style={styles.buttonText}>Crear</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.acceptButton} onPress={handleAddCategory}>
+            <Text style={styles.acceptButtonText}>Aceptar</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
@@ -186,12 +193,21 @@ const styles = StyleSheet.create({
     width: "80%",
     alignItems: "center",
   },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 16,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
     width: "100%",
   },
   buttonContainer: {
@@ -213,16 +229,15 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     fontSize: 14,
-    marginTop: -15,
-    marginBottom: 5,
+    marginTop: -12,
+    marginBottom: 12,
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
   },
   gradientList: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gradientItem: {
     width: 30,
@@ -234,24 +249,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#4B00B8",
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
-    alignSelf: "flex-start",
-  },
   iconList: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   iconItem: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     borderRadius: 20,
     marginRight: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f9f9f9",
   },
   selectedIcon: {
     backgroundColor: "#e0e0e0",
@@ -261,6 +269,19 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: "#FF0000",
     borderWidth: 1,
+  },
+  closeButton: {},
+  acceptButton: {
+    backgroundColor: "#370185",
+    borderRadius: 24,
+    padding: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  acceptButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
