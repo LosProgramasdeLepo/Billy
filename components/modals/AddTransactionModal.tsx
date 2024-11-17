@@ -532,9 +532,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   typeSelector: {
-    marginTop: 10,
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 16,
     position: "relative",
     width: "100%",
     justifyContent: "center",
