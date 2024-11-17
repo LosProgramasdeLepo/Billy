@@ -151,9 +151,11 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
     width: "100%",
   },
   inputContainer: {

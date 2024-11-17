@@ -189,9 +189,11 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
+    borderRadius: 4,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: "#f9f9f9",
+    fontSize: 16,
     width: "100%",
   },
   buttonContainer: {
@@ -213,8 +215,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     fontSize: 14,
-    marginTop: -15,
-    marginBottom: 5,
+    marginTop: -12,
+    marginBottom: 12,
   },
   title: {
     fontSize: 20,
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   gradientList: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gradientItem: {
     width: 30,
@@ -234,24 +236,17 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#4B00B8",
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 10,
-    marginBottom: 5,
-    alignSelf: "flex-start",
-  },
   iconList: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   iconItem: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
     borderRadius: 20,
     marginRight: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f9f9f9",
   },
   selectedIcon: {
     backgroundColor: "#e0e0e0",
