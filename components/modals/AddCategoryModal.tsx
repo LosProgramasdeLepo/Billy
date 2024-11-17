@@ -128,17 +128,30 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
       <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Crear una categoría</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Crear nueva categoría</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <TextInput
             style={[styles.input, errors.name && styles.inputError]}
             value={name}
             onChangeText={handleNameChange}
             placeholder="Nombre (obligatorio)"
+            placeholderTextColor="#AAAAAA"
           />
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-          <TextInput style={styles.input} keyboardType="numeric" value={limit} onChangeText={setLimit} placeholder="Ingresar límite" />
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={limit}
+            onChangeText={setLimit}
+            placeholder="Límite"
+            placeholderTextColor="#AAAAAA"
+          />
 
           <FlatList
             data={icons}
@@ -158,20 +171,14 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
             style={styles.gradientList}
           />
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleAddCategory}>
-              <Text style={styles.buttonText}>Crear</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.acceptButton} onPress={handleAddCategory}>
+            <Text style={styles.acceptButtonText}>Aceptar</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
@@ -185,6 +192,13 @@ const styles = StyleSheet.create({
     padding: 20,
     width: "80%",
     alignItems: "center",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
@@ -221,7 +235,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
   },
   gradientList: {
     marginBottom: 16,
@@ -256,6 +269,19 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: "#FF0000",
     borderWidth: 1,
+  },
+  closeButton: {},
+  acceptButton: {
+    backgroundColor: "#370185",
+    borderRadius: 24,
+    padding: 12,
+    width: "100%",
+    alignItems: "center",
+  },
+  acceptButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
