@@ -612,7 +612,6 @@ const styles = StyleSheet.create({
     padding: 12,
     width: "100%",
     alignItems: "center",
-    marginTop: 10,
   },
   acceptButtonText: {
     color: "#FFFFFF",
@@ -620,7 +619,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   scanButton: {
-    marginBottom: 10,
+    marginBottom: 16,
     padding: 10,
     borderRadius: 5,
     borderWidth: 1,
