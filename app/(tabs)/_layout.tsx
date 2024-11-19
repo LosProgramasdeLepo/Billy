@@ -15,6 +15,7 @@ const TabNavigator = () => {
           if (route.name === "index") iconName = focused ? "home" : "home-outline";
           else if (route.name === "statistics") iconName = focused ? "stats-chart" : "stats-chart-outline";
           else if (route.name === "calendar") iconName = focused ? "calendar" : "calendar-outline";
+          else if (route.name === "temporal") iconName = focused ? "calculator" : "calculator-outline";
           else if (route.name === "profiles") iconName = focused ? "people" : "people-outline";
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -39,6 +40,7 @@ const TabNavigator = () => {
       <Tabs.Screen name="index" options={{ title: "Inicio" }} />
       <Tabs.Screen name="statistics" options={{ title: "Estadísticas" }} />
       <Tabs.Screen name="calendar" options={{ title: "Calendario" }} />
+      <Tabs.Screen name="temporal" options={{ title: "Temporal" }} />
       <Tabs.Screen name="profiles" options={{ title: "Perfiles" }} />
     </Tabs>
   );
