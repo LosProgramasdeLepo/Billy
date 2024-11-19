@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, Text, FlatList, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Calendar } from "react-native-calendars";
@@ -43,6 +43,9 @@ export default function CalendarScreen() {
 
   const [selectionStart, setSelectionStart] = useState<string | null>(null);
   const [longPressTimeout, setLongPressTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const [outcomes, setOutcomes] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
 
   const years = useMemo(() => {
     const currentYear = moment().year();
@@ -134,39 +137,43 @@ export default function CalendarScreen() {
   const processTransactions = useCallback(async () => {
     if (!currentProfileId) return;
 
-    const startOfMonth = moment(currentDate).startOf("month").toDate();
-    const endOfMonth = moment(currentDate).endOf("month").toDate();
+    try {
+      const startOfMonth = moment(currentDate).startOf("month").toDate();
+      const endOfMonth = moment(currentDate).endOf("month").toDate();
 
-    const incomes = await getIncomesFromDateRange(currentProfileId, startOfMonth, endOfMonth);
-    const outcomes = await getOutcomesFromDateRange(currentProfileId, startOfMonth, endOfMonth);
+      const [incomes, outcomes] = await Promise.all([
+        getIncomesFromDateRange(currentProfileId, startOfMonth, endOfMonth),
+        getOutcomesFromDateRange(currentProfileId, startOfMonth, endOfMonth)
+      ]);
 
-    const marked: { [key: string]: { dots: { key: string; color: string }[] } } = {};
+      const marked: { [key: string]: { dots: { key: string; color: string }[] } } = {};
 
-    const addDot = (date: string, id: string, color: string) => {
-      if (marked[date]) marked[date].dots.push({ key: `${color === "#4CAF50" ? "Income" : "Outcome"}-${id}`, color });
-      else marked[date] = { dots: [{ key: `${color === "#4CAF50" ? "Income" : "Outcome"}-${id}`, color }] };
-    };
+      if (Array.isArray(incomes)) {
+        incomes.forEach((income) => {
+          const date = moment(income.created_at).format("YYYY-MM-DD");
+          if (!marked[date]) marked[date] = { dots: [] };
+          marked[date].dots.push({ key: `income-${income.id}`, color: "#4CAF50" });
+        });
+      }
 
-    // Combine income and outcome data
-    const allTransactions = [
-      ...(Array.isArray(incomes) ? incomes.map((income) => ({ ...income, type: "Income" })) : []),
-      ...(Array.isArray(outcomes) ? outcomes.map((outcome) => ({ ...outcome, type: "Outcome" })) : []),
-    ];
+      if (Array.isArray(outcomes)) {
+        outcomes.forEach((outcome) => {
+          const date = moment(outcome.created_at).format("YYYY-MM-DD");
+          if (!marked[date]) marked[date] = { dots: [] };
+          marked[date].dots.push({ key: `outcome-${outcome.id}`, color: "#F44336" });
+        });
+      }
 
-    // Process all transactions in a single loop
-    allTransactions.forEach((transaction) => {
-      const date = moment(transaction.created_at).format("YYYY-MM-DD");
-      const color = transaction.type === "Income" ? "#4CAF50" : "#F44336";
-      addDot(date, transaction.id?.toString() || "", color);
-    });
-
-    setMarkedDates(marked);
-  }, [currentDate, currentProfileId, getOutcomesFromDateRange]);
+      setMarkedDates(marked);
+    } catch (error) {
+      console.error('Error processing transactions:', error);
+    }
+  }, [currentDate, currentProfileId]);
 
   useFocusEffect(
     useCallback(() => {
       if (currentProfileId) processTransactions();
-    }, [currentProfileId, refreshIncomeData, refreshOutcomeData])
+    }, [currentProfileId, refreshIncomeData, refreshOutcomeData, processTransactions, currentDate])
   );
 
   const memoizedCalendar = useMemo(
@@ -179,6 +186,7 @@ export default function CalendarScreen() {
         renderArrow={(direction: "left" | "right") => (direction === "left" ? customArrowLeft() : customArrowRight())}
         onMonthChange={(month: { dateString: string }) => {
           setCurrentDate(month.dateString);
+          setTimeout(() => processTransactions(), 0);
         }}
         renderHeader={renderCustomHeader}
         theme={{ "stylesheet.calendar.header": { monthText: { ...styles.monthText, color: "#735BF2" } } }}
@@ -188,8 +196,9 @@ export default function CalendarScreen() {
         dayPressOut={handleDayPressOut}
       />
     ),
-    [key, currentDate, markedDates, renderCustomHeader, onDayPress]
+    [key, currentDate, markedDates, renderCustomHeader, onDayPress, processTransactions]
   );
+
 
   return (
     <View style={styles.container}>
