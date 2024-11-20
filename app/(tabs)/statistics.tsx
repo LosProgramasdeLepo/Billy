@@ -89,7 +89,7 @@ const App = () => {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader />
+      <BillyHeader title="Estadísticas" subtitle="" />
       <View style={styles.contentContainer}>
         <View style={styles.selectorWrapper}>
           <View style={styles.selectorContainer}>

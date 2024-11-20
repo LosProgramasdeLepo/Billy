@@ -46,13 +46,7 @@ export default function Temporal() {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader title="Sala Temporal" />
-      <TouchableOpacity 
-        style={styles.floatingButton} 
-        onPress={handleReset}
-      >
-        <Text style={styles.floatingButtonText}>Borrar</Text>
-      </TouchableOpacity>
+      <BillyHeader title="Sala Temporal" subtitle="Gestiona rapidamente tus gastos compartidos" />
       <View style={styles.contentContainer}>
         <ScrollView>
           <View style={styles.whiteContainer}>
@@ -78,6 +72,13 @@ export default function Temporal() {
                 </TouchableOpacity>
               </View>
             </View>
+
+            <TouchableOpacity 
+              style={styles.floatingButton} 
+              onPress={handleReset}
+            >
+              <Text style={styles.floatingButtonText}>Borrar</Text>
+            </TouchableOpacity>
 
             <View style={styles.debtCard}>
               <View style={styles.debtItem}>
@@ -273,15 +274,10 @@ const styles = StyleSheet.create({
     color: '#FF0000',
   },
   floatingButton: {
-    position: 'absolute',
-    top: 150,
-    right: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 10,
-    zIndex: 1000,
-    elevation: 6,
-    width: 100,
+    width: '100%',
     height: 50,
     shadowColor: "#000",
     shadowOffset: {
@@ -290,8 +286,10 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    elevation: 5,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   floatingButtonText: {
     fontSize: 16,
