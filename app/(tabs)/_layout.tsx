@@ -40,7 +40,7 @@ const TabNavigator = () => {
       <Tabs.Screen name="index" options={{ title: "Inicio" }} />
       <Tabs.Screen name="statistics" options={{ title: "Estadísticas" }} />
       <Tabs.Screen name="calendar" options={{ title: "Calendario" }} />
-      <Tabs.Screen name="temporal" options={{ title: "Temporal" }} />
+      <Tabs.Screen name="temporal" options={{ title: "Dividir cuenta" }} />
       <Tabs.Screen name="profiles" options={{ title: "Perfiles" }} />
     </Tabs>
   );

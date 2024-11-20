@@ -5,7 +5,7 @@ import { getProfilePictureUrl } from "@/api/api";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useAppContext } from "@/hooks/useAppContext";
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 interface BillyHeaderProps {
   title?: string;
@@ -49,6 +49,7 @@ export const BillyHeader: React.FC<BillyHeaderProps> = ({ title, subtitle, icon 
             <Image
               source={userProfilePicture ? { uri: userProfilePicture } : require("../assets/images/icons/UserIcon.png")}
               style={styles.usuario}
+              defaultSource={require("../assets/images/icons/UserIcon.png")}
             />
           </TouchableOpacity>
         </View>
