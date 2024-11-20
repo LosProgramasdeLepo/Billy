@@ -113,19 +113,13 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <Icon name="close" size={30} color="#000000" />
           </TouchableOpacity>
-          <View style={styles.typeSelector}>
-            <View style={[styles.bubbleBackground, { backgroundColor: "#B39CD4" }]}>
-              <View style={styles.bubble} />
-            </View>
-            <View style={styles.typeButton}>
-              <Text style={[styles.typeButtonText, { color: "#000000" }]}>Gasto</Text>
-            </View>
-          </View>
+          
+          <Text style={styles.title}>Gasto</Text>
 
           <View style={styles.contentContainer}>
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, { flex: 1 }, errors.description && styles.inputError]}
+                style={[styles.input, errors.description && styles.inputError]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descripción"
@@ -158,84 +152,56 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContainer: {
-    width: "85%",
-    maxWidth: 400,
-    backgroundColor: "white",
-    borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  typeSelector: {
-    flexDirection: "row",
-    marginBottom: 16,
-    position: "relative",
-    width: "100%",
-    justifyContent: "center",
-    height: 44,
-  },
-  typeButton: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 1,
-  },
-  typeButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  bubbleBackground: {
-    position: "absolute",
-    top: -3,
-    bottom: -3,
-    left: -6,
-    right: -6,
-    backgroundColor: "#B39CD4",
-    borderRadius: 24,
-    overflow: "hidden",
-  },
-  bubble: {
-    position: "absolute",
-    top: 3,
-    bottom: 3,
-    width: "100%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-  },
-  contentContainer: {
-    width: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 4,
-    padding: 12,
-    marginBottom: 16,
-    width: "100%",
-    backgroundColor: "#f9f9f9",
-    fontSize: 16,
+    minHeight: 300,
   },
   closeButton: {
-    position: 'absolute',
-    right: 5,
-    top: 2,
-    padding: 5,
+    position: "absolute",
+    right: 20,
+    top: 20,
     zIndex: 1,
   },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#000000",
+    marginTop: 20,
+    marginBottom: 30,
+    textAlign: "center",
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+  },
+  inputError: {
+    borderColor: "#FF0000",
+  },
+  scanButton: {
+    marginLeft: 10,
+  },
   acceptButton: {
-    backgroundColor: "#370185",
-    borderRadius: 24,
-    padding: 12,
-    width: "100%",
+    backgroundColor: "#4B00B8",
+    borderRadius: 25,
+    padding: 15,
     alignItems: "center",
     marginTop: 20,
   },
@@ -243,18 +209,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  scanButton: {
-    padding: 10,
-    marginLeft: 10,
-  },
-  inputError: {
-    borderColor: "red",
   },
 });
 

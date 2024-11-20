@@ -3,10 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 
 import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
+import AddPersonModal from "@/components/modals/AddPersonModal";
 
 export default function Temporal() {
   const [personCount, setPersonCount] = useState(4);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
+  const [transactions, setTransactions] = useState([
+    { id: 1, title: 'Starbucks', amount: '1.000,00', paidBy: 'Juan Gómez' },
+    { id: 2, title: 'Helado', amount: '500,00', paidBy: 'Juan Gómez' },
+  ]);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -16,14 +22,33 @@ export default function Temporal() {
     setIsModalVisible(false);
   };
 
+  const handleReset = () => {
+    setPersonCount(0);
+    setTransactions([]);
+  };
+
   const refreshTransactions = () => {
     // Esta función se implementará cuando se agregue la API
     console.log("Refrescando transacciones...");
   };
 
+  const handleOpenPersonModal = () => {
+    setIsPersonModalVisible(true);
+  };
+
+  const handleClosePersonModal = () => {
+    setIsPersonModalVisible(false);
+  };
+
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
       <BillyHeader title="Sala Temporal" />
+      <TouchableOpacity 
+        style={styles.floatingButton} 
+        onPress={handleReset}
+      >
+        <Text style={styles.floatingButtonText}>Borrar</Text>
+      </TouchableOpacity>
       <View style={styles.contentContainer}>
         <ScrollView>
           <View style={styles.whiteContainer}>
@@ -34,7 +59,7 @@ export default function Temporal() {
                   value={`Cantidad de personas: ${personCount}`}
                   editable={false}
                 />
-                <TouchableOpacity onPress={() => setPersonCount(prev => prev + 1)}>
+                <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
                 </TouchableOpacity>
               </View>
@@ -75,27 +100,18 @@ export default function Temporal() {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.transactionCard}>
-                <View>
-                  <Text style={styles.transactionTitle}>Starbucks</Text>
-                  <Text style={styles.transactionSubtitle}>
-                    <Text style={styles.pagadoPor}>Pagado por </Text>
-                    <Text style={styles.pagador}>Juan Gómez</Text>
-                  </Text>
+              {transactions.map((transaction) => (
+                <View key={transaction.id} style={styles.transactionCard}>
+                  <View>
+                    <Text style={styles.transactionTitle}>{transaction.title}</Text>
+                    <Text style={styles.transactionSubtitle}>
+                      <Text style={styles.pagadoPor}>Pagado por </Text>
+                      <Text style={styles.pagador}>{transaction.paidBy}</Text>
+                    </Text>
+                  </View>
+                  <Text style={styles.amount}>- $ {transaction.amount}</Text>
                 </View>
-                <Text style={styles.amount}>- $ 1.000,00</Text>
-              </View>
-
-              <View style={styles.transactionCard}>
-                <View>
-                  <Text style={styles.transactionTitle}>Helado</Text>
-                  <Text style={styles.transactionSubtitle}>
-                    <Text style={styles.pagadoPor}>Pagado por </Text>
-                    <Text style={styles.pagador}>Juan Gómez</Text>
-                  </Text>
-                </View>
-                <Text style={styles.amount}>- $ 500,00</Text>
-              </View>
+              ))}
             </View>
           </View>
         </ScrollView>
@@ -105,6 +121,12 @@ export default function Temporal() {
         isVisible={isModalVisible}
         onClose={handleCloseModal}
         refreshTransactions={refreshTransactions}
+      />
+
+      <AddPersonModal
+        isVisible={isPersonModalVisible}
+        onClose={handleClosePersonModal}
+        onAddPerson={() => setPersonCount(prev => prev + 1)}
       />
     </LinearGradient>
   );
@@ -245,5 +267,31 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 14,
     color: '#FF0000',
+  },
+  floatingButton: {
+    position: 'absolute',
+    top: 150,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 10,
+    zIndex: 1000,
+    elevation: 6,
+    width: 100,
+    height: 50,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  floatingButtonText: {
+    fontSize: 16,
+    color: '#4B00B8',
+    textAlign: 'center',
   },
 });

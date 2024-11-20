@@ -12,24 +12,24 @@ import TimePeriodModal from "@/components/modals/TimePeriodModal";
 import { useAppContext } from "@/hooks/useAppContext";
 import { TransactionList } from "@/components/TransactionList";
 
-const customArrowLeft = () => {
-  return (
-    <View style={styles.arrowContainer}>
-      <View style={[styles.arrow, styles.arrowLeft]} />
-    </View>
-  );
-};
-
-const customArrowRight = () => {
-  return (
-    <View style={styles.arrowContainer}>
-      <View style={[styles.arrow, styles.arrowRight]} />
-    </View>
-  );
-};
-
 export default function CalendarScreen() {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData } = useAppContext();
+
+  const customArrowLeft = useCallback(() => {
+    return (
+      <View style={styles.arrowContainer}>
+        <View style={[styles.arrow, styles.arrowLeft]} />
+      </View>
+    );
+  }, []);
+
+  const customArrowRight = useCallback(() => {
+    return (
+      <View style={styles.arrowContainer}>
+        <View style={[styles.arrow, styles.arrowRight]} />
+      </View>
+    );
+  }, []);
 
   const [markedDates, setMarkedDates] = useState({});
   const [currentDate, setCurrentDate] = useState(moment().format("YYYY-MM-DD"));
@@ -186,7 +186,7 @@ export default function CalendarScreen() {
         renderArrow={(direction: "left" | "right") => (direction === "left" ? customArrowLeft() : customArrowRight())}
         onMonthChange={(month: { dateString: string }) => {
           setCurrentDate(month.dateString);
-          setTimeout(() => processTransactions(), 0);
+          processTransactions();
         }}
         renderHeader={renderCustomHeader}
         theme={{ "stylesheet.calendar.header": { monthText: { ...styles.monthText, color: "#735BF2" } } }}
@@ -196,7 +196,7 @@ export default function CalendarScreen() {
         dayPressOut={handleDayPressOut}
       />
     ),
-    [key, currentDate, markedDates, renderCustomHeader, onDayPress, processTransactions]
+    [key, currentDate, markedDates, customArrowLeft, customArrowRight, renderCustomHeader, onDayPress, onDayLongPress, handleDayPressIn, handleDayPressOut]
   );
 
 
