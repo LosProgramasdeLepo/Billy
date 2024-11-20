@@ -46,37 +46,26 @@ export default function Temporal() {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader/>
+      <BillyHeader />
       <View style={styles.contentContainer}>
-        <ScrollView>
-          <View style={styles.whiteContainer}>
+        <View style={styles.whiteContainer}>
+          <ScrollView>
             <View style={styles.infoCard}>
               <View style={styles.personas}>
-                <TextInput
-                  style={styles.input}
-                  value={`Cantidad de personas: ${personCount}`}
-                  editable={false}
-                />
+                <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
                 <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.gastos}>
-                <TextInput
-                  style={styles.input}
-                  value="Gastos"
-                  editable={false}
-                />
+                <TextInput style={styles.input} value="Gastos" editable={false} />
                 <TouchableOpacity onPress={handleOpenModal}>
                   <Text style={styles.addButton}>+</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            <TouchableOpacity 
-              style={styles.floatingButton} 
-              onPress={handleReset}
-            >
+            <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
               <Text style={styles.floatingButtonText}>Borrar</Text>
             </TouchableOpacity>
 
@@ -118,20 +107,16 @@ export default function Temporal() {
                 </View>
               ))}
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
 
-      <TemporalExpenseModal
-        isVisible={isModalVisible}
-        onClose={handleCloseModal}
-        refreshTransactions={refreshTransactions}
-      />
+      <TemporalExpenseModal isVisible={isModalVisible} onClose={handleCloseModal} refreshTransactions={refreshTransactions} />
 
       <AddPersonModal
         isVisible={isPersonModalVisible}
         onClose={handleClosePersonModal}
-        onAddPerson={() => setPersonCount(prev => prev + 1)}
+        onAddPerson={() => setPersonCount((prev) => prev + 1)}
       />
     </LinearGradient>
   );
@@ -146,51 +131,51 @@ const styles = StyleSheet.create({
     marginHorizontal: "2.5%",
   },
   whiteContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
     elevation: 3,
-    minHeight: '100%',
-    top: 15,
+    minHeight: "100%",
+    marginTop: 10,
   },
   infoCard: {
-    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: "rgba(0, 0, 0, 0.08)",
     borderRadius: 25,
     padding: 20,
     marginBottom: 20,
   },
   personas: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(66, 1, 161, 0.08)',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(66, 1, 161, 0.08)",
     borderRadius: 20,
     padding: 10,
     marginBottom: 10,
   },
   gastos: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(66, 1, 161, 0.08)',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(66, 1, 161, 0.08)",
     borderRadius: 20,
     padding: 10,
   },
   input: {
     fontSize: 16,
-    color: '#222B45',
+    color: "#222B45",
     flex: 1,
   },
   addButton: {
     fontSize: 24,
-    color: '#4B00B8',
+    color: "#4B00B8",
     marginLeft: 10,
   },
   debtCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
@@ -201,49 +186,49 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   debtItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 10,
   },
   debtText: {
     fontSize: 16,
-    color: '#3B3B3B',
+    color: "#3B3B3B",
   },
   precio: {
     fontSize: 16,
-    color: '#3B3B3B',
+    color: "#3B3B3B",
   },
   separator: {
     height: 1,
-    backgroundColor: '#DDD',
+    backgroundColor: "#DDD",
     marginHorizontal: 10,
   },
   movimientos: {
-    width: '100%',
+    width: "100%",
     marginBottom: 20,
   },
   movimientosHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   movimientosTitle: {
     fontSize: 15,
-    color: '#222222',
+    color: "#222222",
   },
   verMas: {
     fontSize: 12,
-    color: '#4B00B8',
-    textDecorationLine: 'underline',
+    color: "#4B00B8",
+    textDecorationLine: "underline",
   },
   transactionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 0 },
@@ -254,26 +239,26 @@ const styles = StyleSheet.create({
   },
   transactionTitle: {
     fontSize: 16,
-    color: '#3C3C3C',
+    color: "#3C3C3C",
   },
   transactionSubtitle: {
     fontSize: 12,
   },
   pagadoPor: {
-    color: '#666666',
+    color: "#666666",
   },
   pagador: {
-    color: '#4B00B8',
+    color: "#4B00B8",
   },
   amount: {
     fontSize: 14,
-    color: '#FF0000',
+    color: "#FF0000",
   },
   floatingButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     padding: 10,
-    width: '100%',
+    width: "100%",
     height: 50,
     shadowColor: "#000",
     shadowOffset: {
@@ -283,13 +268,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   floatingButtonText: {
     fontSize: 16,
-    color: '#4B00B8',
-    textAlign: 'center',
+    color: "#4B00B8",
+    textAlign: "center",
   },
 });

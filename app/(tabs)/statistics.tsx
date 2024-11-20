@@ -91,7 +91,7 @@ const App = () => {
   };
 
   const toggleMode = () => {
-    setIsYearMode(!isYearMode);
+    setMode(mode === "category" ? "person" : "category");
   };
 
   const canGoForward =
@@ -101,56 +101,56 @@ const App = () => {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader/>
+      <BillyHeader />
       <View style={styles.contentContainer}>
-        <ScrollView>
-          <View style={styles.card}>
-            <View style={styles.selectorWrapper}>
-              <View style={styles.selectorContainer}>
-                <TouchableOpacity
-                  style={[styles.selectorButton, selectedButton === "month" && styles.selectorButtonActive]}
-                  onPress={toggleSelector("month")}
-                >
-                  <Text style={[styles.selectorButtonText, selectedButton === "month" && styles.selectorButtonTextActive]}>Mes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.selectorButton, selectedButton === "year" && styles.selectorButtonActive]}
-                  onPress={toggleSelector("year")}
-                >
-                  <Text style={[styles.selectorButtonText, selectedButton === "year" && styles.selectorButtonTextActive]}>Año</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.dateSelector}>
-              <TouchableOpacity onPress={changeDate(selectedButton, -1)} style={styles.arrowButton}>
-                <Text style={styles.arrowText}>{"<"}</Text>
+        <View style={styles.card}>
+          <View style={styles.selectorWrapper}>
+            <View style={styles.selectorContainer}>
+              <TouchableOpacity
+                style={[styles.selectorButton, selectedButton === "month" && styles.selectorButtonActive]}
+                onPress={toggleSelector("month")}
+              >
+                <Text style={[styles.selectorButtonText, selectedButton === "month" && styles.selectorButtonTextActive]}>Mes</Text>
               </TouchableOpacity>
-              <View style={styles.dateTextContainer}>
-                <Text style={styles.dateText}>
-                  {selectedButton === "month" ? `${months[selectedMonth]} ${selectedYear}` : selectedYear.toString()}
-                </Text>
-              </View>
-              <View style={styles.arrowButton}>
-                {canGoForward && (
-                  <TouchableOpacity onPress={changeDate(selectedButton, 1)}>
-                    <Text style={styles.arrowText}>{">"}</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-            {shared && (
-              <TouchableOpacity onPress={toggleMode} style={styles.circularButton}>
-                <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
+              <TouchableOpacity
+                style={[styles.selectorButton, selectedButton === "year" && styles.selectorButtonActive]}
+                onPress={toggleSelector("year")}
+              >
+                <Text style={[styles.selectorButtonText, selectedButton === "year" && styles.selectorButtonTextActive]}>Año</Text>
               </TouchableOpacity>
-            )}
+            </View>
+          </View>
+          <View style={styles.dateSelector}>
+            <TouchableOpacity onPress={changeDate(selectedButton, -1)} style={styles.arrowButton}>
+              <Text style={styles.arrowText}>{"<"}</Text>
+            </TouchableOpacity>
+            <View style={styles.dateTextContainer}>
+              <Text style={styles.dateText}>
+                {selectedButton === "month" ? `${months[selectedMonth]} ${selectedYear}` : selectedYear.toString()}
+              </Text>
+            </View>
+            <View style={styles.arrowButton}>
+              {canGoForward && (
+                <TouchableOpacity onPress={changeDate(selectedButton, 1)}>
+                  <Text style={styles.arrowText}>{">"}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          {shared && (
+            <TouchableOpacity onPress={toggleMode} style={styles.circularButton}>
+              <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
+            </TouchableOpacity>
+          )}
+          <ScrollView contentContainerStyle={styles.scrollContent}>
             <Stats
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
               mode={mode === "category" ? false : true}
               isYearMode={selectedButton === "year"}
             />
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -165,18 +165,16 @@ const styles = StyleSheet.create({
     marginHorizontal: "2.5%",
   },
   card: {
+    marginTop: 10,
+    flex: 1,
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 70,
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
-    minHeight: "100%",
-    top: 15,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   selectorWrapper: {
     position: "absolute",

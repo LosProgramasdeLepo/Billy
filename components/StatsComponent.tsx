@@ -58,23 +58,19 @@ export const StatsComponent = React.memo(({ month, year, mode, isYearMode }: Sta
     } else {
       const sharedUsers = await getSharedUsers(currentProfileId);
       if (sharedUsers && sharedUsers.length > 0) {
-        const startDate = isYearMode 
-          ? new Date(year, 0, 1) 
-          : parseDate(month, year, 1);
-        
-        const endDate = isYearMode
-          ? new Date(year, 11, 31)
-          : parseDate(month, year, getLastDayOfMonth(year, month));
+        const startDate = isYearMode ? new Date(year, 0, 1) : parseDate(month, year, 1);
+
+        const endDate = isYearMode ? new Date(year, 11, 31) : parseDate(month, year, getLastDayOfMonth(year, month));
 
         const items = await getTotalToPayInDateRange(currentProfileId, startDate, endDate);
 
         calculatedExpenses = await Promise.all(
           sharedUsers.map(async (user) => {
             const label = user.name || user.email;
-            return { 
-              label, 
-              amount: items ? items[user.email] || 0 : 0, 
-              color: generateRandomColor() 
+            return {
+              label,
+              amount: items ? items[user.email] || 0 : 0,
+              color: generateRandomColor(),
             } as Expense;
           })
         );
@@ -98,23 +94,12 @@ export const StatsComponent = React.memo(({ month, year, mode, isYearMode }: Sta
   const getCategoryTotal = useMemo(
     () =>
       async (profileId: string, categoryId: string, month: number, year: number): Promise<number> => {
-        const startDate = isYearMode 
-          ? new Date(year, 0, 1) 
-          : parseDate(month, year, 1);
-        
-        const endDate = isYearMode
-          ? new Date(year, 11, 31)
-          : parseDate(month, year, getLastDayOfMonth(year, month));
+        const startDate = isYearMode ? new Date(year, 0, 1) : parseDate(month, year, 1);
 
-        const OutcomeFromCategory = await getOutcomesFromDateRangeAndCategory(
-          profileId,
-          startDate,
-          endDate,
-          categoryId
-        );
-        return Array.isArray(OutcomeFromCategory) 
-          ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) 
-          : 0;
+        const endDate = isYearMode ? new Date(year, 11, 31) : parseDate(month, year, getLastDayOfMonth(year, month));
+
+        const OutcomeFromCategory = await getOutcomesFromDateRangeAndCategory(profileId, startDate, endDate, categoryId);
+        return Array.isArray(OutcomeFromCategory) ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) : 0;
       },
     [isYearMode]
   );
@@ -144,13 +129,13 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
 
   const formatTotalValue = (value: number) => {
     // Formatear el número al estilo español (1.000,00)
-    const formattedNumber = value.toLocaleString('es-ES', {
+    const formattedNumber = value.toLocaleString("es-ES", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
-    
-    const [integerPart, decimalPart] = formattedNumber.split(',');
-    
+
+    const [integerPart, decimalPart] = formattedNumber.split(",");
+
     // Ajustar el tamaño de fuente según la longitud del número
     const getFontSize = (number: string) => {
       if (number.length > 8) return 20;
@@ -163,9 +148,7 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
     return (
       <Text style={[styles.valueText, { fontSize }]}>
         ${integerPart}
-        <Text style={[styles.decimalText, { fontSize: fontSize * 0.64 }]}>
-          {decimalPart ? `,${decimalPart}` : ''}
-        </Text>
+        <Text style={[styles.decimalText, { fontSize: fontSize * 0.64 }]}>{decimalPart ? `,${decimalPart}` : ""}</Text>
       </Text>
     );
   };
@@ -202,9 +185,7 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
         })}
       </Svg>
 
-      <View style={styles.valueContainer}>
-        {formatTotalValue(total)}
-      </View>
+      <View style={styles.valueContainer}>{formatTotalValue(total)}</View>
     </View>
   );
 });
@@ -233,6 +214,7 @@ const styles = StyleSheet.create({
     paddingTop: 260,
   },
   box: {
+    flex: 1,
     width: "100%",
     maxWidth: 400,
     marginTop: 20,
@@ -299,10 +281,8 @@ const styles = StyleSheet.create({
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.40,
+    shadowOpacity: 0.4,
     shadowRadius: 10.84,
-   
-
   },
   valueContainer: {
     position: "absolute",
