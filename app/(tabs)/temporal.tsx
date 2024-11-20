@@ -5,14 +5,18 @@ import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
 
+interface Transaction {
+  id: string | number;
+  title: string;
+  paidBy: string;
+  amount: number;
+}
+
 export default function Temporal() {
-  const [personCount, setPersonCount] = useState(4);
+  const [personCount, setPersonCount] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
-  const [transactions, setTransactions] = useState([
-    { id: 1, title: 'Starbucks', amount: '1.000,00', paidBy: 'Juan Gómez' },
-    { id: 2, title: 'Helado', amount: '500,00', paidBy: 'Juan Gómez' },
-  ]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);

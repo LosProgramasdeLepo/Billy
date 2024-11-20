@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { OutcomeList } from "@/components/OutcomeList";
 import { BillyHeader } from "@/components/BillyHeader";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,17 +16,30 @@ const CategoryDetailsScreen: React.FC<Props> = () => {
   const category = route.params?.category;
   const { categoryData } = useAppContext();
 
-  // Encuentra la categoría correspondiente para obtener el límite y el gasto
   const categoryInfo = categoryData?.find((cat) => cat.id === category.id);
   const spent = categoryInfo?.spent || 0;
   const limit = categoryInfo?.limit || 0;
 
-  const title = limit ? `${category.name} ($${spent.toFixed(2)}/$${limit.toFixed(2)})` : `${category.name} ($${spent.toFixed(2)})`;
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const title = category.name;
+  const subtitleContent = limit ? 
+    <Text style={styles.subtitleText}>
+      ${formatNumber(spent)}/${formatNumber(limit)}
+    </Text> : 
+    <Text style={styles.subtitleText}>
+      ${formatNumber(spent)}
+    </Text>;
 
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-        <BillyHeader title={title} icon={category.icon} />
+        <BillyHeader title={title} subtitle={subtitleContent} icon={category.icon} />
         <View style={styles.contentContainer}>
           <OutcomeList category={category.id} showDateSeparators={true} />
         </View>
@@ -44,10 +57,20 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    top: 15,
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     marginHorizontal: "2.5%",
+  },
+  subtitleText: {
+    fontSize: 15,
+    
+    color: '#ffffff',
+    fontWeight: '500',
+  },
+  titleText: {
+    marginTop: 5,
   },
 });
 

@@ -23,15 +23,23 @@ export const BalanceCard = () => {
   const formattedIncomes = useMemo(() => (totalIncome ? formatNumber(totalIncome) : "0.00"), [incomeData]);
   const formattedOutcomes = useMemo(() => (totalOutcome ? formatNumber(totalOutcome) : "0.00"), [outcomeData]);
 
+  const formatBalanceWithSmallerDecimals = (value: string) => {
+    const parts = value.split(',');
+    return (
+      <ThemedText type="title" style={[styles.balanceAmount, { color: textColor }]}>
+        ${parts[0]}
+        <ThemedText style={styles.decimalPart}>,{parts[1] || '00'}</ThemedText>
+      </ThemedText>
+    );
+  };
+
   return (
     <View style={styles.box}>
       <LinearGradient colors={["rgba(0, 0, 0, 0.08)", "rgba(0, 0, 0, 0.08)"]} style={styles.balanceCard}>
         <ThemedText type="subtitle" style={[styles.balanceTotalText, { color: textColor }]}>
           Balance total:
         </ThemedText>
-        <ThemedText type="title" style={[styles.balanceAmount, { color: textColor }]}>
-          ${formattedBalance}
-        </ThemedText>
+        {formatBalanceWithSmallerDecimals(formattedBalance)}
         <View style={styles.ingresosGastosCard}>
           <View style={styles.ingresosCard}>
             <View style={styles.ingresoPlata}>
@@ -60,8 +68,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   balanceCard: {
-    height: 200,
+    height: 220,
     width: 350,
+    top: -15,
     borderRadius: 25,
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.05)",
@@ -74,16 +83,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "400",
     position: "absolute",
-    top: 25,
-    left: 79,
+    top: 35,
+    left: 20,
     letterSpacing: -0.28,
   },
   balanceAmount: {
     fontSize: 40,
     fontWeight: "400",
     position: "absolute",
-    top: 45,
-    left: 79,
+    top: 55,
+    left: 20,
     letterSpacing: -2,
     lineHeight: 48,
   },
@@ -131,5 +140,10 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     letterSpacing: -0.7,
     marginTop: -10,
+  },
+  decimalPart: {
+    fontSize: 24,
+    fontWeight: "400",
+    letterSpacing: -1,
   },
 });

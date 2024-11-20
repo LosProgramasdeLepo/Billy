@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
-    top: -160,
+    top: -170,
     left: 30,
   },
   button: {
@@ -34,6 +34,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.35,
     elevation: 4,
   },
 });

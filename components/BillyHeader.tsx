@@ -5,10 +5,11 @@ import { getProfilePictureUrl } from "@/api/api";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { useAppContext } from "@/hooks/useAppContext";
+import { ReactNode } from 'react';
 
 interface BillyHeaderProps {
-  title?: string;
-  subtitle?: string;
+  title: string;
+  subtitle: ReactNode;
   icon?: string;
 }
 
