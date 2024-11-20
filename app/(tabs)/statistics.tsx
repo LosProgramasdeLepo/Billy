@@ -22,15 +22,27 @@ const months = [
   "Diciembre",
 ];
 
-const Stats = React.memo(({ selectedMonth, selectedYear, mode, isYearMode }: { selectedMonth: number; selectedYear: number; mode: boolean | null; isYearMode: boolean }) => {
-  const memoKey = useMemo(() => `${selectedMonth}-${selectedYear}-${mode}`, [selectedMonth, selectedYear, mode]);
+const Stats = React.memo(
+  ({
+    selectedMonth,
+    selectedYear,
+    mode,
+    isYearMode,
+  }: {
+    selectedMonth: number;
+    selectedYear: number;
+    mode: boolean | null;
+    isYearMode: boolean;
+  }) => {
+    const memoKey = useMemo(() => `${selectedMonth}-${selectedYear}-${mode}`, [selectedMonth, selectedYear, mode]);
 
-  return (
-    <View style={styles.statsContainer}>
-      <StatsComponent key={memoKey} month={selectedMonth} year={selectedYear} mode={mode} isYearMode={isYearMode} />
-    </View>
-  );
-});
+    return (
+      <View style={styles.statsContainer}>
+        <StatsComponent key={memoKey} month={selectedMonth} year={selectedYear} mode={mode} isYearMode={isYearMode} />
+      </View>
+    );
+  }
+);
 
 const App = () => {
   const currentDate = new Date();
@@ -89,7 +101,7 @@ const App = () => {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader title="Estadísticas" subtitle="Visualiza tus gastos por mes y año" />
+      <BillyHeader/>
       <View style={styles.contentContainer}>
         <ScrollView>
           <View style={styles.card}>
@@ -131,7 +143,12 @@ const App = () => {
                 <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
               </TouchableOpacity>
             )}
-            <Stats selectedMonth={selectedMonth} selectedYear={selectedYear} mode={mode === "category" ? false : true} isYearMode={selectedButton === "year"} />
+            <Stats
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              mode={mode === "category" ? false : true}
+              isYearMode={selectedButton === "year"}
+            />
           </View>
         </ScrollView>
       </View>
@@ -146,7 +163,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     marginHorizontal: "2.5%",
-    
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -159,7 +175,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 3,
-    minHeight: '100%',
+    minHeight: "100%",
     top: 15,
   },
   selectorWrapper: {

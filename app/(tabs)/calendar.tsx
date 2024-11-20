@@ -203,7 +203,7 @@ export default function CalendarScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#4B00B8", "#20014E"]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.gradientContainer}>
-        <BillyHeader title="Calendario" subtitle="Visualiza tus transacciones por fecha" />
+        <BillyHeader/>
         <View style={styles.contentContainer}>
           <View style={styles.calendarContainer}>{viewMode === "month" ? memoizedCalendar : renderYearPicker()}</View>
           {/*           <View style={styles.buttonContainer}>

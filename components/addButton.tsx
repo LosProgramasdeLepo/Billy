@@ -20,8 +20,8 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
-    top: -170,
-    left: 30,
+    top: -155,
+    left: 25,
   },
   button: {
     position: "absolute",

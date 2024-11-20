@@ -46,7 +46,7 @@ export default function Temporal() {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader title="Sala Temporal" subtitle="Gestiona rapidamente tus gastos compartidos" />
+      <BillyHeader/>
       <View style={styles.contentContainer}>
         <ScrollView>
           <View style={styles.whiteContainer}>

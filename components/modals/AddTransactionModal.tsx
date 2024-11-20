@@ -633,7 +633,6 @@ const styles = StyleSheet.create({
   },
   picker: {
     marginLeft: -5,
-    marginTop: -85,
   },
   pickerContainer: {
     borderWidth: 1,
@@ -643,7 +642,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     backgroundColor: "#f9f9f9",
     overflow: "hidden",
-    height: 50,
   },
   pickerItem: {
     fontSize: 16,

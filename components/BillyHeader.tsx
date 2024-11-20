@@ -8,8 +8,8 @@ import { useAppContext } from "@/hooks/useAppContext";
 import { ReactNode } from 'react';
 
 interface BillyHeaderProps {
-  title: string;
-  subtitle: ReactNode;
+  title?: string;
+  subtitle?: ReactNode;
   icon?: string;
 }
 

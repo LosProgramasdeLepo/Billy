@@ -24,11 +24,11 @@ export const BalanceCard = () => {
   const formattedOutcomes = useMemo(() => (totalOutcome ? formatNumber(totalOutcome) : "0.00"), [outcomeData]);
 
   const formatBalanceWithSmallerDecimals = (value: string) => {
-    const parts = value.split(',');
+    const parts = value.split(",");
     return (
       <ThemedText type="title" style={[styles.balanceAmount, { color: textColor }]}>
         ${parts[0]}
-        <ThemedText style={styles.decimalPart}>,{parts[1] || '00'}</ThemedText>
+        <ThemedText style={styles.decimalPart}>,{parts[1] || "00"}</ThemedText>
       </ThemedText>
     );
   };
@@ -66,12 +66,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignSelf: "center",
     marginBottom: 20,
+    alignItems: "center",
   },
   balanceCard: {
     height: 200,
-    width: 330,
-    top: 0,
-    left:10,
+    width: "100%",
     borderRadius: 25,
     borderWidth: 2,
     borderColor: "rgba(255, 255, 255, 0.05)",
