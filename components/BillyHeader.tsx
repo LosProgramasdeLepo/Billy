@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   subtituloTexto: {
     color: "#ffffff",
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "400",
     letterSpacing: -0.12,
   },

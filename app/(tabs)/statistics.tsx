@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import StatsComponent from "@/components/StatsComponent";
 import { BillyHeader } from "@/components/BillyHeader";
@@ -89,49 +89,51 @@ const App = () => {
 
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
-      <BillyHeader title="Estadísticas" subtitle="" />
+      <BillyHeader title="Estadísticas" subtitle="Visualiza tus gastos por mes y año" />
       <View style={styles.contentContainer}>
-        <View style={styles.selectorWrapper}>
-          <View style={styles.selectorContainer}>
-            <TouchableOpacity
-              style={[styles.selectorButton, selectedButton === "month" && styles.selectorButtonActive]}
-              onPress={toggleSelector("month")}
-            >
-              <Text style={[styles.selectorButtonText, selectedButton === "month" && styles.selectorButtonTextActive]}>Mes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.selectorButton, selectedButton === "year" && styles.selectorButtonActive]}
-              onPress={toggleSelector("year")}
-            >
-              <Text style={[styles.selectorButtonText, selectedButton === "year" && styles.selectorButtonTextActive]}>Año</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.dateSelector}>
-            <TouchableOpacity onPress={changeDate(selectedButton, -1)} style={styles.arrowButton}>
-              <Text style={styles.arrowText}>{"<"}</Text>
-            </TouchableOpacity>
-            <View style={styles.dateTextContainer}>
-              <Text style={styles.dateText}>
-                {selectedButton === "month" ? `${months[selectedMonth]} ${selectedYear}` : selectedYear.toString()}
-              </Text>
-            </View>
-            <View style={styles.arrowButton}>
-              {canGoForward && (
-                <TouchableOpacity onPress={changeDate(selectedButton, 1)}>
-                  <Text style={styles.arrowText}>{">"}</Text>
+        <ScrollView>
+          <View style={styles.card}>
+            <View style={styles.selectorWrapper}>
+              <View style={styles.selectorContainer}>
+                <TouchableOpacity
+                  style={[styles.selectorButton, selectedButton === "month" && styles.selectorButtonActive]}
+                  onPress={toggleSelector("month")}
+                >
+                  <Text style={[styles.selectorButtonText, selectedButton === "month" && styles.selectorButtonTextActive]}>Mes</Text>
                 </TouchableOpacity>
-              )}
+                <TouchableOpacity
+                  style={[styles.selectorButton, selectedButton === "year" && styles.selectorButtonActive]}
+                  onPress={toggleSelector("year")}
+                >
+                  <Text style={[styles.selectorButtonText, selectedButton === "year" && styles.selectorButtonTextActive]}>Año</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+            <View style={styles.dateSelector}>
+              <TouchableOpacity onPress={changeDate(selectedButton, -1)} style={styles.arrowButton}>
+                <Text style={styles.arrowText}>{"<"}</Text>
+              </TouchableOpacity>
+              <View style={styles.dateTextContainer}>
+                <Text style={styles.dateText}>
+                  {selectedButton === "month" ? `${months[selectedMonth]} ${selectedYear}` : selectedYear.toString()}
+                </Text>
+              </View>
+              <View style={styles.arrowButton}>
+                {canGoForward && (
+                  <TouchableOpacity onPress={changeDate(selectedButton, 1)}>
+                    <Text style={styles.arrowText}>{">"}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            {shared && (
+              <TouchableOpacity onPress={toggleMode} style={styles.circularButton}>
+                <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
+              </TouchableOpacity>
+            )}
+            <Stats selectedMonth={selectedMonth} selectedYear={selectedYear} mode={mode === "category" ? false : true} isYearMode={selectedButton === "year"} />
           </View>
-          {shared && (
-            <TouchableOpacity onPress={toggleMode} style={styles.circularButton}>
-              <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
-            </TouchableOpacity>
-          )}
-          <Stats selectedMonth={selectedMonth} selectedYear={selectedYear} mode={mode === "category" ? false : true} isYearMode={selectedButton === "year"} />
-        </View>
+        </ScrollView>
       </View>
     </LinearGradient>
   );
@@ -142,16 +144,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    marginHorizontal: "2.5%",
     flex: 1,
+    marginHorizontal: "2.5%",
+    
+  },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 70,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 3,
+    minHeight: '100%',
+    top: 15,
   },
   selectorWrapper: {
+    position: "absolute",
+    top: 15,
+    left: 0,
+    right: 0,
     alignItems: "center",
+    zIndex: 1,
   },
   selectorContainer: {
-    marginTop: 5,
     flexDirection: "row",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#4B00B8",
     borderRadius: 25,
     padding: 4,
   },
@@ -170,17 +191,6 @@ const styles = StyleSheet.create({
   },
   selectorButtonTextActive: {
     color: "#4B00B8",
-  },
-  card: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
   },
   dateSelector: {
     flexDirection: "row",
