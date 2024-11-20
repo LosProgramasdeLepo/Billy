@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, Modal, StyleSheet } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 interface VerificationModalProps {
   isVisible: boolean;
@@ -16,6 +17,17 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   verificationCode,
   setVerificationCode,
 }) => {
+  const getVerificationError = () => {
+    if (verificationCode.trim() !== "" && verificationCode.length !== 6) {
+      return "El código debe tener 6 caracteres";
+    }
+    return "";
+  };
+
+  const isFormValid = () => {
+    return verificationCode.trim() !== "" && verificationCode.length === 6;
+  };
+
   const handleSubmit = () => {
     onSubmit(verificationCode);
     setVerificationCode("");
@@ -25,19 +37,32 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
     <Modal visible={isVisible} transparent animationType="slide">
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Ingrese el código de verificación</Text>
-          <TextInput
-            style={styles.input}
-            value={verificationCode}
-            onChangeText={setVerificationCode}
-            placeholder="Ingrese el código"
-            keyboardType="number-pad"
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Ingrese el código</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={[styles.input, { borderColor: getVerificationError() ? "#FF0000" : "black" }]}
+              value={verificationCode}
+              onChangeText={setVerificationCode}
+              placeholder="Código de verificación"
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholderTextColor="#999"
+            />
+            {getVerificationError() && <Text style={styles.errorText}>{getVerificationError()}</Text>}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.button, !isFormValid() && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={!isFormValid()}
+          >
             <Text style={styles.buttonText}>Verificar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelText}>Cancelar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -65,20 +90,35 @@ const styles = StyleSheet.create({
     elevation: 10,
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     marginBottom: 20,
-    textAlign: "center",
+    paddingHorizontal: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  inputGroup: {
+    width: "100%",
+    marginBottom: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
+    backgroundColor: "white",
     width: "100%",
-    marginBottom: 15,
-    fontSize: 16,
+    padding: 15,
+    borderRadius: 25,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  errorText: {
+    color: "#FF0000",
+    fontSize: 12,
+    marginLeft: 15,
+    marginTop: -10,
   },
   button: {
     backgroundColor: "#370185",
@@ -86,16 +126,13 @@ const styles = StyleSheet.create({
     padding: 12,
     width: "100%",
     alignItems: "center",
-    marginTop: 20,
+  },
+  buttonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  cancelText: {
-    color: "#370185",
-    marginTop: 10,
-    fontSize: 16,
   },
 });

@@ -33,16 +33,18 @@ export default function Start() {
 
   return (
     <View style={styles.container}>
-      <Image style={styles.logo} source={require("../../assets/images/Billy/billy-start.png")} />
-      <View style={styles.whiteContainer}>
-        <ThemedText style={styles.title}>Manejar tu plata nunca fue tan fácil</ThemedText>
-        <ThemedText style={styles.subtitle}>Llevá el control de tus ingresos y gastos de manera simple y rápida.</ThemedText>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate("login" as never)}>
-          <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate("signup" as never)}>
-          <ThemedText style={styles.secondaryButtonText}>Registrarme</ThemedText>
-        </TouchableOpacity>
+      <View style={styles.contentContainer}>
+        <Image style={styles.logo} source={require("../../assets/images/Billy/billy-start.png")} />
+        <View style={styles.whiteContainer}>
+          <ThemedText style={styles.title}>Manejar tu plata nunca fue tan fácil</ThemedText>
+          <ThemedText style={styles.subtitle}>Llevá el control de tus ingresos y gastos de manera simple y rápida.</ThemedText>
+          <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate("login" as never)}>
+            <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate("signup" as never)}>
+            <ThemedText style={styles.secondaryButtonText}>Registrarme</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -51,7 +53,11 @@ export default function Start() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#4B00B8",
-    justifyContent: "center",
+    flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   logo: {
     width: "100%",
@@ -63,9 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    width: "100%",
-    alignItems: "center",
+    padding: 15,
   },
   title: {
     paddingTop: 5,
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "black",
     textAlign: "center",
-    marginBottom: 30,
+    marginBottom: 20,
   },
   primaryButton: {
     backgroundColor: "black",
@@ -88,7 +92,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     width: "100%",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 20,
   },
   buttonText: {
     color: "white",
@@ -104,6 +108,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "black",
+    marginBottom: 10,
   },
   secondaryButtonText: {
     color: "black",

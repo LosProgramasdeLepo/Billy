@@ -7,9 +7,6 @@ import { AppProvider } from "./providers/AppProvider";
 import { useFonts } from "expo-font";
 import { ActivityIndicator } from "react-native";
 import { View } from "react-native";
-import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

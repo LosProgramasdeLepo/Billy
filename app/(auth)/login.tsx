@@ -22,6 +22,10 @@ export default function Login() {
 
   const { setUser } = useAppContext();
 
+  const isFormValid = () => {
+    return email.trim() !== "" && password.trim() !== "";
+  };
+
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
   };
@@ -30,18 +34,18 @@ export default function Login() {
     try {
       const { user, error } = await logIn(email, password);
       if (error) {
-        Alert.alert("Login Failed", "Invalid email or password");
+        Alert.alert("Error de inicio de sesión", "Email o contraseña inválidos");
         return;
       }
 
       if (!user) {
-        Alert.alert("Login Error", "User not found. Please check your email and try again.");
+        Alert.alert("Error de inicio de sesión", "No se encontró información del usuario. Por favor, inténtelo de nuevo.");
         return;
       }
 
       const userData = await getUser(email);
       if (!userData) {
-        Alert.alert("Login Error", "User data not found. Please try again.");
+        Alert.alert("Error de inicio de sesión", "No se encontró información del usuario. Por favor, inténtelo de nuevo.");
         return;
       }
 
@@ -56,27 +60,13 @@ export default function Login() {
 
       navigation.reset({ index: 0, routes: [{ name: "(tabs)" as never }] });
     } catch (error) {
-      console.error("Login Error:", error);
-      Alert.alert("Login Error", "An error occurred during login. Please try again.");
+      console.error("Error de inicio de sesión:", error);
+      Alert.alert("Error de inicio de sesión", "Ocurrió un error al iniciar sesión. Por favor, inténtelo de nuevo.");
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setErrorMessage("Por favor inserte un email");
-      return;
-    }
-    setErrorMessage("");
-    try {
-      const result = await requestPasswordReset(email);
-      if (result.success) {
-        Alert.alert("Código enviado", "Se ha enviado un código de verificación a su email.");
-        setIsVerificationModalVisible(true);
-      } else Alert.alert("Error", result.error || "No se pudo enviar el código de verificación.");
-    } catch (error) {
-      console.error("Error requesting password reset:", error);
-      Alert.alert("Error", "Ocurrió un error al solicitar el restablecimiento de contraseña.");
-    }
+    navigation.navigate("forgot_password" as never);
   };
 
   const handleVerificationSubmit = async () => {
@@ -86,8 +76,8 @@ export default function Login() {
       setIsVerificationModalVisible(false);
       setIsPasswordChangeModalVisible(true);
     } catch (error) {
-      console.error("Error verifying reset code:", error);
-      Alert.alert("Error", "Failed to verify reset code. Please try again.");
+      console.error("Error verificando código de restablecimiento:", error);
+      Alert.alert("Error", "No se pudo verificar el código de restablecimiento. Por favor, inténtelo de nuevo.");
     }
   };
 
@@ -97,8 +87,8 @@ export default function Login() {
       if (!success) throw new Error(error || "Failed to update password.");
       setIsPasswordChangeModalVisible(false);
     } catch (error) {
-      console.error("Error updating password:", error);
-      Alert.alert("Error", "Failed to update password. Please try again.");
+      console.error("Error actualizando contraseña:", error);
+      Alert.alert("Error", "No se pudo actualizar la contraseña. Por favor, inténtelo de nuevo.");
     }
   };
 
@@ -108,54 +98,60 @@ export default function Login() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
     >
-      <Image style={styles.logo} source={require("../../assets/images/Billy/billy-start.png")} />
-      <View style={styles.whiteContainer}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ThemedText style={styles.backButtonText}>{"<"}</ThemedText>
+      <View style={styles.contentContainer}>
+        <Image style={styles.logo} source={require("../../assets/images/Billy/billy-start.png")} />
+        <View style={styles.whiteContainer}>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <ThemedText style={styles.backButtonText}>{"<"}</ThemedText>
+            </TouchableOpacity>
+            <ThemedText style={styles.title}>Inicio de sesión</ThemedText>
+          </View>
+
+          <TextInput style={styles.input} placeholder="Mail" placeholderTextColor="#999" value={email} onChangeText={setEmail} />
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              placeholderTextColor="#999"
+              secureTextEntry={!passwordVisible}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeButton}>
+              <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="black" />
+            </TouchableOpacity>
+          </View>
+
+          {errorMessage ? <ThemedText style={styles.errorText}>{errorMessage}</ThemedText> : null}
+
+          <TouchableOpacity onPress={handleForgotPassword}>
+            <ThemedText style={styles.forgotPassword}>Olvidé mi contraseña</ThemedText>
           </TouchableOpacity>
-          <ThemedText style={styles.title}>Inicio de sesión</ThemedText>
-        </View>
 
-        <TextInput style={styles.input} placeholder="Mail" placeholderTextColor="#999" value={email} onChangeText={setEmail} />
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            placeholderTextColor="#999"
-            secureTextEntry={!passwordVisible}
-            value={password}
-            onChangeText={setPassword}
+          <VerificationModal
+            isVisible={isVerificationModalVisible}
+            onClose={() => setIsVerificationModalVisible(false)}
+            onSubmit={handleVerificationSubmit}
+            verificationCode={verificationCode}
+            setVerificationCode={setVerificationCode}
           />
-          <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeButton}>
-            <Ionicons name={passwordVisible ? "eye-off" : "eye"} size={24} color="black" />
+
+          <ChangePasswordModal
+            isVisible={isPasswordChangeModalVisible}
+            onClose={() => setIsPasswordChangeModalVisible(false)}
+            onSubmit={handlePasswordSubmit}
+          />
+
+          <TouchableOpacity
+            style={[styles.loginButton, !isFormValid() && styles.loginButtonDisabled]}
+            onPress={handleLogin}
+            disabled={!isFormValid()}
+          >
+            <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
           </TouchableOpacity>
         </View>
-
-        {errorMessage ? <ThemedText style={styles.errorText}>{errorMessage}</ThemedText> : null}
-
-        <TouchableOpacity onPress={handleForgotPassword}>
-          <ThemedText style={styles.forgotPassword}>Olvidé mi contraseña</ThemedText>
-        </TouchableOpacity>
-
-        <VerificationModal
-          isVisible={isVerificationModalVisible}
-          onClose={() => setIsVerificationModalVisible(false)}
-          onSubmit={handleVerificationSubmit}
-          verificationCode={verificationCode}
-          setVerificationCode={setVerificationCode}
-        />
-
-        <ChangePasswordModal
-          isVisible={isPasswordChangeModalVisible}
-          onClose={() => setIsPasswordChangeModalVisible(false)}
-          onSubmit={handlePasswordSubmit}
-        />
-
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
-        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -167,18 +163,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     justifyContent: "center",
+    marginTop: 10,
   },
   container: {
     backgroundColor: "#4B00B8",
-    justifyContent: "center",
     flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
   whiteContainer: {
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    width: "100%",
+    padding: 15,
     alignItems: "center",
   },
   backButton: {
@@ -202,12 +201,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "black",
     marginBottom: 20,
-  },
+  },  
   eyeButton: {
     position: "absolute",
     right: 15,
     top: "50%",
-    transform: [{ translateY: -16 }],
+    transform: [{ translateY: -22 }],
   },
   input: {
     borderColor: "black",
@@ -215,9 +214,10 @@ const styles = StyleSheet.create({
     width: "100%",
     padding: 15,
     borderRadius: 25,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   forgotPassword: {
+    marginBottom: 10,
     color: "black",
     textDecorationLine: "underline",
   },
@@ -234,6 +234,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+  loginButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  },
   buttonText: {
     color: "white",
     fontSize: 16,
@@ -241,6 +244,5 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "red",
-    marginTop: 10,
   },
 });
