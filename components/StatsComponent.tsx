@@ -24,8 +24,15 @@ const getLastDayOfMonth = (year: number, month: number): number => {
   return new Date(year, month + 1, 0).getDate();
 };
 
-//if mode is false, then it's category. TODO: optimize this. Should be a better way.
-export const StatsComponent = React.memo(({ month, year, mode }: { month: number; year: number; mode: boolean | null }) => {
+// Actualiza la interfaz de props del StatsComponent
+interface StatsComponentProps {
+  month: number;
+  year: number;
+  mode: boolean | null;
+  isYearMode: boolean;
+}
+
+export const StatsComponent = React.memo(({ month, year, mode, isYearMode }: StatsComponentProps) => {
   const { currentProfileId, categoryData } = useAppContext();
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
@@ -51,20 +58,30 @@ export const StatsComponent = React.memo(({ month, year, mode }: { month: number
     } else {
       const sharedUsers = await getSharedUsers(currentProfileId);
       if (sharedUsers && sharedUsers.length > 0) {
-        const startDate = parseDate(month, year, 1);
-        const endDate = parseDate(month, year, getLastDayOfMonth(year, month));
+        const startDate = isYearMode 
+          ? new Date(year, 0, 1) 
+          : parseDate(month, year, 1);
+        
+        const endDate = isYearMode
+          ? new Date(year, 11, 31)
+          : parseDate(month, year, getLastDayOfMonth(year, month));
+
         const items = await getTotalToPayInDateRange(currentProfileId, startDate, endDate);
 
         calculatedExpenses = await Promise.all(
           sharedUsers.map(async (user) => {
             const label = user.name || user.email;
-            return { label, amount: items ? items[user.email] || 0 : 0, color: generateRandomColor() } as Expense;
+            return { 
+              label, 
+              amount: items ? items[user.email] || 0 : 0, 
+              color: generateRandomColor() 
+            } as Expense;
           })
         );
       }
     }
     setExpenses(calculatedExpenses);
-  }, [categoryData, currentProfileId, month, year]);
+  }, [categoryData, currentProfileId, month, year, isYearMode, mode]);
 
   useEffect(() => {
     calculateExpenses();
@@ -81,15 +98,25 @@ export const StatsComponent = React.memo(({ month, year, mode }: { month: number
   const getCategoryTotal = useMemo(
     () =>
       async (profileId: string, categoryId: string, month: number, year: number): Promise<number> => {
+        const startDate = isYearMode 
+          ? new Date(year, 0, 1) 
+          : parseDate(month, year, 1);
+        
+        const endDate = isYearMode
+          ? new Date(year, 11, 31)
+          : parseDate(month, year, getLastDayOfMonth(year, month));
+
         const OutcomeFromCategory = await getOutcomesFromDateRangeAndCategory(
           profileId,
-          parseDate(month, year, 1),
-          parseDate(month, year, 30),
+          startDate,
+          endDate,
           categoryId
         );
-        return Array.isArray(OutcomeFromCategory) ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) : 0;
+        return Array.isArray(OutcomeFromCategory) 
+          ? OutcomeFromCategory.reduce((sum, outcome) => sum + outcome.amount, 0) 
+          : 0;
       },
-    []
+    [isYearMode]
   );
 
   const maxAmount = useMemo(() => expenses.reduce((sum, expense) => sum + (expense.amount ?? 0), 0), [expenses]);
@@ -114,6 +141,34 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
   const total = useMemo(() => data.reduce((sum, item) => sum + (item.amount ?? 0), 0), [data]);
 
   let accumulatedPercentage = 0;
+
+  const formatTotalValue = (value: number) => {
+    // Formatear el número al estilo español (1.000,00)
+    const formattedNumber = value.toLocaleString('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    const [integerPart, decimalPart] = formattedNumber.split(',');
+    
+    // Ajustar el tamaño de fuente según la longitud del número
+    const getFontSize = (number: string) => {
+      if (number.length > 8) return 20;
+      if (number.length > 6) return 24;
+      return 28;
+    };
+
+    const fontSize = getFontSize(integerPart);
+
+    return (
+      <Text style={[styles.valueText, { fontSize }]}>
+        ${integerPart}
+        <Text style={[styles.decimalText, { fontSize: fontSize * 0.64 }]}>
+          {decimalPart ? `,${decimalPart}` : ''}
+        </Text>
+      </Text>
+    );
+  };
 
   return (
     <View style={styles.pieContainer}>
@@ -148,7 +203,7 @@ const PieChart = React.memo(({ data }: { data: Expense[] }) => {
       </Svg>
 
       <View style={styles.valueContainer}>
-        <Text style={styles.valueText}>${formatNumber(total)}</Text>
+        {formatTotalValue(total)}
       </View>
     </View>
   );
@@ -239,6 +294,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     position: "absolute",
     marginLeft: -125,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.40,
+    shadowRadius: 10.84,
+   
+
   },
   valueContainer: {
     position: "absolute",
@@ -246,9 +310,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   valueText: {
-    fontSize: 36,
     color: "#3B3B3B",
     textAlign: "center",
+    fontWeight: "bold",
+  },
+  decimalText: {
+    color: "#3B3B3B",
     fontWeight: "bold",
   },
 });

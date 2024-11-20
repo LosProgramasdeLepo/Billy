@@ -22,12 +22,12 @@ const months = [
   "Diciembre",
 ];
 
-const Stats = React.memo(({ selectedMonth, selectedYear, mode }: { selectedMonth: number; selectedYear: number; mode: boolean | null }) => {
+const Stats = React.memo(({ selectedMonth, selectedYear, mode, isYearMode }: { selectedMonth: number; selectedYear: number; mode: boolean | null; isYearMode: boolean }) => {
   const memoKey = useMemo(() => `${selectedMonth}-${selectedYear}-${mode}`, [selectedMonth, selectedYear, mode]);
 
   return (
     <View style={styles.statsContainer}>
-      <StatsComponent key={memoKey} month={selectedMonth} year={selectedYear} mode={mode} />
+      <StatsComponent key={memoKey} month={selectedMonth} year={selectedYear} mode={mode} isYearMode={isYearMode} />
     </View>
   );
 });
@@ -38,6 +38,7 @@ const App = () => {
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedButton, setSelectedButton] = useState<"month" | "year">("month");
   const [mode, setMode] = useState<"category" | "person">("category");
+  const [isYearMode, setIsYearMode] = useState(false);
 
   const { currentProfileId } = useAppContext();
   const [shared, setShared] = useState<boolean | null>(null);
@@ -50,6 +51,7 @@ const App = () => {
 
   const toggleSelector = (type: "month" | "year") => () => {
     setSelectedButton(type);
+    setIsYearMode(type === "year");
   };
 
   const changeDate = (type: "month" | "year", increment: number) => () => {
@@ -77,7 +79,7 @@ const App = () => {
   };
 
   const toggleMode = () => {
-    setMode((prevMode) => (prevMode === "category" ? "person" : "category"));
+    setIsYearMode(!isYearMode);
   };
 
   const canGoForward =
@@ -128,7 +130,7 @@ const App = () => {
               <Text style={styles.circularButtonText}>{mode === "category" ? "C" : "P"}</Text>
             </TouchableOpacity>
           )}
-          <Stats selectedMonth={selectedMonth} selectedYear={selectedYear} mode={mode === "category" ? false : true} />
+          <Stats selectedMonth={selectedMonth} selectedYear={selectedYear} mode={mode === "category" ? false : true} isYearMode={selectedButton === "year"} />
         </View>
       </View>
     </LinearGradient>
