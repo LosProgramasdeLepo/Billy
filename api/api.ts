@@ -1506,7 +1506,7 @@ export async function createBill(total: number, participants: string[]): Promise
 
 export async function addParticipantToBill(billId: string, participant: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.from("BillParticipantes").insert({ id: billId, email: participant }).select().single();
+    const { data, error } = await supabase.from("BillParticipantes").insert({ id: billId, name: participant }).select().single();
 
     if (error) {
       console.error("Error al añadir participante a la factura:", error);
@@ -1526,7 +1526,7 @@ export async function addOutcomeToBill(billId: string, participant: string, amou
       .from("BillParticipants")
       .update({ amount_spent: amount })
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .select()
       .single();
 
@@ -1548,7 +1548,7 @@ export async function deleteOutcomeToBill(billId: string, participant: string): 
       .from("BillParticipants")
       .update({ amount_spent: null })
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .select()
       .single();
 
@@ -1570,7 +1570,7 @@ export async function addIncomeToBill(billId: string, participant: string, amoun
       .from("BillParticipants")
       .update({ amount_paid: amount })
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .select()
       .single();
 
@@ -1592,7 +1592,7 @@ export async function deleteIncomeToBill(billId: string, participant: string): P
       .from("BillParticipants")
       .update({ amount_paid: null })
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .select()
       .single();
 
@@ -1610,7 +1610,7 @@ export async function deleteIncomeToBill(billId: string, participant: string): P
 
 export async function calculateDebts(billId: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.from("BillParticipants").select("email, amount_spent, amount_paid").eq("bill", billId);
+    const { data, error } = await supabase.from("BillParticipants").select("name, amount_spent, amount_paid").eq("bill", billId);
 
     if (error) {
       console.error("Error al obtener los datos de los participantes de la factura:", error);
@@ -1626,7 +1626,7 @@ export async function calculateDebts(billId: string): Promise<boolean> {
     const participants = data.map((participant) => {
       totalSpent += participant.amount_spent || 0;
       return {
-        email: participant.email,
+        name: participant.name,
         spent: participant.amount_spent || 0,
         paid: participant.amount_paid || 0,
       };
@@ -1637,15 +1637,15 @@ export async function calculateDebts(billId: string): Promise<boolean> {
     const debts: { debtor: string; creditor: string; amount: number }[] = [];
     participants.forEach((debtor) => {
       participants.forEach((creditor) => {
-        if (debtor.email !== creditor.email) {
+        if (debtor.name !== creditor.name) {
           const debtorBalance = debtor.paid - averageSpent;
           const creditorBalance = creditor.paid - averageSpent;
 
           if (debtorBalance < 0 && creditorBalance > 0) {
             const debtAmount = Math.min(Math.abs(debtorBalance), creditorBalance);
             debts.push({
-              debtor: debtor.email,
-              creditor: creditor.email,
+              debtor: debtor.name,
+              creditor: creditor.name,
               amount: Number(debtAmount.toFixed(2)),
             });
           }
@@ -1690,19 +1690,19 @@ export async function getBillDebts(billId: string) {
   }
 }
 
-export async function getUserName(email: string): Promise<string> {
+export async function getUserName(name: string): Promise<string> {
   try {
-    const { data, error } = await supabase.from(USERS_TABLE).select("name").eq("email", email).single();
+    const { data, error } = await supabase.from(USERS_TABLE).select("name").eq("name", name).single();
 
     if (error) {
       console.error("Error fetching name from Users:", error);
-      return email;
+      return name;
     }
 
-    return data?.name || email;
+    return data?.name || name;
   } catch (error) {
     console.error("Unexpected error fetching user name:", error);
-    return email;
+    return name;
   }
 }
 
@@ -1759,7 +1759,7 @@ export async function markUserPaymentAsCompleted(billId: string, participant: st
       .from("BillParticipants")
       .select("has_paid")
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .single();
 
     if (error) {
@@ -1778,7 +1778,7 @@ export async function markUserPaymentAsCompleted(billId: string, participant: st
       .from("BillParticipants")
       .update({ has_paid: true })
       .eq("bill", billId)
-      .eq("email", participant)
+      .eq("name", participant)
       .select()
       .single();
 
