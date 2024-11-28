@@ -1517,17 +1517,6 @@ export async function deleteBill(billId: string): Promise<boolean> {
       return false;
     }
 
-    // Luego eliminamos todas las deudas asociadas a la factura
-    const { error: debtsError } = await supabase
-      .from("BillDebts")
-      .delete()
-      .eq("bill", billId);
-
-    if (debtsError) {
-      console.error("Error eliminando deudas de la factura:", debtsError);
-      return false;
-    }
-
     // Finalmente eliminamos la factura
     const { error: billError } = await supabase
       .from(BILLS_TABLE)
@@ -1546,17 +1535,33 @@ export async function deleteBill(billId: string): Promise<boolean> {
   }
 }
 
-
 export async function addParticipantToBill(billId: string, participant: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
+    // Primero verificamos si ya existe un participante con ese nombre en este bill específico
+    const { data: existingParticipant, error: checkError } = await supabase
       .from("BillParticipants")
-      .insert({ bill: billId, name: participant })
-      .select()
-      .single();
+      .select("name")
+      .eq("bill", billId)
+      .eq("name", participant);
 
-    if (error) {
-      console.error("Error al añadir participante a la factura:", error);
+    if (checkError) {
+      console.error("Error al verificar participante existente:", checkError);
+      return false;
+    }
+
+    if (existingParticipant && existingParticipant.length > 0) {
+      console.error("Ya existe un participante con ese nombre en esta factura");
+      Alert.alert("Error", "Ya existe un participante con ese nombre en esta factura");
+      return false;
+    }
+
+    // Si no existe, procedemos a insertarlo
+    const { error: insertError } = await supabase
+      .from("BillParticipants")
+      .insert({ bill: billId, name: participant });
+
+    if (insertError) {
+      console.error("Error al añadir participante a la factura:", insertError);
       return false;
     }
 
@@ -1988,5 +1993,26 @@ export const processOcrResults = async (ocrResult: any) => {
 
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
+
+export async function getBillParticipants(billId: string): Promise<string[]> {
+  try {
+    console.log("Fetching participants for billId:", billId);
+    const { data, error } = await supabase
+      .from("BillParticipants")
+      .select("name")
+      .eq("bill", billId);
+
+    if (error) {
+      console.error("Error al obtener participantes:", error);
+      return [];
+    }
+
+    console.log("Participants data:", data);
+    return data.map(participant => participant.name);
+  } catch (error) {
+    console.error("Error inesperado al obtener participantes:", error);
+    return [];
+  }
 }
 

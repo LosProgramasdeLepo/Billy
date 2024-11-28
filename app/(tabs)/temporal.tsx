@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
-import { createBill, deleteBill, addParticipantToBill } from "@/api/api";
+import { createBill, deleteBill, addParticipantToBill, getBillParticipants } from "@/api/api";
 
 interface Transaction {
   id: string | number;
@@ -41,13 +41,22 @@ export default function Temporal() {
 
   const handleReset = async () => {
     if (billId) {
-      await deleteBill(billId);
+      const deleteSuccess = await deleteBill(billId);
+      if (!deleteSuccess) {
+        Alert.alert("Error", "No se pudo borrar la cuenta actual");
+        return;
+      }
     }
+    
     setPersonCount(0);
     setTransactions([]);
+    
+    // Crear nuevo bill
     const newBillId = await createBill(0, []);
     if (newBillId) {
       setBillId(newBillId);
+    } else {
+      Alert.alert("Error", "No se pudo crear una nueva cuenta");
     }
   };
 
@@ -69,9 +78,22 @@ export default function Temporal() {
       const success = await addParticipantToBill(billId, name);
       if (success) {
         setPersonCount(prev => prev + 1);
-        handleClosePersonModal();
+        
+        // Obtener la lista actualizada de participantes
+        const participants = await getBillParticipants(billId);
+        
+        // Mostrar el pop-up con la lista de participantes
+        Alert.alert(
+          "Participantes Actuales",
+          `Participantes hasta ahora:\n\n${participants.map(p => `• ${p}`).join('\n')}`,
+          [{ text: "OK", onPress: handleClosePersonModal }]
+        );
       } else {
-        Alert.alert("Error", "No se pudo añadir el participante");
+        Alert.alert(
+          "Error", 
+          "No se pudo agregar al participante ya que ya existe uno con el mismo nombre en esta cuenta",
+          [{ text: "OK" }]
+        );
       }
     }
   };
@@ -143,7 +165,12 @@ export default function Temporal() {
         </View>
       </View>
 
-      <TemporalExpenseModal isVisible={isModalVisible} onClose={handleCloseModal} refreshTransactions={refreshTransactions} />
+      <TemporalExpenseModal
+        isVisible={isModalVisible}
+        onClose={handleCloseModal}
+        refreshTransactions={refreshTransactions}
+        billId={billId || ""}
+      />
 
       <AddPersonModal
         isVisible={isPersonModalVisible}

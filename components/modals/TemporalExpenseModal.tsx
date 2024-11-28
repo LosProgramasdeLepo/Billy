@@ -1,25 +1,51 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
-import { processOcrResults } from "../../api/api";
+import { processOcrResults, getBillParticipants } from "../../api/api";
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
   onClose: () => void;
   refreshTransactions: () => void;
+  billId: string;
 }
 
-const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: TemporalExpenseModalProps) => {
+const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId }: TemporalExpenseModalProps) => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ticketScanned, setTicketScanned] = useState(false);
   const [errors, setErrors] = useState({
     description: false,
     amount: false,
   });
+
+  useEffect(() => {
+    const loadParticipants = async () => {
+      if (billId) {
+        const billParticipants = await getBillParticipants(billId);
+        setParticipants(billParticipants);
+        Alert.alert(
+          "Participantes Disponibles",
+          `Participantes en esta cuenta:\n\n${billParticipants.map(p => `• ${p}`).join('\n')}`,
+          [{ text: "OK" }]
+        );
+      }
+    };
+    loadParticipants();
+  }, [billId]);
+
+  const toggleParticipant = (participant: string) => {
+    setSelectedParticipants(prev => 
+      prev.includes(participant) 
+        ? prev.filter(p => p !== participant)
+        : [...prev, participant]
+    );
+  };
 
   const resetForm = () => {
     setAmount("");
@@ -139,7 +165,36 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
               placeholderTextColor="#AAAAAA"
             />
 
-            <TouchableOpacity style={styles.acceptButton} onPress={handleSubmit}>
+            <Text style={styles.participantsTitle}>Participantes:</Text>
+            <View style={styles.participantsContainer}>
+              {participants.length > 0 ? (
+                participants.map((participant) => (
+                  <TouchableOpacity 
+                    key={participant}
+                    style={[
+                      styles.participantItem,
+                      selectedParticipants.includes(participant) && styles.participantItemSelected
+                    ]}
+                    onPress={() => toggleParticipant(participant)}
+                  >
+                    <Text style={[
+                      styles.participantText,
+                      selectedParticipants.includes(participant) && styles.participantTextSelected
+                    ]}>
+                      {participant}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.noParticipantsText}>No hay participantes para elegir aún</Text>
+              )}
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.acceptButton, selectedParticipants.length === 0 && styles.acceptButtonDisabled]} 
+              onPress={handleSubmit}
+              disabled={selectedParticipants.length === 0}
+            >
               <Text style={styles.acceptButtonText}>Aceptar</Text>
             </TouchableOpacity>
           </View>
@@ -212,6 +267,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  participantsContainer: {
+    marginTop: 10,
+    marginBottom: 20,
+    maxHeight: 200,
+  },
+  participantsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000000",
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  participantItem: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: "#F0F0F0",
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+  },
+  participantItemSelected: {
+    backgroundColor: "#4B00B8",
+    borderColor: "#4B00B8",
+  },
+  participantText: {
+    fontSize: 16,
+    color: "#000000",
+  },
+  participantTextSelected: {
+    color: "#FFFFFF",
+  },
+  noParticipantsText: {
+    fontSize: 14,
+    color: "#666666",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
+  },
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  }
 });
 
 export default TemporalExpenseModal;
