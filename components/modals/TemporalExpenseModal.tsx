@@ -185,12 +185,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    flex: 1,
     borderWidth: 1,
     borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 15,
+    marginBottom: 20,
     fontSize: 16,
+    color: "#000000",
+    backgroundColor: "#FFFFFF",
   },
   inputError: {
     borderColor: "#FF0000",

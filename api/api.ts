@@ -1476,14 +1476,14 @@ export async function markAsPaid(profile: string, whoPaid: string, outcomeId: st
 
 /* División de Cuenta */
 
-export async function createBill(total: number, participants: string[]): Promise<boolean> {
+export async function createBill(total: number, participants: string[]): Promise<string | null> {
   try {
     // Insertar el total en la tabla Bills
     const { data: billData, error: billError } = await supabase.from(BILLS_TABLE).insert({ total: total }).select().single();
 
     if (billError) {
       console.error("Error al crear la factura:", billError);
-      return false;
+      return null;
     }
 
     const billId = billData.id;
@@ -1493,20 +1493,67 @@ export async function createBill(total: number, participants: string[]): Promise
       const success = await addParticipantToBill(billId, participant);
       if (!success) {
         console.error("Error al añadir participante:", participant);
-        return false;
+        return null;
       }
+    }
+
+    return billId;
+  } catch (error) {
+    console.error("Error inesperado al crear la factura:", error);
+    return null;
+  }
+}
+
+export async function deleteBill(billId: string): Promise<boolean> {
+  try {
+    // Primero eliminamos todos los participantes asociados a la factura
+    const { error: participantsError } = await supabase
+      .from("BillParticipants")
+      .delete()
+      .eq("bill", billId);
+
+    if (participantsError) {
+      console.error("Error eliminando participantes de la factura:", participantsError);
+      return false;
+    }
+
+    // Luego eliminamos todas las deudas asociadas a la factura
+    const { error: debtsError } = await supabase
+      .from("BillDebts")
+      .delete()
+      .eq("bill", billId);
+
+    if (debtsError) {
+      console.error("Error eliminando deudas de la factura:", debtsError);
+      return false;
+    }
+
+    // Finalmente eliminamos la factura
+    const { error: billError } = await supabase
+      .from(BILLS_TABLE)
+      .delete()
+      .eq("id", billId);
+
+    if (billError) {
+      console.error("Error eliminando la factura:", billError);
+      return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Error inesperado al crear la factura:", error);
+    console.error("Error inesperado eliminando la factura:", error);
     return false;
   }
 }
 
+
 export async function addParticipantToBill(billId: string, participant: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.from("BillParticipantes").insert({ id: billId, name: participant }).select().single();
+    const { data, error } = await supabase
+      .from("BillParticipants")
+      .insert({ bill: billId, name: participant })
+      .select()
+      .single();
 
     if (error) {
       console.error("Error al añadir participante a la factura:", error);
@@ -1942,3 +1989,4 @@ export const processOcrResults = async (ocrResult: any) => {
 function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
+

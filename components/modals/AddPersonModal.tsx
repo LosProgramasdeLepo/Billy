@@ -6,25 +6,25 @@ import { StyleSheet } from "react-native";
 interface AddPersonModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onAddPerson: () => void;
+  onAddPerson: (name: string) => void;
 }
 
-const AddPersonModal = ({ isVisible, onClose, onAddPerson }: AddPersonModalProps) => {
-  const [description, setDescription] = useState("");
+const AddPersonModal: React.FC<AddPersonModalProps> = ({ isVisible, onClose, onAddPerson }) => {
+  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    if (description.trim() === "") {
+    if (name.trim() === "") {
       Alert.alert("Error", "Por favor ingrese un nombre");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      onAddPerson();
-      setDescription("");
+      onAddPerson(name.trim());
+      setName("");
       onClose();
     } finally {
       setIsSubmitting(false);
@@ -44,8 +44,8 @@ const AddPersonModal = ({ isVisible, onClose, onAddPerson }: AddPersonModalProps
           <View style={styles.contentContainer}>
             <TextInput
               style={styles.input}
-              value={description}
-              onChangeText={setDescription}
+              value={name}
+              onChangeText={setName}
               placeholder="Nombre"
               placeholderTextColor="#AAAAAA"
             />

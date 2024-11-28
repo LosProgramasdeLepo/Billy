@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
+import { createBill, deleteBill, addParticipantToBill } from "@/api/api";
 
 interface Transaction {
   id: string | number;
@@ -17,6 +18,18 @@ export default function Temporal() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [billId, setBillId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initializeBill = async () => {
+      const newBillId = await createBill(0, []);
+      if (newBillId) {
+        setBillId(newBillId);
+      }
+    };
+
+    initializeBill();
+  }, []);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -26,9 +39,16 @@ export default function Temporal() {
     setIsModalVisible(false);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (billId) {
+      await deleteBill(billId);
+    }
     setPersonCount(0);
     setTransactions([]);
+    const newBillId = await createBill(0, []);
+    if (newBillId) {
+      setBillId(newBillId);
+    }
   };
 
   const refreshTransactions = () => {
@@ -42,6 +62,18 @@ export default function Temporal() {
 
   const handleClosePersonModal = () => {
     setIsPersonModalVisible(false);
+  };
+
+  const handleAddPerson = async (name: string) => {
+    if (billId) {
+      const success = await addParticipantToBill(billId, name);
+      if (success) {
+        setPersonCount(prev => prev + 1);
+        handleClosePersonModal();
+      } else {
+        Alert.alert("Error", "No se pudo añadir el participante");
+      }
+    }
   };
 
   return (
@@ -116,7 +148,7 @@ export default function Temporal() {
       <AddPersonModal
         isVisible={isPersonModalVisible}
         onClose={handleClosePersonModal}
-        onAddPerson={() => setPersonCount((prev) => prev + 1)}
+        onAddPerson={handleAddPerson}
       />
     </LinearGradient>
   );
