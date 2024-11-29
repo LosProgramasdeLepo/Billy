@@ -1572,18 +1572,38 @@ export async function addParticipantToBill(billId: string, participant: string):
   }
 }
 
-export async function addOutcomeToBill(billId: string, participant: string, amount: number): Promise<boolean> {
+export async function addOutcomeToBill(
+  billId: string, 
+  paidBy: string, 
+  amount: number,
+  description: string,
+  participants: string[]
+): Promise<boolean> {
   try {
-    const { data, error } = await supabase
+    // Primero insertamos la transacción
+    const { error: transactionError } = await supabase
+      .from("BillTransactions")
+      .insert({
+        bill_id: billId,
+        description: description,
+        paid_by: paidBy,
+        amount: amount,
+      });
+
+    if (transactionError) {
+      console.error("Error al crear la transacción:", transactionError);
+      return false;
+    }
+
+    // Actualizamos el monto gastado por quien pagó
+    const { error: updateError } = await supabase
       .from("BillParticipants")
       .update({ amount_spent: amount })
       .eq("bill", billId)
-      .eq("name", participant)
-      .select()
-      .single();
+      .eq("name", paidBy);
 
-    if (error) {
-      console.error("Error al agregar gasto a la factura:", error);
+    if (updateError) {
+      console.error("Error al actualizar el gasto:", updateError);
       return false;
     }
 
@@ -2012,6 +2032,33 @@ export async function getBillParticipants(billId: string): Promise<string[]> {
     return data.map(participant => participant.name);
   } catch (error) {
     console.error("Error inesperado al obtener participantes:", error);
+    return [];
+  }
+}
+
+export async function getBillTransactions(billId: string) {
+  try {
+    const { data, error } = await supabase
+      .from("BillTransactions")
+      .select("*")
+      .eq("bill_id", billId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error al obtener las transacciones:", error);
+      return [];
+    }
+
+    return data.map(transaction => ({
+      id: transaction.id,
+      description: transaction.description,
+      paidBy: transaction.paid_by,
+      amount: transaction.amount,
+      date: transaction.created_at
+    }));
+
+  } catch (error) {
+    console.error("Error inesperado al obtener las transacciones:", error);
     return [];
   }
 }

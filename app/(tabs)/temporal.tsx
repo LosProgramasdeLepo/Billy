@@ -4,13 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
-import { createBill, deleteBill, addParticipantToBill, getBillParticipants } from "@/api/api";
+import { createBill, deleteBill, addParticipantToBill, getBillParticipants, getBillTransactions } from "@/api/api";
 
 interface Transaction {
   id: string | number;
   title: string;
   paidBy: string;
   amount: number;
+  date: Date;
 }
 
 export default function Temporal() {
@@ -25,6 +26,7 @@ export default function Temporal() {
       const newBillId = await createBill(0, []);
       if (newBillId) {
         setBillId(newBillId);
+        refreshTransactions();
       }
     };
 
@@ -81,9 +83,22 @@ export default function Temporal() {
     }
   };
 
-  const refreshTransactions = () => {
-    // Esta función se implementará cuando se agregue la API
-    console.log("Refrescando transacciones...");
+  const refreshTransactions = async () => {
+    if (billId) {
+      try {
+        const transactions = await getBillTransactions(billId);
+        setTransactions(transactions.map(transaction => ({
+          id: transaction.id,
+          title: transaction.description,
+          paidBy: transaction.paidBy,
+          amount: transaction.amount,
+          date: new Date(transaction.date)
+        })));
+      } catch (error) {
+        console.error("Error al obtener las transacciones:", error);
+        Alert.alert("Error", "No se pudieron cargar los movimientos");
+      }
+    }
   };
 
   const handleOpenPersonModal = () => {
@@ -119,6 +134,17 @@ export default function Temporal() {
     }
   };
 
+  const showParticipantsList = async () => {
+    if (billId) {
+      const participants = await getBillParticipants(billId);
+      Alert.alert(
+        "Participantes Actuales",
+        `Participantes hasta ahora:\n\n${participants.map(p => `• ${p}`).join('\n')}`,
+        [{ text: "OK" }]
+      );
+    }
+  };
+
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
       <BillyHeader />
@@ -127,7 +153,13 @@ export default function Temporal() {
           <ScrollView>
             <View style={styles.infoCard}>
               <View style={styles.personas}>
-                <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
+                <TouchableOpacity onPress={showParticipantsList}>
+                  <TextInput 
+                    style={styles.input} 
+                    value={`Cantidad de personas: ${personCount}`} 
+                    editable={false} 
+                  />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
                 </TouchableOpacity>
