@@ -3,8 +3,9 @@ import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, A
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
-import { processOcrResults, getBillParticipants } from "../../api/api";
+import { processOcrResults, getBillParticipants, addOutcomeToBill } from "../../api/api";
 import { Picker } from '@react-native-picker/picker';
+import { supabase } from "../../lib/supabase";
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
@@ -116,7 +117,19 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     setIsSubmitting(true);
 
     try {
-      console.log("Gasto temporal:", { amount, description, whoPaid, participants: selectedParticipants });
+      const success = await addOutcomeToBill(
+        billId,
+        whoPaid,
+        parseFloat(amount),
+        description,
+        selectedParticipants
+      );
+
+      if (!success) {
+        Alert.alert("Error", "No se pudo guardar el gasto");
+        return;
+      }
+
       refreshTransactions();
       setAmount("");
       setDescription("");
@@ -125,6 +138,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
       onClose();
     } catch (error) {
       console.error("Error al guardar el gasto:", error);
+      Alert.alert("Error", "Ocurrió un error al guardar el gasto");
     } finally {
       setIsSubmitting(false);
     }
