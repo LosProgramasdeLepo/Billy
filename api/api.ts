@@ -1575,11 +1575,6 @@ export async function addParticipantToBill(billId: string, participant: string):
   }
 }
 
-<<<<<<< HEAD
-
-//MIRAR ESYO
-export async function addOutcomeToBill(billId: string, participant: string, amount: number): Promise<boolean> {
-=======
 export async function addOutcomeToBill(
   billId: string, 
   paidBy: string, 
@@ -1587,7 +1582,6 @@ export async function addOutcomeToBill(
   description: string,
   participants: string[]
 ): Promise<boolean> {
->>>>>>> eebf2f1e44732372e728f78a62b4b652bf3e6f01
   try {
     // Primero insertamos la transacción
     const { error: transactionError } = await supabase
