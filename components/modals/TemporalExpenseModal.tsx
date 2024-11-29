@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView, Platform } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
 import { processOcrResults, getBillParticipants } from "../../api/api";
+import { Picker } from '@react-native-picker/picker';
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
@@ -23,28 +24,29 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     description: false,
     amount: false,
   });
+  const [whoPaid, setWhoPaid] = useState<string>("");
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     const loadParticipants = async () => {
       if (billId) {
         const billParticipants = await getBillParticipants(billId);
         setParticipants(billParticipants);
-        Alert.alert(
-          "Participantes Disponibles",
-          `Participantes en esta cuenta:\n\n${billParticipants.map(p => `• ${p}`).join('\n')}`,
-          [{ text: "OK" }]
-        );
       }
     };
-    loadParticipants();
-  }, [billId]);
+    if (isVisible) {
+      loadParticipants();
+    }
+  }, [billId, isVisible]);
 
   const toggleParticipant = (participant: string) => {
-    setSelectedParticipants(prev => 
-      prev.includes(participant) 
+    setSelectedParticipants(prev => {
+      const newSelected = prev.includes(participant)
         ? prev.filter(p => p !== participant)
-        : [...prev, participant]
-    );
+        : [...prev, participant];
+      
+      return newSelected;
+    });
   };
 
   const resetForm = () => {
@@ -99,7 +101,6 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // Validar campos
     const newErrors = {
       description: description.trim() === "",
       amount: amount.trim() === "",
@@ -107,18 +108,20 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
 
     setErrors(newErrors);
 
-    if (newErrors.description || newErrors.amount) {
-      Alert.alert("Error", "Por favor complete todos los campos obligatorios");
+    if (newErrors.description || newErrors.amount || !whoPaid || selectedParticipants.length === 0) {
+      Alert.alert("Error", "Por favor complete todos los campos obligatorios y seleccione quién pagó");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log("Gasto temporal:", { amount, description });
+      console.log("Gasto temporal:", { amount, description, whoPaid, participants: selectedParticipants });
       refreshTransactions();
       setAmount("");
       setDescription("");
+      setWhoPaid("");
+      setSelectedParticipants([]);
       onClose();
     } catch (error) {
       console.error("Error al guardar el gasto:", error);
@@ -166,27 +169,61 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
             />
 
             <Text style={styles.participantsTitle}>Participantes:</Text>
-            <View style={styles.participantsContainer}>
-              {participants.length > 0 ? (
-                participants.map((participant) => (
-                  <TouchableOpacity 
-                    key={participant}
+            <ScrollView style={styles.participantsList}>
+              <View style={styles.participantsContainer}>
+                {participants.map((participant, index) => (
+                  <TouchableOpacity
+                    key={index}
                     style={[
-                      styles.participantItem,
-                      selectedParticipants.includes(participant) && styles.participantItemSelected
+                      styles.participantButton,
+                      selectedParticipants.includes(participant) && styles.participantButtonSelected
                     ]}
                     onPress={() => toggleParticipant(participant)}
                   >
                     <Text style={[
-                      styles.participantText,
-                      selectedParticipants.includes(participant) && styles.participantTextSelected
+                      styles.participantButtonText,
+                      selectedParticipants.includes(participant) && styles.participantButtonTextSelected
                     ]}>
                       {participant}
                     </Text>
                   </TouchableOpacity>
-                ))
-              ) : (
-                <Text style={styles.noParticipantsText}>No hay participantes para elegir aún</Text>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.whoPaidContainer}>
+              <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowPicker(!showPicker)}
+              >
+                <Text style={styles.dropdownButtonText}>
+                  {whoPaid || "Seleccione quién pagó"}
+                </Text>
+                <Icon 
+                  name={showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+                  size={24} 
+                  color="#000" 
+                />
+              </TouchableOpacity>
+              
+              {showPicker && (
+                <View style={styles.dropdownList}>
+                  {participants.map((participant) => (
+                    <TouchableOpacity
+                      key={participant}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setWhoPaid(participant);
+                        setShowPicker(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>
+                        {participant}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               )}
             </View>
 
@@ -267,47 +304,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  participantsContainer: {
-    marginTop: 10,
-    marginBottom: 20,
-    maxHeight: 200,
-  },
   participantsTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#000000",
-    marginTop: 20,
+    fontWeight: 'bold',
+    marginTop: 15,
     marginBottom: 10,
   },
-  participantItem: {
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: "#F0F0F0",
-    borderWidth: 1,
-    borderColor: "#DDDDDD",
+  participantsList: {
+    maxHeight: 200,
   },
-  participantItemSelected: {
+  participantsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  participantButton: {
+    backgroundColor: "#DDDDDD",
+    borderRadius: 10,
+    padding: 10,
+    margin: 5,
+  },
+  participantButtonSelected: {
     backgroundColor: "#4B00B8",
-    borderColor: "#4B00B8",
   },
-  participantText: {
+  participantButtonText: {
     fontSize: 16,
-    color: "#000000",
   },
-  participantTextSelected: {
+  participantButtonTextSelected: {
     color: "#FFFFFF",
-  },
-  noParticipantsText: {
-    fontSize: 14,
-    color: "#666666",
-    fontStyle: "italic",
-    textAlign: "center",
-    marginTop: 10,
   },
   acceptButtonDisabled: {
     backgroundColor: "#CCCCCC",
-  }
+  },
+  whoPaidContainer: {
+    width: '100%',
+    marginTop: 15,
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: '#F8F8F8',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 10,
+    marginTop: 5,
+    backgroundColor: '#F8F8F8',
+  },
+  dropdownItem: {
+    padding: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+  },
 });
 
 export default TemporalExpenseModal;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, AppStateStatus } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
@@ -29,6 +29,27 @@ export default function Temporal() {
     };
 
     initializeBill();
+
+    // Manejar el cambio de estado de la aplicación
+    const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // La aplicación está en segundo plano o se está cerrando
+        if (billId) {
+          await deleteBill(billId);
+          setBillId(null);
+          setPersonCount(0);
+          setTransactions([]);
+        }
+      }
+    });
+
+    // Limpieza cuando el componente se desmonta
+    return () => {
+      subscription.remove();
+      if (billId) {
+        deleteBill(billId);
+      }
+    };
   }, []);
 
   const handleOpenModal = () => {
