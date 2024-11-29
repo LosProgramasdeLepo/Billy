@@ -1572,6 +1572,8 @@ export async function addParticipantToBill(billId: string, participant: string):
   }
 }
 
+
+//MIRAR ESYO
 export async function addOutcomeToBill(billId: string, participant: string, amount: number): Promise<boolean> {
   try {
     const { data, error } = await supabase
@@ -1594,6 +1596,7 @@ export async function addOutcomeToBill(billId: string, participant: string, amou
   }
 }
 
+//MIRAR ESTO
 export async function deleteOutcomeToBill(billId: string, participant: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
@@ -1616,6 +1619,7 @@ export async function deleteOutcomeToBill(billId: string, participant: string): 
   }
 }
 
+//MIRAR
 export async function addIncomeToBill(billId: string, participant: string, amount: number): Promise<boolean> {
   try {
     const { data, error } = await supabase
@@ -1638,6 +1642,7 @@ export async function addIncomeToBill(billId: string, participant: string, amoun
   }
 }
 
+//MIRA ESTO
 export async function deleteIncomeToBill(billId: string, participant: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
@@ -1660,6 +1665,7 @@ export async function deleteIncomeToBill(billId: string, participant: string): P
   }
 }
 
+//MIRAR ESTO, creo que hay que sacarlo
 export async function calculateDebts(billId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase.from("BillParticipants").select("name, amount_spent, amount_paid").eq("bill", billId);
@@ -1726,6 +1732,7 @@ export async function calculateDebts(billId: string): Promise<boolean> {
   }
 }
 
+//que esto
 export async function getBillDebts(billId: string) {
   try {
     const { data: debts, error } = await supabase.from("BillDebts").select("*").eq("bill", billId);
@@ -1742,6 +1749,7 @@ export async function getBillDebts(billId: string) {
   }
 }
 
+//CREO QUE HAY QUE SACARLA
 export async function getUserName(name: string): Promise<string> {
   try {
     const { data, error } = await supabase.from(USERS_TABLE).select("name").eq("name", name).single();
@@ -1758,6 +1766,7 @@ export async function getUserName(name: string): Promise<string> {
   }
 }
 
+//MIRA ESTO
 export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutcomeData | null> {
   const sharedOutcome = await getSharedOutcome(id);
   if (sharedOutcome) {
@@ -1770,6 +1779,7 @@ export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutco
   return null;
 }
 
+//MIRAR ESTO
 export async function getUserDebtsInBill(billId: string, participant: string) {
   try {
     const { data: debtsAsDebtor, error: debtorError } = await supabase
@@ -1804,6 +1814,7 @@ export async function getUserDebtsInBill(billId: string, participant: string) {
   }
 }
 
+//MIRAR ESTO
 export async function markUserPaymentAsCompleted(billId: string, participant: string): Promise<boolean> {
   try {
     // Obtener los datos del participante en la factura
