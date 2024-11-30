@@ -114,16 +114,7 @@ export default function Temporal() {
       const success = await addParticipantToBill(billId, name);
       if (success) {
         setPersonCount(prev => prev + 1);
-        
-        // Obtener la lista actualizada de participantes
-        const participants = await getBillParticipants(billId);
-        
-        // Mostrar el pop-up con la lista de participantes
-        Alert.alert(
-          "Participantes Actuales",
-          `Participantes hasta ahora:\n\n${participants.map(p => `• ${p}`).join('\n')}`,
-          [{ text: "OK", onPress: handleClosePersonModal }]
-        );
+        handleClosePersonModal();
       } else {
         Alert.alert(
           "Error", 
