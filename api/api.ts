@@ -1573,14 +1573,14 @@ export async function addParticipantToBill(billId: string, participant: string):
 }
 
 export async function addOutcomeToBill(
-  billId: string, 
-  paidBy: string, 
+  billId: string,
+  paidBy: string,
   amount: number,
   description: string,
   participants: string[]
 ): Promise<boolean> {
   try {
-    // Primero insertamos la transacción
+    // Insertamos la transacción en la tabla `BillTransactions`
     const { error: transactionError } = await supabase
       .from("BillTransactions")
       .insert({
@@ -1595,15 +1595,66 @@ export async function addOutcomeToBill(
       return false;
     }
 
+    // Calculamos el monto que cada participante debe pagar
+    const splitAmount = amount / participants.length;
+
+    // Actualizamos el monto adeudado por cada participante
+    for (const participant of participants) {
+      if (participant !== paidBy) {
+        // Recuperamos el valor actual de `amount_paid`
+        const { data: participantData, error: fetchError } = await supabase
+          .from("BillParticipants")
+          .select("amount_paid")
+          .eq("bill", billId)
+          .eq("name", participant)
+          .single();
+
+        if (fetchError) {
+          console.error(`Error al recuperar el monto actual de ${participant}:`, fetchError);
+          return false;
+        }
+
+        const currentAmountPaid = participantData?.amount_paid || 0;
+        const newAmountPaid = currentAmountPaid + splitAmount;
+
+        // Actualizamos el valor calculado en la base de datos
+        const { error: updateError } = await supabase
+          .from("BillParticipants")
+          .update({ amount_paid: newAmountPaid })
+          .eq("bill", billId)
+          .eq("name", participant);
+
+        if (updateError) {
+          console.error(`Error al actualizar el monto adeudado para ${participant}:`, updateError);
+          return false;
+        }
+      }
+    }
+
     // Actualizamos el monto gastado por quien pagó
-    const { error: updateError } = await supabase
+    const { data: payerData, error: payerFetchError } = await supabase
       .from("BillParticipants")
-      .update({ amount_spent: amount })
+      .select("amount_spent")
+      .eq("bill", billId)
+      .eq("name", paidBy)
+      .single();
+
+    if (payerFetchError) {
+      console.error(`Error al recuperar el monto gastado por ${paidBy}:`, payerFetchError);
+      return false;
+    }
+
+    const currentAmountSpent = payerData?.amount_spent || 0;
+    const newAmountSpent = currentAmountSpent + amount;
+
+    const { error: updatePayerError } = await supabase
+      .from("BillParticipants")
+      .update({ amount_spent: newAmountSpent })
       .eq("bill", billId)
       .eq("name", paidBy);
 
-    if (updateError) {
-      console.error("Error al actualizar el gasto:", updateError);
+    if (updatePayerError) {
+      console.error("Error al actualizar el gasto del pagador:", updatePayerError);
       return false;
     }
 
