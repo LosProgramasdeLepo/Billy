@@ -1665,13 +1665,13 @@ export async function addOutcomeToBill(
   }
 }
 
-export async function deleteOutcomeInBill(billId: string, participant: string): Promise<boolean> {
+export async function deleteOutcomeInBill(billId: string, description: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from("BillTransaction")
       .delete()
       .eq("bill_id", billId)
-      .eq("paid_by", participant);
+      .eq("description", description);
 
     if (error) {
       console.error("Error al eliminar la transacción:", error);
