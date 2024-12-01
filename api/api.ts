@@ -1478,7 +1478,6 @@ export async function markAsPaid(profile: string, whoPaid: string, outcomeId: st
 
 export async function createBill(total: number, participants: string[]): Promise<string | null> {
   try {
-    // Insertar el total en la tabla Bills
     const { data: billData, error: billError } = await supabase.from(BILLS_TABLE).insert({ total: total }).select().single();
 
     if (billError) {
@@ -1488,7 +1487,6 @@ export async function createBill(total: number, participants: string[]): Promise
 
     const billId = billData.id;
 
-    // Añadir cada participante a la factura
     for (const participant of participants) {
       const success = await addParticipantToBill(billId, participant);
       if (!success) {
@@ -1506,7 +1504,6 @@ export async function createBill(total: number, participants: string[]): Promise
 
 export async function deleteBill(billId: string): Promise<boolean> {
   try {
-    // Primero eliminamos todos los participantes asociados a la factura
     const { error: participantsError } = await supabase
       .from("BillParticipants")
       .delete()
@@ -1517,7 +1514,6 @@ export async function deleteBill(billId: string): Promise<boolean> {
       return false;
     }
 
-    // Finalmente eliminamos la factura
     const { error: billError } = await supabase
       .from(BILLS_TABLE)
       .delete()
@@ -1537,7 +1533,6 @@ export async function deleteBill(billId: string): Promise<boolean> {
 
 export async function addParticipantToBill(billId: string, participant: string): Promise<boolean> {
   try {
-    // Primero verificamos si ya existe un participante con ese nombre en este bill específico
     const { data: existingParticipant, error: checkError } = await supabase
       .from("BillParticipants")
       .select("name")
@@ -1555,7 +1550,6 @@ export async function addParticipantToBill(billId: string, participant: string):
       return false;
     }
 
-    // Si no existe, procedemos a insertarlo
     const { error: insertError } = await supabase
       .from("BillParticipants")
       .insert({ bill: billId, name: participant });
@@ -1580,82 +1574,56 @@ export async function addOutcomeToBill(
   participants: string[]
 ): Promise<boolean> {
   try {
-    // Insertamos la transacción en la tabla `BillTransactions`
-    const { error: transactionError } = await supabase
+    const { data: transactionData, error: transactionError } = await supabase
       .from("BillTransactions")
       .insert({
         bill_id: billId,
         description: description,
         paid_by: paidBy,
         amount: amount,
-      });
+      })
+      .select()
+      .single();
 
     if (transactionError) {
       console.error("Error al crear la transacción:", transactionError);
       return false;
     }
 
-    // Calculamos el monto que cada participante debe pagar
     const splitAmount = amount / participants.length;
 
-    // Actualizamos el monto adeudado por cada participante
     for (const participant of participants) {
-      if (participant !== paidBy) {
-        // Recuperamos el valor actual de `amount_paid`
-        const { data: participantData, error: fetchError } = await supabase
-          .from("BillParticipants")
-          .select("amount_paid")
-          .eq("bill", billId)
-          .eq("name", participant)
-          .single();
+      const isPayer = participant === paidBy;
 
-        if (fetchError) {
-          console.error(`Error al recuperar el monto actual de ${participant}:`, fetchError);
-          return false;
-        }
+      const { data: participantData, error: participantError } = await supabase
+        .from("BillParticipants")
+        .select("amount_paid, amount_spent")
+        .eq("bill", billId)
+        .eq("name", participant)
+        .single();
 
-        const currentAmountPaid = participantData?.amount_paid || 0;
-        const newAmountPaid = currentAmountPaid + splitAmount;
-
-        // Actualizamos el valor calculado en la base de datos
-        const { error: updateError } = await supabase
-          .from("BillParticipants")
-          .update({ amount_paid: newAmountPaid })
-          .eq("bill", billId)
-          .eq("name", participant);
-
-        if (updateError) {
-          console.error(`Error al actualizar el monto adeudado para ${participant}:`, updateError);
-          return false;
-        }
+      if (participantError) {
+        console.error(`Error al recuperar información de ${participant}:`, participantError);
+        return false;
       }
-    }
 
-    // Actualizamos el monto gastado por quien pagó
-    const { data: payerData, error: payerFetchError } = await supabase
-      .from("BillParticipants")
-      .select("amount_spent")
-      .eq("bill", billId)
-      .eq("name", paidBy)
-      .single();
+      const currentAmountPaid = participantData?.amount_paid || 0;
+      const currentAmountSpent = participantData?.amount_spent || 0;
 
-    if (payerFetchError) {
-      console.error(`Error al recuperar el monto gastado por ${paidBy}:`, payerFetchError);
-      return false;
-    }
+      const updatedData = isPayer
+        ? { amount_spent: currentAmountSpent + amount }
+        : { amount_paid: currentAmountPaid + splitAmount };
 
-    const currentAmountSpent = payerData?.amount_spent || 0;
-    const newAmountSpent = currentAmountSpent + amount;
+      const { error: updateError } = await supabase
+        .from("BillParticipants")
+        .update(updatedData)
+        .eq("bill", billId)
+        .eq("name", participant);
 
-    const { error: updatePayerError } = await supabase
-      .from("BillParticipants")
-      .update({ amount_spent: newAmountSpent })
-      .eq("bill", billId)
-      .eq("name", paidBy);
-
-    if (updatePayerError) {
-      console.error("Error al actualizar el gasto del pagador:", updatePayerError);
-      return false;
+      if (updateError) {
+        console.error(`Error al actualizar la información de ${participant}:`, updateError);
+        return false;
+      }
     }
 
     return true;
@@ -1665,13 +1633,13 @@ export async function addOutcomeToBill(
   }
 }
 
-export async function deleteOutcomeInBill(billId: string, description: string): Promise<boolean> {
+
+export async function deleteOutcomeInBill(transactionId: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
       .from("BillTransaction")
       .delete()
-      .eq("bill_id", billId)
-      .eq("description", description);
+      .eq("transaction_id", transactionId);
 
     if (error) {
       console.error("Error al eliminar la transacción:", error);
