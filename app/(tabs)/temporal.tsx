@@ -4,7 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
-import { createBill, deleteBill, addParticipantToBill, getBillParticipants, getBillTransactions } from "@/api/api";
+import { createBill, deleteBill, addParticipantToBill, getBillParticipants, getBillTransactions, calculateDebts } from "@/api/api";
+import { formatNumber } from "@/lib/utils";
 
 interface Transaction {
   id: string | number;
@@ -20,6 +21,7 @@ export default function Temporal() {
   const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [billId, setBillId] = useState<string | null>(null);
+  const [debts, setDebts] = useState<{ [participant: string]: { [payer: string]: number } } | null>(null);
 
   useEffect(() => {
     const initializeBill = async () => {
@@ -136,6 +138,17 @@ export default function Temporal() {
     }
   };
 
+  const refreshDebts = async () => {
+    if (billId) {
+      const calculatedDebts = await calculateDebts(billId);
+      setDebts(calculatedDebts);
+    }
+  };
+
+  useEffect(() => {
+    refreshDebts();
+  }, [transactions]);
+
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
       <BillyHeader />
@@ -168,20 +181,26 @@ export default function Temporal() {
             </TouchableOpacity>
 
             <View style={styles.debtCard}>
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Olivia debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
-              <View style={styles.separator} />
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Pilar debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
-              <View style={styles.separator} />
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Maria debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
+              {debts && Object.entries(debts).map(([debtor, payerDebts]) => 
+                Object.entries(payerDebts).map(([payer, amount]) => (
+                  amount > 0 && (
+                    <React.Fragment key={`${debtor}-${payer}`}>
+                      <View style={styles.debtItem}>
+                        <Text style={styles.debtText}>
+                          {payer} debe a {debtor}
+                        </Text>
+                        <Text style={styles.precio}>
+                          ${formatNumber(amount)}
+                        </Text>
+                      </View>
+                      <View style={styles.separator} />
+                    </React.Fragment>
+                  )
+                ))
+              )}
+              {(!debts || Object.keys(debts).length === 0) && (
+                <Text style={styles.noDebtsText}>No hay deudas pendientes</Text>
+              )}
             </View>
 
             <View style={styles.movimientos}>
@@ -379,5 +398,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4B00B8",
     textAlign: "center",
+  },
+  noDebtsText: {
+    textAlign: 'center',
+    color: '#666',
+    padding: 20,
+    fontStyle: 'italic',
   },
 });
