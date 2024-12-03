@@ -70,9 +70,9 @@ export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amo
         {name1} le debe(s) a {name2}
       </Text>
       <View style={styles.debtDetailsContainer}>
-        <Image source={avatar1 != "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
+        <Image source={avatar1 && avatar1 !== "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
         <Text style={styles.userAmount}>$ {formatNumber(amount)}</Text>
-        <Image source={avatar2 != "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar} />
+        <Image source={avatar2 && avatar2 !== "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar} />
       </View>
     </View>
   );
@@ -85,9 +85,9 @@ export const DebtEntryComponentToUser: React.FC<DebtEntryProps> = ({ name1, name
     <View style={styles.debtEntry}>
       <Text style={styles.debtText}>{name1} te debe</Text>
       <View style={styles.debtDetailsContainer}>
-        <Image source={avatar1 != "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
+        <Image source={avatar1 && avatar1 !== "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
         <Text style={styles.userAmount}>$ {formatNumber(amount)}</Text>
-        <Image source={avatar2 != "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar} />
+        <Image source={avatar2 && avatar2 !== "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar} />
       </View>
     </View>
   );

@@ -30,6 +30,7 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
   const [isPaying, setIsPaying] = useState(false);
   const [participantAvatars, setParticipantAvatars] = useState<Record<string, string>>({});
   const payerEmail = expense.sharedOutcomeData?.users?.[0] || expense.paidBy;
+  const defaultAvatar = require("@/assets/images/icons/UserIcon.png");
 
   const truncateText = (text: string, maxLength: number = 12) => {
     return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
@@ -99,9 +100,12 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
           <View style={styles.payerInfo}>
             <Image
               source={
-                participantAvatars[payerEmail] ? { uri: participantAvatars[payerEmail] } : require("@/assets/images/icons/UserIcon.png")
+                participantAvatars[payerEmail] && participantAvatars[payerEmail] !== "NULL"
+                  ? { uri: participantAvatars[payerEmail] }
+                  : defaultAvatar
               }
               style={styles.userIcon}
+              defaultSource={defaultAvatar}
             />
             <ThemedText style={styles.value}>{expense.paidBy}</ThemedText>
           </View>
@@ -116,11 +120,12 @@ export const ExpenseDetailsModal: React.FC<ExpenseDetailsModalProps> = ({ isVisi
                   <View style={styles.userInfoColumn}>
                     <Image
                       source={
-                        participantAvatars[userEmail]
+                        participantAvatars[userEmail] && participantAvatars[userEmail] !== "NULL"
                           ? { uri: participantAvatars[userEmail] }
-                          : require("@/assets/images/icons/UserIcon.png")
+                          : defaultAvatar
                       }
                       style={styles.userIcon}
+                      defaultSource={defaultAvatar}
                     />
                     <ThemedText style={styles.value}>{truncateText(userName)}</ThemedText>
                   </View>
