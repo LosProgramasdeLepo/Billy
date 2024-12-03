@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRoute, useNavigation } from "@react-navigation/native";
 import { useAppContext } from "@/hooks/useAppContext";
 import PaymentModal from "@/components/modals/PaymentModal";
+import { useDeepLinking } from '@/hooks/useDeepLinking';
 
 export default function Profiles() {
   const { user, setCurrentProfileId, refreshBalanceData, profileData, refreshProfileData } = useAppContext();
@@ -16,6 +17,7 @@ export default function Profiles() {
   const route = useRoute();
   const navigation = useNavigation();
   const [isPro, setIsPro] = useState(false);
+  useDeepLinking();
 
   const isProfileLimitReached = useCallback(async () => {
     const isPro = await isUserPro(user?.email || "");

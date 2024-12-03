@@ -1103,9 +1103,8 @@ export async function generateInvitationLink(profile: string): Promise<string | 
       console.error("Error generating invitation link:", error);
       return null;
     }
-
-    // Uses the configured base URL
-    return createURL(`/(tabs)/profiles?invitationId=${data.id}`);
+    //return createURL(`/(tabs)/profiles?invitationId=${data.id}`); (old)
+    return `https://billyapp.online/pshare?invitationId=${data.id}`;
   } catch (error) {
     console.error("Unexpected error generating invitation link:", error);
     return null;
@@ -1504,20 +1503,14 @@ export async function createBill(total: number, participants: string[]): Promise
 
 export async function deleteBill(billId: string): Promise<boolean> {
   try {
-    const { error: participantsError } = await supabase
-      .from("BillParticipants")
-      .delete()
-      .eq("bill", billId);
+    const { error: participantsError } = await supabase.from("BillParticipants").delete().eq("bill", billId);
 
     if (participantsError) {
       console.error("Error eliminando participantes de la factura:", participantsError);
       return false;
     }
 
-    const { error: billError } = await supabase
-      .from(BILLS_TABLE)
-      .delete()
-      .eq("id", billId);
+    const { error: billError } = await supabase.from(BILLS_TABLE).delete().eq("id", billId);
 
     if (billError) {
       console.error("Error eliminando la factura:", billError);
@@ -1550,9 +1543,7 @@ export async function addParticipantToBill(billId: string, participant: string):
       return false;
     }
 
-    const { error: insertError } = await supabase
-      .from("BillParticipants")
-      .insert({ bill: billId, name: participant });
+    const { error: insertError } = await supabase.from("BillParticipants").insert({ bill: billId, name: participant });
 
     if (insertError) {
       console.error("Error al añadir participante a la factura:", insertError);
@@ -1610,15 +1601,9 @@ export async function addOutcomeToBill(
       const currentAmountPaid = participantData?.amount_paid || 0;
       const currentAmountSpent = participantData?.amount_spent || 0;
 
-      const updatedData = isPayer
-        ? { amount_spent: currentAmountSpent + amount }
-        : { amount_paid: currentAmountPaid + splitAmount };
+      const updatedData = isPayer ? { amount_spent: currentAmountSpent + amount } : { amount_paid: currentAmountPaid + splitAmount };
 
-      const { error: updateError } = await supabase
-        .from("BillParticipants")
-        .update(updatedData)
-        .eq("bill", billId)
-        .eq("name", participant);
+      const { error: updateError } = await supabase.from("BillParticipants").update(updatedData).eq("bill", billId).eq("name", participant);
 
       if (updateError) {
         console.error(`Error al actualizar la información de ${participant}:`, updateError);
@@ -1633,13 +1618,9 @@ export async function addOutcomeToBill(
   }
 }
 
-
 export async function deleteOutcomeInBill(transactionId: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from("BillTransaction")
-      .delete()
-      .eq("transaction_id", transactionId);
+    const { data, error } = await supabase.from("BillTransaction").delete().eq("transaction_id", transactionId);
 
     if (error) {
       console.error("Error al eliminar la transacción:", error);
@@ -1713,10 +1694,7 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
 export async function getBillParticipants(billId: string): Promise<string[]> {
   try {
     console.log("Fetching participants for billId:", billId);
-    const { data, error } = await supabase
-      .from("BillParticipants")
-      .select("name")
-      .eq("bill", billId);
+    const { data, error } = await supabase.from("BillParticipants").select("name").eq("bill", billId);
 
     if (error) {
       console.error("Error al obtener participantes:", error);
@@ -1724,7 +1702,7 @@ export async function getBillParticipants(billId: string): Promise<string[]> {
     }
 
     console.log("Participants data:", data);
-    return data.map(participant => participant.name);
+    return data.map((participant) => participant.name);
   } catch (error) {
     console.error("Error inesperado al obtener participantes:", error);
     return [];
@@ -1744,20 +1722,18 @@ export async function getBillTransactions(billId: string) {
       return [];
     }
 
-    return data.map(transaction => ({
+    return data.map((transaction) => ({
       id: transaction.id,
       description: transaction.description,
       paidBy: transaction.paid_by,
       amount: transaction.amount,
-      date: transaction.created_at
+      date: transaction.created_at,
     }));
-
   } catch (error) {
     console.error("Error inesperado al obtener las transacciones:", error);
     return [];
   }
 }
-
 
 /* AI */
 
