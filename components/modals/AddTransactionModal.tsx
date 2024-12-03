@@ -466,9 +466,9 @@ const ParticipantSelect = ({
     }
     if (selectedUsers.length > 0) {
       const count = selectedUsers.length;
-      return `${count} ${count === 1 ? "Participante" : "Participantes"}`;
+      return `${count} ${count === 1 ? "participante" : "participantes"}`;
     }
-    return "Seleccionar Participantes";
+    return "Seleccionar participantes";
   };
 
   const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter((user) => user !== whoPaidIt) || [];
