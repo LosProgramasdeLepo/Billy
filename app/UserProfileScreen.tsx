@@ -237,6 +237,12 @@ export default function UserProfileScreen() {
           <View style={styles.contentContainer}>
             <View style={styles.iconContainer}>
               <Image source={userIcon ? { uri: userIcon } : require("@/assets/images/icons/UserIcon.png")} style={styles.userIcon} />
+
+              {isEditing && (
+                <TouchableOpacity style={styles.cameraIconButton} onPress={handleChangeIcon}>
+                  <Icon name="camera-alt" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              )}
             </View>
 
             <EditableField
