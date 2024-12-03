@@ -170,10 +170,6 @@ export default function Temporal() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
-              <Text style={styles.floatingButtonText}>Borrar</Text>
-            </TouchableOpacity>
-
             <View style={styles.debtCard}>
               {debts &&
                 Object.entries(debts).map(([debtor, payerDebts]) =>
@@ -223,6 +219,10 @@ export default function Temporal() {
                 )}
               </View>
             </View>
+
+            <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
+              <Text style={styles.floatingButtonText}>Finalizar cuenta</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
