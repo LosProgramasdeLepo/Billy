@@ -130,9 +130,10 @@ export default function Temporal() {
   const showParticipantsList = async () => {
     if (billId) {
       const participants = await getBillParticipants(billId);
-      Alert.alert("Participantes actuales", `${participants.map((p) => `• ${p}`).join("\n")}`, [
-        { text: "OK" },
-      ]);
+      const message =
+        participants.length === 0 ? "Todavía no se agregaron participantes." : `${participants.map((p) => `• ${p}`).join("\n")}`;
+
+      Alert.alert("Participantes actuales", message, [{ text: "OK" }]);
     }
   };
 
@@ -179,7 +180,7 @@ export default function Temporal() {
                         <React.Fragment key={`${debtor}-${payer}-${index}`}>
                           <View style={styles.debtItem}>
                             <Text style={styles.debtText}>
-                              {payer} debe a {debtor}
+                              {payer} le debe a {debtor}
                             </Text>
                             <Text style={styles.precio}>${formatNumber(amount)}</Text>
                           </View>
@@ -188,8 +189,10 @@ export default function Temporal() {
                       )
                   )
                 )}
-              {(!debts || Object.keys(debts).length === 0) && <Text style={styles.noDebtsText}>No hay deudas pendientes</Text>}
+              {(!debts || Object.keys(debts).length === 0) && <Text style={styles.noDebtsText}>No hay deudas pendientes.</Text>}
             </View>
+
+            <View style={styles.sectionSeparator} />
 
             <View style={styles.movimientos}>
               <View style={styles.movimientos}>
@@ -198,27 +201,25 @@ export default function Temporal() {
                 </View>
 
                 {transactions.length === 0 ? (
-                  <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos</Text>
+                  <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos.</Text>
                 ) : (
                   transactions.map((transaction, index) => (
                     <View key={index} style={styles.transactionCard}>
-                      {transactions.map((transaction, index) => (
-                        <View key={index} style={styles.transactionCard}>
-                          <View>
-                            <Text style={styles.transactionTitle}>{transaction.title}</Text>
-                            <Text style={styles.transactionSubtitle}>
-                              <Text style={styles.pagadoPor}>Pagado por </Text>
-                              <Text style={styles.pagador}>{transaction.paidBy}</Text>
-                            </Text>
-                          </View>
-                          <Text style={styles.amount}>- $ {transaction.amount}</Text>
-                        </View>
-                      ))}
+                      <View>
+                        <Text style={styles.transactionTitle}>{transaction.title}</Text>
+                        <Text style={styles.transactionSubtitle}>
+                          <Text style={styles.pagadoPor}>Pagado por </Text>
+                          <Text style={styles.pagador}>{transaction.paidBy}</Text>
+                        </Text>
+                      </View>
+                      <Text style={styles.amount}>- $ {transaction.amount}</Text>
                     </View>
                   ))
                 )}
               </View>
             </View>
+
+            <View style={styles.sectionSeparator} />
 
             <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
               <Text style={styles.floatingButtonText}>Finalizar cuenta</Text>
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.08)",
     borderRadius: 25,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   personas: {
     flexDirection: "row",
@@ -301,7 +302,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
-    marginBottom: 20,
+    marginBottom: 15,
     padding: 10,
   },
   debtItem: {
@@ -325,7 +326,6 @@ const styles = StyleSheet.create({
   },
   movimientos: {
     width: "100%",
-    marginBottom: 20,
   },
   movimientosHeader: {
     flexDirection: "row",
@@ -354,6 +354,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
+    width: "100%",
     marginBottom: 10,
   },
   transactionTitle: {
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   floatingButtonText: {
     fontSize: 16,
@@ -407,5 +408,11 @@ const styles = StyleSheet.create({
     color: "#666",
     padding: 10,
     fontStyle: "italic",
+  },
+  sectionSeparator: {
+    height: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+    marginBottom: 10,
   },
 });
