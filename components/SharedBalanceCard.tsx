@@ -78,6 +78,21 @@ export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amo
   );
 };
 
+export const DebtEntryComponentToUser: React.FC<DebtEntryProps> = ({ name1, name2, amount, avatar1, avatar2 }) => {
+  const defaultAvatar = require("@/assets/images/icons/UserIcon.png");
+
+  return (
+    <View style={styles.debtEntry}>
+      <Text style={styles.debtText}>{name1} te debe</Text>
+      <View style={styles.debtDetailsContainer}>
+        <Image source={avatar1 != "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
+        <Text style={styles.userAmount}>$ {formatNumber(amount)}</Text>
+        <Image source={avatar2 != "NULL" ? { uri: avatar2 } : defaultAvatar} style={styles.avatar} />
+      </View>
+    </View>
+  );
+};
+
 {
   /* Expense item component */
 }
@@ -180,9 +195,7 @@ export const SharedBalanceCard = () => {
     }
   };
 
-  const filteredDebtsToUser = debtsToUser.filter((debt) => !debt.has_paid);
-  const filteredDebtsFromUser = debtsFromUser.filter((debt) => !debt.has_paid);
-  const hasMoreDebts = filteredDebtsToUser.length + filteredDebtsFromUser.length > 1;
+  const hasMoreDebts = debtsToUser.length + debtsFromUser.length > 1;
 
   return (
     <LinearGradient colors={["#e8e0ff", "#d6c5fc"]} start={[0, 0]} end={[1, 1]} style={styles.card}>
@@ -215,30 +228,20 @@ export const SharedBalanceCard = () => {
       </View>
 
       <View style={styles.userDebtSection}>
-        {filteredDebtsToUser.length > 0 && (
-          <DebtEntryComponent
-            name1="Tú"
-            name2={userNames[filteredDebtsToUser[0].debtor]}
-            amount={filteredDebtsToUser[0].amount}
-            avatar1={userAvatars[user?.email ?? ""]}
-            avatar2={userAvatars[filteredDebtsToUser[0].debtor]}
-          />
-        )}
-
         {isExpanded && (
           <>
-            {filteredDebtsToUser.slice(1).map((debt, index) => (
-              <DebtEntryComponent
+            {debtsToUser.map((debt, index) => (
+              <DebtEntryComponentToUser
                 key={debt.id || index}
-                name1="Tú"
-                name2={userNames[debt.debtor]}
+                name1={userNames[debt.debtor]}
+                name2="Tú"
                 amount={debt.amount}
-                avatar1={userAvatars[user?.email ?? ""]}
-                avatar2={userAvatars[debt.debtor]}
+                avatar1={userAvatars[debt.debtor]}
+                avatar2={userAvatars[user?.email ?? ""]}
               />
             ))}
 
-            {filteredDebtsFromUser.map((debt, index) => (
+            {debtsFromUser.map((debt, index) => (
               <DebtEntryComponent
                 key={debt.id || index}
                 name1={userNames[debt.paid_by]}
@@ -254,7 +257,7 @@ export const SharedBalanceCard = () => {
 
       {hasMoreDebts && (
         <TouchableOpacity onPress={toggleExpanded}>
-          <Text style={styles.viewAll}>{isExpanded ? "Ver menos" : "Ver todo"}</Text>
+          <Text style={styles.viewAll}>{isExpanded ? "Ocultar deudas" : "Ver deudas"}</Text>
         </TouchableOpacity>
       )}
 

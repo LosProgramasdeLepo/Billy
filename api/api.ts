@@ -1226,14 +1226,9 @@ export async function getDebtsFromProfile(profileId: string): Promise<DebtData[]
   }
 }
 
-export async function getDebtsToUser(debtor: string, profileId: string): Promise<DebtData[] | null> {
+export async function getDebtsToUser(user: string, profileId: string): Promise<DebtData[] | null> {
   try {
-    const { data, error } = await supabase
-      .from(DEBTS_TABLE)
-      .select("*")
-      .eq("paid_by", debtor)
-      .eq("profile", profileId)
-      .eq("has_paid", false);
+    const { data, error } = await supabase.from(DEBTS_TABLE).select("*").eq("paid_by", user).eq("profile", profileId);
 
     if (error) {
       console.error("Error fetching debts to user:", error);
@@ -1247,14 +1242,9 @@ export async function getDebtsToUser(debtor: string, profileId: string): Promise
   }
 }
 
-export async function getDebtsFromUser(debtor: string, profileId: string): Promise<DebtData[] | null> {
+export async function getDebtsFromUser(user: string, profileId: string): Promise<DebtData[] | null> {
   try {
-    const { data, error } = await supabase
-      .from(DEBTS_TABLE)
-      .select("*")
-      .eq("debtor", debtor)
-      .eq("profile", profileId)
-      .eq("has_paid", false);
+    const { data, error } = await supabase.from(DEBTS_TABLE).select("*").eq("debtor", user).eq("profile", profileId);
 
     if (error) {
       console.error("Error fetching debts from user:", error);
