@@ -35,8 +35,8 @@ export default function Temporal() {
     initializeBill();
 
     // Manejar el cambio de estado de la aplicación
-    const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'background' || nextAppState === 'inactive') {
+    const subscription = AppState.addEventListener("change", async (nextAppState: AppStateStatus) => {
+      if (nextAppState === "background") {
         // La aplicación está en segundo plano o se está cerrando
         if (billId) {
           await deleteBill(billId);
@@ -72,10 +72,10 @@ export default function Temporal() {
         return;
       }
     }
-    
+
     setPersonCount(0);
     setTransactions([]);
-    
+
     // Crear nuevo bill
     const newBillId = await createBill(0, []);
     if (newBillId) {
@@ -89,13 +89,15 @@ export default function Temporal() {
     if (billId) {
       try {
         const transactions = await getBillTransactions(billId);
-        setTransactions(transactions.map(transaction => ({
-          id: transaction.id,
-          title: transaction.description,
-          paidBy: transaction.paidBy,
-          amount: transaction.amount,
-          date: new Date(transaction.date)
-        })));
+        setTransactions(
+          transactions.map((transaction) => ({
+            id: transaction.id,
+            title: transaction.description,
+            paidBy: transaction.paidBy || "Desconocido",
+            amount: transaction.amount,
+            date: new Date(transaction.date),
+          }))
+        );
       } catch (error) {
         console.error("Error al obtener las transacciones:", error);
         Alert.alert("Error", "No se pudieron cargar los movimientos");
@@ -115,14 +117,12 @@ export default function Temporal() {
     if (billId) {
       const success = await addParticipantToBill(billId, name);
       if (success) {
-        setPersonCount(prev => prev + 1);
+        setPersonCount((prev) => prev + 1);
         handleClosePersonModal();
       } else {
-        Alert.alert(
-          "Error", 
-          "No se pudo agregar al participante ya que ya existe uno con el mismo nombre en esta cuenta",
-          [{ text: "OK" }]
-        );
+        Alert.alert("Error", "No se pudo agregar al participante ya que ya existe uno con el mismo nombre en esta cuenta", [
+          { text: "OK" },
+        ]);
       }
     }
   };
@@ -130,11 +130,9 @@ export default function Temporal() {
   const showParticipantsList = async () => {
     if (billId) {
       const participants = await getBillParticipants(billId);
-      Alert.alert(
-        "Participantes Actuales",
-        `Participantes hasta ahora:\n\n${participants.map(p => `• ${p}`).join('\n')}`,
-        [{ text: "OK" }]
-      );
+      Alert.alert("Participantes Actuales", `Participantes hasta ahora:\n\n${participants.map((p) => `• ${p}`).join("\n")}`, [
+        { text: "OK" },
+      ]);
     }
   };
 
@@ -158,11 +156,7 @@ export default function Temporal() {
             <View style={styles.infoCard}>
               <View style={styles.personas}>
                 <TouchableOpacity onPress={showParticipantsList}>
-                  <TextInput 
-                    style={styles.input} 
-                    value={`Cantidad de personas: ${personCount}`} 
-                    editable={false} 
-                  />
+                  <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
@@ -181,38 +175,33 @@ export default function Temporal() {
             </TouchableOpacity>
 
             <View style={styles.debtCard}>
-              {debts && Object.entries(debts).map(([debtor, payerDebts]) => 
-                Object.entries(payerDebts).map(([payer, amount]) => (
-                  amount > 0 && (
-                    <React.Fragment key={`${debtor}-${payer}`}>
-                      <View style={styles.debtItem}>
-                        <Text style={styles.debtText}>
-                          {payer} debe a {debtor}
-                        </Text>
-                        <Text style={styles.precio}>
-                          ${formatNumber(amount)}
-                        </Text>
-                      </View>
-                      <View style={styles.separator} />
-                    </React.Fragment>
+              {debts &&
+                Object.entries(debts).map(([debtor, payerDebts]) =>
+                  Object.entries(payerDebts).map(
+                    ([payer, amount], index) =>
+                      amount > 0 && (
+                        <React.Fragment key={`${debtor}-${payer}-${index}`}>
+                          <View style={styles.debtItem}>
+                            <Text style={styles.debtText}>
+                              {payer} debe a {debtor}
+                            </Text>
+                            <Text style={styles.precio}>${formatNumber(amount)}</Text>
+                          </View>
+                          <View style={styles.separator} />
+                        </React.Fragment>
+                      )
                   )
-                ))
-              )}
-              {(!debts || Object.keys(debts).length === 0) && (
-                <Text style={styles.noDebtsText}>No hay deudas pendientes</Text>
-              )}
+                )}
+              {(!debts || Object.keys(debts).length === 0) && <Text style={styles.noDebtsText}>No hay deudas pendientes</Text>}
             </View>
 
             <View style={styles.movimientos}>
               <View style={styles.movimientosHeader}>
                 <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
-                <TouchableOpacity>
-                  <Text style={styles.verMas}>Ver más</Text>
-                </TouchableOpacity>
               </View>
 
-              {transactions.map((transaction) => (
-                <View key={transaction.id} style={styles.transactionCard}>
+              {transactions.map((transaction, index) => (
+                <View key={index} style={styles.transactionCard}>
                   <View>
                     <Text style={styles.transactionTitle}>{transaction.title}</Text>
                     <Text style={styles.transactionSubtitle}>
@@ -235,11 +224,7 @@ export default function Temporal() {
         billId={billId || ""}
       />
 
-      <AddPersonModal
-        isVisible={isPersonModalVisible}
-        onClose={handleClosePersonModal}
-        onAddPerson={handleAddPerson}
-      />
+      <AddPersonModal isVisible={isPersonModalVisible} onClose={handleClosePersonModal} onAddPerson={handleAddPerson} />
     </LinearGradient>
   );
 }
@@ -400,9 +385,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   noDebtsText: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: "#666",
     padding: 20,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 });

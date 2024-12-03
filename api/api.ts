@@ -1520,13 +1520,6 @@ export async function createBill(total: number, participants: string[]): Promise
 
 export async function deleteBill(billId: string): Promise<boolean> {
   try {
-    const { error: participantsError } = await supabase.from("BillParticipants").delete().eq("bill", billId);
-
-    if (participantsError) {
-      console.error("Error eliminando participantes de la factura:", participantsError);
-      return false;
-    }
-
     const { error: billError } = await supabase.from(BILLS_TABLE).delete().eq("id", billId);
 
     if (billError) {
@@ -1556,7 +1549,6 @@ export async function addParticipantToBill(billId: string, participant: string):
 
     if (existingParticipant && existingParticipant.length > 0) {
       console.error("Ya existe un participante con ese nombre en esta factura");
-      Alert.alert("Error", "Ya existe un participante con ese nombre en esta factura");
       return false;
     }
 
@@ -1574,6 +1566,16 @@ export async function addParticipantToBill(billId: string, participant: string):
   }
 }
 
+export async function getParticipantId(participant: string, billId: string): Promise<string | null> {
+  const { data } = await supabase.from("BillParticipants").select("id").eq("bill", billId).eq("name", participant).single();
+  return data?.id || null;
+}
+
+export async function getParticipantName(participantId: string, billId: string): Promise<string | null> {
+  const { data } = await supabase.from("BillParticipants").select("name").eq("bill", billId).eq("id", participantId).single();
+  return data?.name || null;
+}
+
 export async function addOutcomeToBill(
   billId: string,
   paidBy: string,
@@ -1582,12 +1584,16 @@ export async function addOutcomeToBill(
   participants: string[]
 ): Promise<boolean> {
   try {
+    console.log(paidBy, participants);
+
+    const paidById = await getParticipantId(paidBy, billId);
+
     const { data: transactionData, error: transactionError } = await supabase
       .from("BillTransactions")
       .insert({
         bill_id: billId,
         description: description,
-        paid_by: paidBy,
+        paid_by: paidById,
         amount: amount,
       })
       .select()
@@ -1601,13 +1607,15 @@ export async function addOutcomeToBill(
     const splitAmount = amount / participants.length;
 
     for (const participant of participants) {
-      const isPayer = participant === paidBy;
+      const participantId = await getParticipantId(participant, billId);
+
+      const isPayer = participantId === paidById;
 
       const { data: participantData, error: participantError } = await supabase
         .from("BillParticipants")
         .select("amount_paid, amount_spent")
         .eq("bill", billId)
-        .eq("name", participant)
+        .eq("id", participantId)
         .single();
 
       if (participantError) {
@@ -1620,7 +1628,7 @@ export async function addOutcomeToBill(
 
       const updatedData = isPayer ? { amount_spent: currentAmountSpent + amount } : { amount_paid: currentAmountPaid + splitAmount };
 
-      const { error: updateError } = await supabase.from("BillParticipants").update(updatedData).eq("bill", billId).eq("name", participant);
+      const { error: updateError } = await supabase.from("BillParticipants").update(updatedData).eq("bill", billId).eq("id", participantId);
 
       if (updateError) {
         console.error(`Error al actualizar la información de ${participant}:`, updateError);
@@ -1644,7 +1652,6 @@ export async function deleteOutcomeInBill(transactionId: string): Promise<boolea
       return false;
     }
 
-    console.log("Transacción eliminada:", data);
     return true;
   } catch (error) {
     console.error("Error inesperado al eliminar la transacción:", error);
@@ -1657,7 +1664,7 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
   try {
     const { data: participants, error } = await supabase
       .from("BillParticipants")
-      .select("name, amount_paid, amount_spent")
+      .select("id, name, amount_paid, amount_spent")
       .eq("bill", billId);
 
     if (error) {
@@ -1671,7 +1678,6 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
     }
 
     const totalBill = participants.reduce((sum, participant) => sum + (participant.amount_spent || 0), 0);
-
     const equalShare = totalBill / participants.length;
 
     const payers = participants.filter((participant) => (participant.amount_paid || 0) > 0);
@@ -1683,6 +1689,7 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
     }
 
     const debts: { [participant: string]: { [payer: string]: number } } = {};
+
     participants.forEach((participant) => {
       const amountPaid = participant.amount_paid || 0;
 
@@ -1700,7 +1707,6 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
       });
     });
 
-    console.log("Deudas calculadas:", debts);
     return debts;
   } catch (error) {
     console.error("Error inesperado al calcular las deudas:", error);
@@ -1710,15 +1716,13 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
 
 export async function getBillParticipants(billId: string): Promise<string[]> {
   try {
-    console.log("Fetching participants for billId:", billId);
-    const { data, error } = await supabase.from("BillParticipants").select("name").eq("bill", billId);
+    const { data, error } = await supabase.from("BillParticipants").select("*").eq("bill", billId);
 
     if (error) {
       console.error("Error al obtener participantes:", error);
       return [];
     }
 
-    console.log("Participants data:", data);
     return data.map((participant) => participant.name);
   } catch (error) {
     console.error("Error inesperado al obtener participantes:", error);
@@ -1739,13 +1743,24 @@ export async function getBillTransactions(billId: string) {
       return [];
     }
 
-    return data.map((transaction) => ({
-      id: transaction.id,
-      description: transaction.description,
-      paidBy: transaction.paid_by,
-      amount: transaction.amount,
-      date: transaction.created_at,
-    }));
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    const results = await Promise.all(
+      data.map(async (transaction) => {
+        const paidByName = await getParticipantName(transaction.paid_by, billId);
+        return {
+          id: transaction.id,
+          description: transaction.description,
+          paidBy: paidByName || "Desconocido",
+          amount: transaction.amount,
+          date: transaction.created_at,
+        };
+      })
+    );
+
+    return results;
   } catch (error) {
     console.error("Error inesperado al obtener las transacciones:", error);
     return [];
