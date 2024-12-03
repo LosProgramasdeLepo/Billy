@@ -361,7 +361,34 @@ async function getSharedOutcome(id: string): Promise<SharedOutcomeData | null> {
   return await getData(SHARED_OUTCOMES_TABLE, id);
 }
 
-// In testing phase
+export async function getSharedOutcomeWithNames(id: string): Promise<SharedOutcomeData | null> {
+  const sharedOutcome = await getSharedOutcome(id);
+  if (sharedOutcome) {
+    const userNames = await Promise.all(sharedOutcome.users.map(getUserName));
+    return {
+      ...sharedOutcome,
+      userNames,
+    };
+  }
+  return null;
+}
+
+export async function getUserName(email: string): Promise<string> {
+  try {
+    const { data, error } = await supabase.from(USERS_TABLE).select("name").eq("email", email).single();
+
+    if (error) {
+      console.error("Error fetching name from Users:", error);
+      return email;
+    }
+
+    return data?.name || email;
+  } catch (error) {
+    console.error("Unexpected error fetching user name:", error);
+    return email;
+  }
+}
+
 async function removeSharedOutcomeDebts(profile: string, sharedOutcome: SharedOutcomeData) {
   const paidBy = sharedOutcome.users[0];
   const debtUpdatePromises = sharedOutcome.users
