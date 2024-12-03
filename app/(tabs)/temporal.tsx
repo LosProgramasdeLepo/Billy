@@ -196,22 +196,32 @@ export default function Temporal() {
             </View>
 
             <View style={styles.movimientos}>
-              <View style={styles.movimientosHeader}>
-                <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
-              </View>
-
-              {transactions.map((transaction, index) => (
-                <View key={index} style={styles.transactionCard}>
-                  <View>
-                    <Text style={styles.transactionTitle}>{transaction.title}</Text>
-                    <Text style={styles.transactionSubtitle}>
-                      <Text style={styles.pagadoPor}>Pagado por </Text>
-                      <Text style={styles.pagador}>{transaction.paidBy}</Text>
-                    </Text>
-                  </View>
-                  <Text style={styles.amount}>- $ {transaction.amount}</Text>
+              <View style={styles.movimientos}>
+                <View style={styles.movimientosHeader}>
+                  <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
                 </View>
-              ))}
+
+                {transactions.length === 0 ? (
+                  <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos</Text>
+                ) : (
+                  transactions.map((transaction, index) => (
+                    <View key={index} style={styles.transactionCard}>
+                      {transactions.map((transaction, index) => (
+                        <View key={index} style={styles.transactionCard}>
+                          <View>
+                            <Text style={styles.transactionTitle}>{transaction.title}</Text>
+                            <Text style={styles.transactionSubtitle}>
+                              <Text style={styles.pagadoPor}>Pagado por </Text>
+                              <Text style={styles.pagador}>{transaction.paidBy}</Text>
+                            </Text>
+                          </View>
+                          <Text style={styles.amount}>- $ {transaction.amount}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))
+                )}
+              </View>
             </View>
           </ScrollView>
         </View>
@@ -275,11 +285,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#222B45",
     flex: 1,
+    paddingHorizontal: 5,
   },
   addButton: {
     fontSize: 24,
     color: "#4B00B8",
     marginLeft: 10,
+    paddingHorizontal: 5,
   },
   debtCard: {
     backgroundColor: "#FFFFFF",
@@ -388,6 +400,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#666",
     padding: 20,
+    fontStyle: "italic",
+  },
+  noMovimientosText: {
+    textAlign: "center",
+    color: "#666",
+    padding: 10,
     fontStyle: "italic",
   },
 });
