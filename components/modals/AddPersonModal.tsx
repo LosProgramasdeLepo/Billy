@@ -39,7 +39,7 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({ isVisible, onClose, onA
             <Icon name="close" size={30} color="#000000" />
           </TouchableOpacity>
           
-          <Text style={styles.title}>Nueva Persona</Text>
+          <Text style={styles.title}>Nuevo participante</Text>
 
           <View style={styles.contentContainer}>
             <TextInput

@@ -130,7 +130,7 @@ export default function Temporal() {
   const showParticipantsList = async () => {
     if (billId) {
       const participants = await getBillParticipants(billId);
-      Alert.alert("Participantes Actuales", `Participantes hasta ahora:\n\n${participants.map((p) => `• ${p}`).join("\n")}`, [
+      Alert.alert("Participantes actuales", `${participants.map((p) => `• ${p}`).join("\n")}`, [
         { text: "OK" },
       ]);
     }
