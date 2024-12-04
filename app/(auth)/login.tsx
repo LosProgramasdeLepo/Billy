@@ -38,7 +38,7 @@ export default function Login() {
         return;
       }
 
-      if (error) {
+      else if (error) {
         Alert.alert("Error de inicio de sesión", "Email o contraseña inválidos.");
         return;
       }
