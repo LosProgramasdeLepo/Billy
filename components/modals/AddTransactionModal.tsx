@@ -124,8 +124,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   }, [isVisible, fetchCategoriesData]);
 
   const handleAmountChange = (text: string) => {
-    setAmount(text);
-    validateField("amount", text);
+    const formattedText = text.replace(/[^0-9,]/g, "").replace(",", ".");
+    setAmount(formattedText);
+    validateField("amount", formattedText);
   };
 
   const handleDescriptionChange = (text: string) => {
