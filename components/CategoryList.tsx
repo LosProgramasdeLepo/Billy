@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: "#4B00B8",
     textDecorationLine: "underline",
-    marginBottom: 10,
+    alignSelf: "center",
   },
   backgroundIcon: {
     position: "absolute",
