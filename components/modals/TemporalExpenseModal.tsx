@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView, Platform } from "react-native";
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
 import { processOcrResults, getBillParticipants, addOutcomeToBill } from "../../api/api";
-import { Picker } from '@react-native-picker/picker';
-import { supabase } from "../../lib/supabase";
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
@@ -41,11 +39,9 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
   }, [billId, isVisible]);
 
   const toggleParticipant = (participant: string) => {
-    setSelectedParticipants(prev => {
-      const newSelected = prev.includes(participant)
-        ? prev.filter(p => p !== participant)
-        : [...prev, participant];
-      
+    setSelectedParticipants((prev) => {
+      const newSelected = prev.includes(participant) ? prev.filter((p) => p !== participant) : [...prev, participant];
+
       return newSelected;
     });
   };
@@ -117,13 +113,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     setIsSubmitting(true);
 
     try {
-      const success = await addOutcomeToBill(
-        billId,
-        whoPaid,
-        parseFloat(amount),
-        description,
-        selectedParticipants
-      );
+      const success = await addOutcomeToBill(billId, whoPaid, parseFloat(amount), description, selectedParticipants);
 
       if (!success) {
         Alert.alert("Error", "No se pudo guardar el gasto");
@@ -153,19 +143,20 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={handleClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Icon name="close" size={30} color="#000000" />
-          </TouchableOpacity>
-          
-          <Text style={styles.title}>Gasto</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Gasto</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.contentContainer}>
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, errors.description && styles.inputError, { width: '90%' }]}
+                style={[styles.input, errors.description && styles.inputError, { width: "90%" }]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Descripción"
+                placeholder="Descripción (obligatorio)"
                 placeholderTextColor="#AAAAAA"
               />
               <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
@@ -178,49 +169,17 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
               keyboardType="numeric"
               value={amount}
               onChangeText={setAmount}
-              placeholder="Monto"
+              placeholder="Monto (obligatorio)"
               placeholderTextColor="#AAAAAA"
             />
 
-            <Text style={styles.participantsTitle}>Participantes:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
-              <View style={styles.participantsContainer}>
-                {participants.map((participant, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.participantButton,
-                      selectedParticipants.includes(participant) && styles.participantButtonSelected
-                    ]}
-                    onPress={() => toggleParticipant(participant)}
-                  >
-                    <Text style={[
-                      styles.participantButtonText,
-                      selectedParticipants.includes(participant) && styles.participantButtonTextSelected
-                    ]}>
-                      {participant}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-
             <View style={styles.whoPaidContainer}>
               <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
-              <TouchableOpacity
-                style={styles.dropdownButton}
-                onPress={() => setShowPicker(!showPicker)}
-              >
-                <Text style={styles.dropdownButtonText}>
-                  {whoPaid || "Seleccione quién pagó"}
-                </Text>
-                <Icon 
-                  name={showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-                  size={24} 
-                  color="#000" 
-                />
+              <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowPicker(!showPicker)}>
+                <Text style={styles.dropdownButtonText}>{whoPaid || "Seleccione quién pagó"}</Text>
+                <Icon name={showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={24} color="#000" />
               </TouchableOpacity>
-              
+
               {showPicker && (
                 <View style={styles.dropdownList}>
                   <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
@@ -233,9 +192,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
                           setShowPicker(false);
                         }}
                       >
-                        <Text style={styles.dropdownItemText}>
-                          {participant}
-                        </Text>
+                        <Text style={styles.dropdownItemText}>{participant}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -243,8 +200,30 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
               )}
             </View>
 
-            <TouchableOpacity 
-              style={[styles.acceptButton, selectedParticipants.length === 0 && styles.acceptButtonDisabled]} 
+            <Text style={styles.participantsTitle}>Participantes:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
+              <View style={styles.participantsContainer}>
+                {participants.map((participant, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.participantButton, selectedParticipants.includes(participant) && styles.participantButtonSelected]}
+                    onPress={() => toggleParticipant(participant)}
+                  >
+                    <Text
+                      style={[
+                        styles.participantButtonText,
+                        selectedParticipants.includes(participant) && styles.participantButtonTextSelected,
+                      ]}
+                    >
+                      {participant}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.acceptButton, selectedParticipants.length === 0 && styles.acceptButtonDisabled]}
               onPress={handleSubmit}
               disabled={selectedParticipants.length === 0}
             >
@@ -272,32 +251,27 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    right: 20,
-    top: 20,
-    zIndex: 1,
+    right: 0,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#000000",
-    marginTop: 20,
-    marginBottom: 30,
-    textAlign: "center",
   },
   contentContainer: {
     paddingHorizontal: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   input: {
     borderWidth: 1,
     borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 16,
     fontSize: 16,
     color: "#000000",
     backgroundColor: "#FFFFFF",
@@ -306,7 +280,9 @@ const styles = StyleSheet.create({
     borderColor: "#FF0000",
   },
   scanButton: {
-    marginLeft: 10,
+    padding: 5,
+    marginLeft: 5,
+    marginBottom: 16,
   },
   acceptButton: {
     backgroundColor: "#4B00B8",
@@ -322,16 +298,15 @@ const styles = StyleSheet.create({
   },
   participantsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 15,
+    fontWeight: "bold",
     marginBottom: 10,
   },
   participantsList: {
     maxHeight: 200,
   },
   participantsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   participantButton: {
     backgroundColor: "#DDDDDD",
@@ -352,28 +327,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#CCCCCC",
   },
   whoPaidContainer: {
-    width: '100%',
-    marginTop: 15,
+    width: "100%",
   },
   dropdownButton: {
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 10,
-    backgroundColor: '#F8F8F8',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: "#F8F8F8",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    height: 60,
   },
   dropdownButtonText: {
     fontSize: 16,
   },
   dropdownList: {
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: "#DDDDDD",
     borderRadius: 10,
     marginTop: 5,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   dropdownItem: {
     padding: 10,
@@ -383,6 +359,12 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     maxHeight: 80,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
 });
 
