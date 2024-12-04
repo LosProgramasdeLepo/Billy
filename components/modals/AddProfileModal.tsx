@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, SafeAreaView } from "react-native";
 import { addProfile, addSharedUsers, addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -23,6 +23,20 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
   const [emailBlocks, setEmailBlocks] = useState<Array<{ email: string; isValid: boolean }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({ name: false });
+
+  const resetModal = useCallback(() => {
+    setProfileName("");
+    setSharedUsers("");
+    setEmailBlocks([]);
+    setIsSubmitting(false);
+    setErrors({ name: false });
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) {
+      resetModal();
+    }
+  }, [isVisible, resetModal]);
 
   const handleNameChange = (text: string) => {
     setProfileName(text);
