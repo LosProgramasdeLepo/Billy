@@ -144,7 +144,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <View style={styles.headerContainer}>
-            <Text style={styles.title}>Gasto</Text>
+            <Text style={styles.title}>Nuevo gasto</Text>
             <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
               <Icon name="close" size={30} color="#000000" />
             </TouchableOpacity>
@@ -348,8 +348,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#DDDDDD",
     borderRadius: 10,
-    marginTop: 5,
     backgroundColor: "#F8F8F8",
+    marginBottom: 16,
+    marginTop: -10,
   },
   dropdownItem: {
     padding: 10,

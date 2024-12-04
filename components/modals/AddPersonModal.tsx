@@ -35,22 +35,21 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({ isVisible, onClose, onA
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Icon name="close" size={30} color="#000000" />
-          </TouchableOpacity>
-          
-          <Text style={styles.title}>Nuevo participante</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Nuevo participante</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.contentContainer}>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Nombre"
-              placeholderTextColor="#AAAAAA"
-            />
+            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nombre (obligatorio)" placeholderTextColor="#AAAAAA" />
 
-            <TouchableOpacity style={styles.acceptButton} onPress={handleSubmit}>
+            <TouchableOpacity
+              style={[styles.acceptButton, name.trim() === "" && styles.acceptButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={name.trim() === ""}
+            >
               <Text style={styles.acceptButtonText}>Aceptar</Text>
             </TouchableOpacity>
           </View>
@@ -71,21 +70,22 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    minHeight: 300,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   closeButton: {
-    position: "absolute",
-    right: 20,
-    top: 20,
-    zIndex: 1,
+    position: 'absolute',
+    right: 0,
+    padding: 5,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#000000",
-    marginTop: 20,
-    marginBottom: 30,
-    textAlign: "center",
   },
   contentContainer: {
     paddingHorizontal: 20,
@@ -95,15 +95,19 @@ const styles = StyleSheet.create({
     borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 15,
-    marginBottom: 20,
+    marginBottom: 16,
     fontSize: 16,
+    color: "#000000",
+    backgroundColor: "#FFFFFF",
   },
   acceptButton: {
     backgroundColor: "#4B00B8",
     borderRadius: 25,
     padding: 15,
     alignItems: "center",
-    marginTop: 20,
+  },
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
   acceptButtonText: {
     color: "#FFFFFF",

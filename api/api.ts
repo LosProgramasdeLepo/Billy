@@ -1704,13 +1704,35 @@ export async function calculateDebts(billId: string): Promise<{ [participant: st
       }
 
       const amountOwed = equalShare - amountPaid;
-      debts[participant.name] = {};
+      debts[participant.name] = debts[participant.name] || {};
 
       payers.forEach((payer) => {
-        const proportion = (payer.amount_paid || 0) / totalPaidByPayers;
-        debts[participant.name][payer.name] = amountOwed * proportion;
+        if (payer.name !== participant.name) {
+          const proportion = (payer.amount_paid || 0) / totalPaidByPayers;
+          const amount = amountOwed * proportion;
+
+          if (debts[participant.name][payer.name]) {
+            debts[participant.name][payer.name] += Number(amount.toFixed(2));
+          } else {
+            debts[participant.name][payer.name] = Number(amount.toFixed(2));
+          }
+        }
       });
     });
+
+    for (const debtor in debts) {
+      for (const creditor in debts[debtor]) {
+        if (debts[creditor] && debts[creditor][debtor]) {
+          if (debts[debtor][creditor] > debts[creditor][debtor]) {
+            debts[debtor][creditor] -= debts[creditor][debtor];
+            delete debts[creditor][debtor];
+          } else {
+            debts[creditor][debtor] -= debts[debtor][creditor];
+            delete debts[debtor][creditor];
+          }
+        }
+      }
+    }
 
     return debts;
   } catch (error) {
