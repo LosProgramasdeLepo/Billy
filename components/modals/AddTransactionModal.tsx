@@ -324,13 +324,18 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           <View style={styles.contentContainer}>
             {renderTypeSelector}
 
-            <TextInput
-              style={[styles.input, errors.description && styles.inputError]}
-              value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
-              onChangeText={handleDescriptionChange}
-              placeholder="Descripción (obligatorio)"
-              placeholderTextColor="#AAAAAA"
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, errors.description && styles.inputError, { width: '90%' }]}
+                value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
+                onChangeText={handleDescriptionChange}
+                placeholder="Descripción (obligatorio)"
+                placeholderTextColor="#AAAAAA"
+              />
+              <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
+                <Icon name="scan-helper" size={24} color="#370185" />
+              </TouchableOpacity>
+            </View>
 
             <TextInput
               style={[styles.input, errors.amount && styles.inputError]}
@@ -394,12 +399,6 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
             {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
 
-            {type === "Outcome" && (
-              <TouchableOpacity style={styles.scanButton} onPress={handleScanTicket}>
-                <Text style={styles.scanButtonText}>Escanear ticket</Text>
-              </TouchableOpacity>
-            )}
-
             <TouchableOpacity style={styles.acceptButton} onPress={handleSubmit}>
               <Text style={styles.acceptButtonText}>Aceptar</Text>
             </TouchableOpacity>
@@ -421,88 +420,85 @@ const ParticipantSelect = ({
   singleSelection: boolean;
   whoPaidIt?: string;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showPicker, setShowPicker] = useState(false);
 
   if (singleSelection) {
     return (
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedUsers[0] || ""}
-          onValueChange={(value) => {
-            setSelectedUsers([value]);
-            onSelect([value]);
-          }}
-          style={styles.picker}
+      <View style={styles.whoPaidContainer}>
+        <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setShowPicker(!showPicker)}
         >
-          {sharedUsers?.map((user) => (
-            <Picker.Item key={user} label={user} value={user} />
-          ))}
-        </Picker>
+          <Text style={styles.dropdownButtonText}>
+            {selectedUsers[0] || "Seleccione quién pagó"}
+          </Text>
+          <Icon 
+            name={showPicker ? "chevron-up" : "chevron-down"} 
+            size={24} 
+            color="#000" 
+          />
+        </TouchableOpacity>
+        
+        {showPicker && (
+          <View style={styles.dropdownList}>
+            <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
+              {sharedUsers?.map((user) => (
+                <TouchableOpacity
+                  key={user}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSelectedUsers([user]);
+                    onSelect([user]);
+                    setShowPicker(false);
+                  }}
+                >
+                  <Text style={styles.dropdownItemText}>
+                    {user}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </View>
     );
   }
 
   const toggleUser = (user: string) => {
     setSelectedUsers((prev) => {
-      if (singleSelection) {
-        return [user];
-      }
       return prev.includes(user) ? prev.filter((u) => u !== user) : [...prev, user];
     });
-  };
-
-  const handleDone = () => {
     onSelect(selectedUsers);
-    setIsOpen(false);
   };
 
-  const getButtonText = () => {
-    if (singleSelection) {
-      if (selectedUsers.length > 0) {
-        return `${selectedUsers[0]}`;
-      }
-      return "¿Quién Pagó?";
-    }
-    if (selectedUsers.length > 0) {
-      const count = selectedUsers.length;
-      return `${count} ${count === 1 ? "participante" : "Participantes"}`;
-    }
-    return "Seleccionar Participantes";
-  };
-
-  const displayedUsers = singleSelection ? sharedUsers : sharedUsers?.filter((user) => user !== whoPaidIt) || [];
+  const displayedUsers = sharedUsers?.filter((user) => user !== whoPaidIt) || [];
 
   return (
     <View style={styles.selectContainer}>
-      <TouchableOpacity style={styles.selectButton} onPress={() => setIsOpen(!isOpen)}>
-        <Text style={styles.selectButtonText}>{getButtonText()}</Text>
-        <Icon name={isOpen ? "chevron-up" : "chevron-down"} size={24} color="#000" />
-      </TouchableOpacity>
-
-      {isOpen && (
-        <Modal transparent visible={isOpen} animationType="fade">
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1}>
-            <View style={styles.dropdown}>
-              <ScrollView>
-                {displayedUsers?.map((user: string) => (
-                  <TouchableOpacity key={user} style={styles.option} onPress={() => toggleUser(user)}>
-                    <View style={styles.userRow}>
-                      <Text style={styles.optionText}>{user}</Text>
-                      <View style={[styles.checkbox, selectedUsers.includes(user) && styles.checkedBox]}>
-                        {selectedUsers.includes(user) && <Text style={styles.tick}>✓</Text>}
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-                <Text style={styles.doneButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
+      <Text style={styles.participantsTitle}>Participantes:</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
+        <View style={styles.participantsContainer}>
+          {displayedUsers.map((user, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.participantButton,
+                selectedUsers.includes(user) && styles.participantButtonSelected
+              ]}
+              onPress={() => toggleUser(user)}
+            >
+              <Text style={[
+                styles.participantButtonText,
+                selectedUsers.includes(user) && styles.participantButtonTextSelected
+              ]}>
+                {user}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -618,18 +614,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   scanButton: {
+    marginLeft: 10,
     marginBottom: 16,
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#6A1B9A",
-    backgroundColor: "transparent",
-    width: "100%",
-    alignItems: "center",
-  },
-  scanButtonText: {
-    color: "#6A1B9A",
-    fontSize: 16,
   },
   picker: {
     marginLeft: -5,
@@ -639,9 +625,10 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderColor: "#ddd",
     borderRadius: 4,
-    marginBottom: 16,
+    marginBottom: -10,
     backgroundColor: "#f9f9f9",
     overflow: "hidden",
+    
   },
   pickerItem: {
     fontSize: 16,
@@ -726,6 +713,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     position: "relative",
+    height: 90,
   },
   cancelCategorization: {
     position: "absolute",
@@ -744,6 +732,73 @@ const styles = StyleSheet.create({
     borderColor: "#370185",
     width: "200%",
   },
+  participantsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  participantsList: {
+    maxHeight: 200,
+  },
+  participantsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  participantButton: {
+    backgroundColor: "#DDDDDD",
+    borderRadius: 10,
+    padding: 10,
+    margin: 5,
+  },
+  participantButtonSelected: {
+    backgroundColor: "#4B00B8",
+  },
+  participantButtonText: {
+    fontSize: 16,
+  },
+  participantButtonTextSelected: {
+    color: "#FFFFFF",
+  },
+  whoPaidContainer: {
+    width: '100%',
+    marginTop: 15,
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: '#F8F8F8',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 10,
+    marginTop: 5,
+    backgroundColor: '#F8F8F8',
+  },
+  dropdownItem: {
+    padding: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+  },
+  scrollView: {
+    maxHeight: 80,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+
 });
 
 export default React.memo(AddTransactionModal);

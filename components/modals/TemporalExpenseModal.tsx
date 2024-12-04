@@ -162,7 +162,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
           <View style={styles.contentContainer}>
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, errors.description && styles.inputError]}
+                style={[styles.input, errors.description && styles.inputError, { width: '90%' }]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descripción"
@@ -183,7 +183,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
             />
 
             <Text style={styles.participantsTitle}>Participantes:</Text>
-            <ScrollView style={styles.participantsList}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
               <View style={styles.participantsContainer}>
                 {participants.map((participant, index) => (
                   <TouchableOpacity
@@ -223,20 +223,22 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
               
               {showPicker && (
                 <View style={styles.dropdownList}>
-                  {participants.map((participant) => (
-                    <TouchableOpacity
-                      key={participant}
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setWhoPaid(participant);
-                        setShowPicker(false);
-                      }}
-                    >
-                      <Text style={styles.dropdownItemText}>
-                        {participant}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
+                    {participants.map((participant) => (
+                      <TouchableOpacity
+                        key={participant}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setWhoPaid(participant);
+                          setShowPicker(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItemText}>
+                          {participant}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
             </View>
@@ -378,6 +380,9 @@ const styles = StyleSheet.create({
   },
   dropdownItemText: {
     fontSize: 16,
+  },
+  scrollView: {
+    maxHeight: 80,
   },
 });
 
