@@ -326,15 +326,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, errors.description && styles.inputError, { width: '90%' }]}
+                style={[styles.input, errors.description && styles.inputError, { width: type === "Income" ? "100%" : "88%" }]}
                 value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
                 onChangeText={handleDescriptionChange}
                 placeholder="Descripción (obligatorio)"
                 placeholderTextColor="#AAAAAA"
               />
-              <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
-                <Icon name="scan-helper" size={24} color="#370185" />
-              </TouchableOpacity>
+              {type === "Outcome" && (
+                <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
+                  <Icon name="scan-helper" size={24} color="#370185" />
+                </TouchableOpacity>
+              )}
             </View>
 
             <TextInput
@@ -427,20 +429,11 @@ const ParticipantSelect = ({
     return (
       <View style={styles.whoPaidContainer}>
         <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
-        <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => setShowPicker(!showPicker)}
-        >
-          <Text style={styles.dropdownButtonText}>
-            {selectedUsers[0] || "Seleccione quién pagó"}
-          </Text>
-          <Icon 
-            name={showPicker ? "chevron-up" : "chevron-down"} 
-            size={24} 
-            color="#000" 
-          />
+        <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowPicker(!showPicker)}>
+          <Text style={styles.dropdownButtonText}>{selectedUsers[0] || "Seleccione quién pagó"}</Text>
+          <Icon name={showPicker ? "chevron-up" : "chevron-down"} size={24} color="#000" />
         </TouchableOpacity>
-        
+
         {showPicker && (
           <View style={styles.dropdownList}>
             <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
@@ -454,9 +447,7 @@ const ParticipantSelect = ({
                     setShowPicker(false);
                   }}
                 >
-                  <Text style={styles.dropdownItemText}>
-                    {user}
-                  </Text>
+                  <Text style={styles.dropdownItemText}>{user}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -477,22 +468,16 @@ const ParticipantSelect = ({
 
   return (
     <View style={styles.selectContainer}>
-      <Text style={styles.participantsTitle}>Participantes:</Text>
+      <Text style={styles.participantsTitle}>Participantes</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
         <View style={styles.participantsContainer}>
           {displayedUsers.map((user, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.participantButton,
-                selectedUsers.includes(user) && styles.participantButtonSelected
-              ]}
+              style={[styles.participantButton, selectedUsers.includes(user) && styles.participantButtonSelected]}
               onPress={() => toggleUser(user)}
             >
-              <Text style={[
-                styles.participantButtonText,
-                selectedUsers.includes(user) && styles.participantButtonTextSelected
-              ]}>
+              <Text style={[styles.participantButtonText, selectedUsers.includes(user) && styles.participantButtonTextSelected]}>
                 {user}
               </Text>
             </TouchableOpacity>
@@ -628,10 +613,10 @@ const styles = StyleSheet.create({
     marginBottom: -10,
     backgroundColor: "#f9f9f9",
     overflow: "hidden",
-    
   },
   pickerItem: {
     fontSize: 16,
+    height: 50,
   },
   selectContainer: {
     marginBottom: 16,
@@ -713,7 +698,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     position: "relative",
-    height: 90,
+    height: 50,
   },
   cancelCategorization: {
     position: "absolute",
@@ -734,16 +719,16 @@ const styles = StyleSheet.create({
   },
   participantsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 10,
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 5,
   },
   participantsList: {
     maxHeight: 200,
   },
   participantsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   participantButton: {
     backgroundColor: "#DDDDDD",
@@ -761,28 +746,28 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   whoPaidContainer: {
-    width: '100%',
+    width: "100%",
     marginTop: 15,
   },
   dropdownButton: {
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 10,
-    backgroundColor: '#F8F8F8',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: "#F8F8F8",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   dropdownButtonText: {
     fontSize: 16,
   },
   dropdownList: {
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: "#DDDDDD",
     borderRadius: 10,
     marginTop: 5,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   dropdownItem: {
     padding: 10,
@@ -794,11 +779,11 @@ const styles = StyleSheet.create({
     maxHeight: 80,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 0,
   },
-
 });
 
 export default React.memo(AddTransactionModal);
