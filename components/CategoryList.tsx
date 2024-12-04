@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: "#370185",
-    borderRadius: 15,  // Match the category borderRadius
+    borderRadius: 15,
   },
   addCategoryButtonText: {
     fontSize: 24,
