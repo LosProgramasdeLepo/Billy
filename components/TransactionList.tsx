@@ -9,6 +9,7 @@ import { useAppContext } from "@/hooks/useAppContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ExpenseDetailsModal } from "./modals/ExpenseDetailsModal";
 import { formatNumber } from "@/lib/utils";
+import { TransactionDetailsModal } from "./modals/TransactionDetailsModal";
 
 moment.locale("es");
 
@@ -46,6 +47,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const navigation = useNavigation();
   const [selectedTransaction, setSelectedTransaction] = useState<IncomeData | OutcomeData | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [participants, setParticipants] = useState<string[]>([]);
   const [paidBy, setPaidBy] = useState<string>("");
   const [sharedOutcomeData, setSharedOutcomeData] = useState<any>(null);
@@ -121,13 +123,28 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           setSharedOutcomeData(sharedOutcomeData);
         }
       }
+      setModalVisible(true);
     } else {
-      setParticipants([]);
-      setPaidBy("");
-      setSharedOutcomeData(null);
+      setSelectedTransaction(transaction);
+      setDetailsModalVisible(true);
     }
-    setModalVisible(true);
   }, []);
+
+  const handleMarkAsPaid = useCallback(
+    async (whoPaid: string, outcomeId: string, paid: boolean) => {
+      if (currentProfileId) {
+        const success = await markAsPaid(currentProfileId, whoPaid, outcomeId, paid);
+        if (success) {
+          refreshOutcomeData();
+          refreshBalanceData();
+          setModalVisible(false);
+        } else {
+          Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
+        }
+      }
+    },
+    [currentProfileId, refreshOutcomeData, refreshBalanceData]
+  );
 
   const handleLongPress = useCallback(
     (transaction: IncomeData | OutcomeData) => {
@@ -160,28 +177,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     refreshBalanceData();
   };
 
-  const handleMarkAsPaid = useCallback(
-    async (whoPaid: string, outcomeId: string, paid: boolean) => {
-      if (currentProfileId) {
-        const success = await markAsPaid(currentProfileId, whoPaid, outcomeId, paid);
-        if (success) {
-          refreshOutcomeData();
-          refreshBalanceData();
-          setModalVisible(false);
-        } else {
-          Alert.alert("Error", "No se pudo marcar como pagado. Inténtalo de nuevo.");
-        }
-      }
-    },
-    [currentProfileId, refreshOutcomeData, refreshBalanceData]
-  );
-
   const renderTransactionItem = useCallback(
     ({ item }: { item: IncomeData | OutcomeData }) => (
-      <TouchableOpacity
-        onPress={() => ((item as OutcomeData).shared_outcome ? handlePress(item) : null)}
-        onLongPress={() => handleLongPress(item)}
-      >
+      <TouchableOpacity onPress={() => handlePress(item)} onLongPress={() => handleLongPress(item)}>
         <View style={styles.card}>
           <View style={styles.iconContainer}>
             {(item as any).type === "income" ? (
@@ -255,21 +253,39 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         </View>
       )}
       {selectedTransaction && (
-        <ExpenseDetailsModal
-          isVisible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          expense={{
-            id: selectedTransaction.id ?? "",
-            amount: selectedTransaction.amount,
-            description: selectedTransaction.description,
-            paidBy: paidBy,
-            participants: participants,
-            categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
-            sharedOutcomeData: sharedOutcomeData,
-          }}
-          currentUser={user?.email ?? ""}
-          onMarkAsPaid={handleMarkAsPaid}
-        />
+        <>
+          <TransactionDetailsModal
+            isVisible={detailsModalVisible}
+            onClose={() => setDetailsModalVisible(false)}
+            transaction={{
+              type: (selectedTransaction as any).type,
+              amount: selectedTransaction.amount,
+              description: selectedTransaction.description,
+              created_at: moment(selectedTransaction.created_at).format(),
+              categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
+              categoryName:
+                (selectedTransaction as any).type === "outcome"
+                  ? categoryData?.find((cat) => cat.id === (selectedTransaction as OutcomeData).category)?.name
+                  : undefined,
+            }}
+          />
+
+          <ExpenseDetailsModal
+            isVisible={modalVisible}
+            onClose={() => setModalVisible(false)}
+            expense={{
+              id: selectedTransaction.id || "",
+              amount: selectedTransaction.amount,
+              description: selectedTransaction.description,
+              paidBy: paidBy,
+              participants: participants,
+              categoryIcon: getCategoryIcon((selectedTransaction as OutcomeData).category),
+              sharedOutcomeData: sharedOutcomeData,
+            }}
+            currentUser={user?.email || ""}
+            onMarkAsPaid={handleMarkAsPaid}
+          />
+        </>
       )}
     </View>
   );
