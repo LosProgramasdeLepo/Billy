@@ -116,7 +116,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
   const handleAddCategory = useCallback(async () => {
     if (!validateCategoryName(name) || isSubmitting) return;
     setIsSubmitting(true);
-    await addCategory(currentProfileId ?? "", name, JSON.stringify(selectedGradient), selectedIcon || DEFAULT_ICON, parseFloat(limit));
+    await addCategory(currentProfileId ?? "", name, JSON.stringify(selectedGradient), selectedIcon || DEFAULT_ICON, parseFloat(limit.replace(",", ".")));
     setName("");
     setLimit("");
     setSelectedGradient(gradients[0]);
