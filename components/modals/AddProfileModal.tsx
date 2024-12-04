@@ -103,6 +103,8 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
             onChangeText={handleNameChange}
           />
 
+          <Text style={styles.subtitle}>Compartir perfil (opcional)</Text>
+
           <View style={[styles.inputContainer, styles.expandableInput]}>
             <View style={styles.emailBlocksContainer}>
               {emailBlocks.map((block, index) => (
@@ -134,7 +136,11 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
             </View>
           </View>
 
-          <TouchableOpacity style={styles.acceptButton} onPress={handleAddProfile}>
+          <TouchableOpacity
+            style={[styles.acceptButton, !profileName.trim() && styles.acceptButtonDisabled]}
+            onPress={handleAddProfile}
+            disabled={!profileName.trim()}
+          >
             <Text style={styles.acceptButtonText}>Aceptar</Text>
           </TouchableOpacity>
         </View>
@@ -254,9 +260,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  closeButton: {
-    
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
+  subtitle: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 8,
+    alignSelf: "flex-start",
+    fontWeight: "bold",
+  },
+  closeButton: {},
 });
 
 export default AddProfileModal;

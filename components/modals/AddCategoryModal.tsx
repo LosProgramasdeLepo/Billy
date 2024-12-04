@@ -186,7 +186,11 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
             style={styles.gradientList}
           />
 
-          <TouchableOpacity style={styles.acceptButton} onPress={handleAddCategory}>
+          <TouchableOpacity
+            style={[styles.acceptButton, (!name.trim() || errors.name) && styles.acceptButtonDisabled]}
+            onPress={handleAddCategory}
+            disabled={!name.trim() || errors.name}
+          >
             <Text style={styles.acceptButtonText}>Aceptar</Text>
           </TouchableOpacity>
         </View>
@@ -297,6 +301,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
 });
 
