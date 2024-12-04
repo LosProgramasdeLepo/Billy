@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: "#4B00B8",
     textDecorationLine: "underline",
+    marginBottom: 10,
   },
   container: {
     flex: 1,

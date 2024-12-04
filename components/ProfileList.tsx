@@ -77,16 +77,15 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile, isPro })
       const isSharedProfile = item !== "add" && item.is_shared === true;
 
       if (item === "add") {
-        const isProfileLimitReached = profileData ? profileData.length >= 3 && !isPro : false;
-        
+        const isProfileLimitReached = profileData ? profileData.length >= 3 : false;
+
         return (
           <TouchableOpacity style={[styles.profileItem, styles.addButton]} onPress={onAddProfile}>
             <View style={styles.addButtonContent}>
               <Ionicons name="add-circle-outline" size={40} color="#FFFFFF" />
               <Text style={styles.addButtonText}>Agregar Perfil</Text>
-              {isProfileLimitReached && (
+              {isProfileLimitReached && !isPro && (
                 <View style={styles.lockIconContainer}>
-                  {/* TODO: cambiar el tamano del candado a gusto. */}
                   <Ionicons name="lock-closed-outline" size={28} color="#FFFFFF" />
                 </View>
               )}

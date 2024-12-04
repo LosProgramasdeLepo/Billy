@@ -1,15 +1,18 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, AppState, AppStateStatus } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BillyHeader } from "@/components/BillyHeader";
 import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
+import { createBill, deleteBill, addParticipantToBill, getBillParticipants, getBillTransactions, calculateDebts } from "@/api/api";
+import { formatNumber } from "@/lib/utils";
 
 interface Transaction {
   id: string | number;
   title: string;
   paidBy: string;
   amount: number;
+  date: Date;
 }
 
 export default function Temporal() {
@@ -17,6 +20,41 @@ export default function Temporal() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [billId, setBillId] = useState<string | null>(null);
+  const [debts, setDebts] = useState<{ [participant: string]: { [payer: string]: number } } | null>(null);
+
+  useEffect(() => {
+    const initializeBill = async () => {
+      const newBillId = await createBill(0, []);
+      if (newBillId) {
+        setBillId(newBillId);
+        refreshTransactions();
+      }
+    };
+
+    initializeBill();
+
+    // Manejar el cambio de estado de la aplicación
+    const subscription = AppState.addEventListener("change", async (nextAppState: AppStateStatus) => {
+      if (nextAppState === "background") {
+        // La aplicación está en segundo plano o se está cerrando
+        if (billId) {
+          await deleteBill(billId);
+          setBillId(null);
+          setPersonCount(0);
+          setTransactions([]);
+        }
+      }
+    });
+
+    // Limpieza cuando el componente se desmonta
+    return () => {
+      subscription.remove();
+      if (billId) {
+        deleteBill(billId);
+      }
+    };
+  }, []);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -26,14 +64,45 @@ export default function Temporal() {
     setIsModalVisible(false);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (billId) {
+      const deleteSuccess = await deleteBill(billId);
+      if (!deleteSuccess) {
+        Alert.alert("Error", "No se pudo borrar la cuenta actual");
+        return;
+      }
+    }
+
     setPersonCount(0);
     setTransactions([]);
+
+    // Crear nuevo bill
+    const newBillId = await createBill(0, []);
+    if (newBillId) {
+      setBillId(newBillId);
+    } else {
+      Alert.alert("Error", "No se pudo crear una nueva cuenta");
+    }
   };
 
-  const refreshTransactions = () => {
-    // Esta función se implementará cuando se agregue la API
-    console.log("Refrescando transacciones...");
+  const refreshTransactions = async () => {
+    if (billId) {
+      try {
+        const transactions = await getBillTransactions(billId);
+        setTransactions(
+          transactions.map((transaction) => ({
+            id: transaction.id,
+            title: transaction.description,
+            paidBy: transaction.paidBy || "Desconocido",
+            amount: transaction.amount,
+            date: new Date(transaction.date),
+          }))
+        );
+      } catch (error) {
+        console.error("Error al obtener las transacciones:", error);
+        Alert.alert("Error", "No se pudieron cargar los movimientos");
+      }
+    }
   };
 
   const handleOpenPersonModal = () => {
@@ -44,15 +113,59 @@ export default function Temporal() {
     setIsPersonModalVisible(false);
   };
 
+  const handleAddPerson = async (name: string) => {
+    if (billId) {
+      const success = await addParticipantToBill(billId, name);
+      if (success) {
+        setPersonCount((prev) => prev + 1);
+        handleClosePersonModal();
+      } else {
+        Alert.alert("Error", "No se pudo agregar al participante ya que ya existe uno con el mismo nombre en esta cuenta", [
+          { text: "OK" },
+        ]);
+      }
+    }
+  };
+
+  const showParticipantsList = async () => {
+    if (billId) {
+      const participants = await getBillParticipants(billId);
+      const message =
+        participants.length === 0 ? "Todavía no se agregaron participantes." : `${participants.map((p) => `• ${p}`).join("\n")}`;
+
+      Alert.alert("Participantes actuales", message, [{ text: "OK" }]);
+    }
+  };
+
+  const refreshDebts = async () => {
+    if (billId) {
+      const participants = await getBillParticipants(billId);
+      if (participants.length === 0) {
+       
+        setDebts(null); // O puedes establecer un estado que indique que no hay deudas
+        return; // Salir de la función si no hay participantes
+      }
+      
+      const calculatedDebts = await calculateDebts(billId);
+      setDebts(calculatedDebts);
+    }
+  };
+
+  useEffect(() => {
+    refreshDebts();
+  }, [transactions]);
+
   return (
     <LinearGradient colors={["#4B00B8", "#20014E"]} style={styles.gradientContainer}>
       <BillyHeader />
       <View style={styles.contentContainer}>
         <View style={styles.whiteContainer}>
-          <ScrollView>
+          <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.infoCard}>
               <View style={styles.personas}>
-                <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
+                <TouchableOpacity onPress={showParticipantsList}>
+                  <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
+                </TouchableOpacity>
                 <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
                 </TouchableOpacity>
@@ -65,59 +178,69 @@ export default function Temporal() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
-              <Text style={styles.floatingButtonText}>Borrar</Text>
-            </TouchableOpacity>
-
             <View style={styles.debtCard}>
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Olivia debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
-              <View style={styles.separator} />
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Pilar debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
-              <View style={styles.separator} />
-              <View style={styles.debtItem}>
-                <Text style={styles.debtText}>Maria debe a Juan</Text>
-                <Text style={styles.precio}>$500,00</Text>
-              </View>
+              {debts &&
+                Object.entries(debts).map(([debtor, payerDebts]) =>
+                  Object.entries(payerDebts).map(
+                    ([payer, amount], index) =>
+                      amount > 0 && (
+                        <React.Fragment key={`${debtor}-${payer}-${index}`}>
+                          <View style={styles.debtItem}>
+                            <Text style={styles.debtText}>
+                              {payer} le debe a {debtor}
+                            </Text>
+                            <Text style={styles.precio}>${formatNumber(amount)}</Text>
+                          </View>
+                          <View style={styles.separator} />
+                        </React.Fragment>
+                      )
+                  )
+                )}
+              {(!debts || Object.keys(debts).length === 0) && <Text style={styles.noDebtsText}>No hay deudas pendientes.</Text>}
             </View>
+
+            <View style={styles.sectionSeparator} />
 
             <View style={styles.movimientos}>
               <View style={styles.movimientosHeader}>
                 <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
-                <TouchableOpacity>
-                  <Text style={styles.verMas}>Ver más</Text>
-                </TouchableOpacity>
               </View>
 
-              {transactions.map((transaction) => (
-                <View key={transaction.id} style={styles.transactionCard}>
-                  <View>
-                    <Text style={styles.transactionTitle}>{transaction.title}</Text>
-                    <Text style={styles.transactionSubtitle}>
-                      <Text style={styles.pagadoPor}>Pagado por </Text>
-                      <Text style={styles.pagador}>{transaction.paidBy}</Text>
-                    </Text>
+              {transactions.length === 0 ? (
+                <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos.</Text>
+              ) : (
+                transactions.map((transaction, index) => (
+                  <View key={index} style={styles.transactionCard}>
+                    <View>
+                      <Text style={styles.transactionTitle}>{transaction.title}</Text>
+                      <Text style={styles.transactionSubtitle}>
+                        <Text style={styles.pagadoPor}>Pagado por </Text>
+                        <Text style={styles.pagador}>{transaction.paidBy}</Text>
+                      </Text>
+                    </View>
+                    <Text style={styles.amount}>- $ {transaction.amount}</Text>
                   </View>
-                  <Text style={styles.amount}>- $ {transaction.amount}</Text>
-                </View>
-              ))}
+                ))
+              )}
             </View>
+
+            <View style={styles.sectionSeparator} />
+
+            <TouchableOpacity style={styles.floatingButton} onPress={handleReset}>
+              <Text style={styles.floatingButtonText}>Finalizar cuenta</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
       </View>
 
-      <TemporalExpenseModal isVisible={isModalVisible} onClose={handleCloseModal} refreshTransactions={refreshTransactions} />
-
-      <AddPersonModal
-        isVisible={isPersonModalVisible}
-        onClose={handleClosePersonModal}
-        onAddPerson={() => setPersonCount((prev) => prev + 1)}
+      <TemporalExpenseModal
+        isVisible={isModalVisible}
+        onClose={handleCloseModal}
+        refreshTransactions={refreshTransactions}
+        billId={billId || ""}
       />
+
+      <AddPersonModal isVisible={isPersonModalVisible} onClose={handleClosePersonModal} onAddPerson={handleAddPerson} />
     </LinearGradient>
   );
 }
@@ -145,7 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.08)",
     borderRadius: 25,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   personas: {
     flexDirection: "row",
@@ -168,11 +291,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#222B45",
     flex: 1,
+    paddingHorizontal: 5,
   },
   addButton: {
     fontSize: 24,
     color: "#4B00B8",
     marginLeft: 10,
+    paddingHorizontal: 5,
   },
   debtCard: {
     backgroundColor: "#FFFFFF",
@@ -182,7 +307,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
-    marginBottom: 20,
+    marginBottom: 15,
     padding: 10,
   },
   debtItem: {
@@ -206,7 +331,6 @@ const styles = StyleSheet.create({
   },
   movimientos: {
     width: "100%",
-    marginBottom: 20,
   },
   movimientosHeader: {
     flexDirection: "row",
@@ -235,6 +359,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
+    width: "100%",
     marginBottom: 10,
   },
   transactionTitle: {
@@ -270,11 +395,32 @@ const styles = StyleSheet.create({
     elevation: 5,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   floatingButtonText: {
     fontSize: 16,
     color: "#4B00B8",
     textAlign: "center",
+  },
+  noDebtsText: {
+    textAlign: "center",
+    color: "#666",
+    padding: 20,
+    fontStyle: "italic",
+  },
+  noMovimientosText: {
+    textAlign: "center",
+    color: "#666",
+    padding: 10,
+    fontStyle: "italic",
+  },
+  sectionSeparator: {
+    height: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+    marginBottom: 10,
+  },
+  scrollViewContent: {
+    paddingBottom: 100,
   },
 });

@@ -1,25 +1,50 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
-import { processOcrResults } from "../../api/api";
+import { processOcrResults, getBillParticipants, addOutcomeToBill } from "../../api/api";
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
   onClose: () => void;
   refreshTransactions: () => void;
+  billId: string;
 }
 
-const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: TemporalExpenseModalProps) => {
+const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId }: TemporalExpenseModalProps) => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ticketScanned, setTicketScanned] = useState(false);
   const [errors, setErrors] = useState({
     description: false,
     amount: false,
   });
+  const [whoPaid, setWhoPaid] = useState<string>("");
+  const [showPicker, setShowPicker] = useState(false);
+
+  useEffect(() => {
+    const loadParticipants = async () => {
+      if (billId) {
+        const billParticipants = await getBillParticipants(billId);
+        setParticipants(billParticipants);
+      }
+    };
+    if (isVisible) {
+      loadParticipants();
+    }
+  }, [billId, isVisible]);
+
+  const toggleParticipant = (participant: string) => {
+    setSelectedParticipants((prev) => {
+      const newSelected = prev.includes(participant) ? prev.filter((p) => p !== participant) : [...prev, participant];
+
+      return newSelected;
+    });
+  };
 
   const resetForm = () => {
     setAmount("");
@@ -73,7 +98,6 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
   const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    // Validar campos
     const newErrors = {
       description: description.trim() === "",
       amount: amount.trim() === "",
@@ -81,21 +105,30 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
 
     setErrors(newErrors);
 
-    if (newErrors.description || newErrors.amount) {
-      Alert.alert("Error", "Por favor complete todos los campos obligatorios");
+    if (newErrors.description || newErrors.amount || !whoPaid || selectedParticipants.length === 0) {
+      Alert.alert("Error", "Por favor complete todos los campos obligatorios y seleccione quién pagó");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log("Gasto temporal:", { amount, description });
+      const success = await addOutcomeToBill(billId, whoPaid, parseFloat(amount), description, selectedParticipants);
+
+      if (!success) {
+        Alert.alert("Error", "No se pudo guardar el gasto");
+        return;
+      }
+
       refreshTransactions();
       setAmount("");
       setDescription("");
+      setWhoPaid("");
+      setSelectedParticipants([]);
       onClose();
     } catch (error) {
       console.error("Error al guardar el gasto:", error);
+      Alert.alert("Error", "Ocurrió un error al guardar el gasto");
     } finally {
       setIsSubmitting(false);
     }
@@ -110,19 +143,20 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
     <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={handleClose}>
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <Icon name="close" size={30} color="#000000" />
-          </TouchableOpacity>
-          
-          <Text style={styles.title}>Gasto</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Nuevo gasto</Text>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.contentContainer}>
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, errors.description && styles.inputError]}
+                style={[styles.input, errors.description && styles.inputError, { width: "90%" }]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Descripción"
+                placeholder="Descripción (obligatorio)"
                 placeholderTextColor="#AAAAAA"
               />
               <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
@@ -135,11 +169,64 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions }: Tempo
               keyboardType="numeric"
               value={amount}
               onChangeText={setAmount}
-              placeholder="Monto"
+              placeholder="Monto (obligatorio)"
               placeholderTextColor="#AAAAAA"
             />
 
-            <TouchableOpacity style={styles.acceptButton} onPress={handleSubmit}>
+            <View style={styles.whoPaidContainer}>
+              <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
+              <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowPicker(!showPicker)}>
+                <Text style={styles.dropdownButtonText}>{whoPaid || "Seleccione quién pagó"}</Text>
+                <Icon name={showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={24} color="#000" />
+              </TouchableOpacity>
+
+              {showPicker && (
+                <View style={styles.dropdownList}>
+                  <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
+                    {participants.map((participant) => (
+                      <TouchableOpacity
+                        key={participant}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setWhoPaid(participant);
+                          setShowPicker(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItemText}>{participant}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
+            <Text style={styles.participantsTitle}>Participantes:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
+              <View style={styles.participantsContainer}>
+                {participants.map((participant, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.participantButton, selectedParticipants.includes(participant) && styles.participantButtonSelected]}
+                    onPress={() => toggleParticipant(participant)}
+                  >
+                    <Text
+                      style={[
+                        styles.participantButtonText,
+                        selectedParticipants.includes(participant) && styles.participantButtonTextSelected,
+                      ]}
+                    >
+                      {participant}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.acceptButton, selectedParticipants.length === 0 && styles.acceptButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={selectedParticipants.length === 0}
+            >
               <Text style={styles.acceptButtonText}>Aceptar</Text>
             </TouchableOpacity>
           </View>
@@ -164,39 +251,38 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    right: 20,
-    top: 20,
-    zIndex: 1,
+    right: 0,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#000000",
-    marginTop: 20,
-    marginBottom: 30,
-    textAlign: "center",
   },
   contentContainer: {
     paddingHorizontal: 20,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   input: {
-    flex: 1,
     borderWidth: 1,
     borderColor: "#DDDDDD",
     borderRadius: 10,
     padding: 15,
+    marginBottom: 16,
     fontSize: 16,
+    color: "#000000",
+    backgroundColor: "#FFFFFF",
   },
   inputError: {
     borderColor: "#FF0000",
   },
   scanButton: {
-    marginLeft: 10,
+    padding: 5,
+    marginLeft: 5,
+    marginBottom: 16,
   },
   acceptButton: {
     backgroundColor: "#4B00B8",
@@ -209,6 +295,77 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  participantsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  participantsList: {
+    maxHeight: 200,
+  },
+  participantsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  participantButton: {
+    backgroundColor: "#DDDDDD",
+    borderRadius: 10,
+    padding: 10,
+    margin: 5,
+  },
+  participantButtonSelected: {
+    backgroundColor: "#4B00B8",
+  },
+  participantButtonText: {
+    fontSize: 16,
+  },
+  participantButtonTextSelected: {
+    color: "#FFFFFF",
+  },
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
+  },
+  whoPaidContainer: {
+    width: "100%",
+  },
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: "#F8F8F8",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    height: 60,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderColor: "#DDDDDD",
+    borderRadius: 10,
+    backgroundColor: "#F8F8F8",
+    marginBottom: 16,
+    marginTop: -10,
+  },
+  dropdownItem: {
+    padding: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+  },
+  scrollView: {
+    maxHeight: 80,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
 });
 

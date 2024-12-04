@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppContext } from "@/hooks/useAppContext";
 import { getUser } from "@/api/api";
+import { createBill } from "@/api/api";
 
 export default function Start() {
   const navigation = useNavigation();
@@ -19,6 +20,7 @@ export default function Start() {
           if (parsedSession && parsedSession.user && parsedSession.user.email) {
             const user = await getUser(parsedSession.user.email);
             setUser(user);
+            await createBill(0, []);
             navigation.reset({ index: 0, routes: [{ name: "(tabs)" as never }] });
           } else await AsyncStorage.removeItem("userSession");
         }

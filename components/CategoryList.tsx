@@ -114,7 +114,12 @@ export const CategoryList: React.FC<CategoryListProps> = ({ layout, showAddButto
               color="rgba(255,255,255,0.2)"
               style={styles.backgroundIcon}
             />
-            <ThemedText style={layout === "grid" ? styles.gridCategoryName : styles.rowCategoryName}>{category.name}</ThemedText>
+            <ThemedText
+              numberOfLines={layout === "row" ? 1 : undefined}
+              style={layout === "grid" ? styles.gridCategoryName : styles.rowCategoryName}
+            >
+              {category.name}
+            </ThemedText>
             <ThemedText style={layout === "grid" ? styles.gridCategoryAmount : styles.rowCategoryAmount}>
               ${formatNumber(category.spent ?? 0)}
             </ThemedText>
@@ -236,6 +241,7 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: "#4B00B8",
     textDecorationLine: "underline",
+    marginBottom: 10,
   },
   backgroundIcon: {
     position: "absolute",

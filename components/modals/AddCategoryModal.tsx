@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, SafeAreaView } from "react-native";
 import { addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
@@ -70,6 +70,21 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({ name: false });
+
+  const resetModal = useCallback(() => {
+    setName("");
+    setLimit("");
+    setSelectedGradient(gradients[0]);
+    setSelectedIcon(icons[0]);
+    setErrorMessage("");
+    setErrors({ name: false });
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) {
+      resetModal();
+    }
+  }, [isVisible, resetModal]);
 
   const handleNameChange = useCallback((text: string) => {
     setName(text);
@@ -171,7 +186,11 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
             style={styles.gradientList}
           />
 
-          <TouchableOpacity style={styles.acceptButton} onPress={handleAddCategory}>
+          <TouchableOpacity
+            style={[styles.acceptButton, (!name.trim() || errors.name) && styles.acceptButtonDisabled]}
+            onPress={handleAddCategory}
+            disabled={!name.trim() || errors.name}
+          >
             <Text style={styles.acceptButtonText}>Aceptar</Text>
           </TouchableOpacity>
         </View>
@@ -179,6 +198,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
@@ -282,6 +302,9 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  acceptButtonDisabled: {
+    backgroundColor: "#CCCCCC",
   },
 });
 
