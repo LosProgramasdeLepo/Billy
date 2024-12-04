@@ -54,6 +54,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
   const [isCategorizing, setIsCategorizing] = useState(false);
 
   const [errors, setErrors] = useState({ description: false, amount: false });
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let rotationLoop: Animated.CompositeAnimation;
@@ -313,97 +314,157 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     [categories, currentProfileId]
   );
 
+  const resetModal = useCallback(() => {
+    setType("Income");
+    setDescription("");
+    setAmount("");
+    setDate(new Date());
+    setSelectedCategory("");
+    setTicketScanned(false);
+    setCategorizedByIA(false);
+    setSelectedSharedUser(null);
+    setWhoPaidIt(null);
+    setCurrentPage(1);
+    setErrors({ description: false, amount: false });
+    bubbleAnimation.setValue(0);
+  }, [bubbleAnimation]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isVisible) {
+      resetModal();
+    }
+  }, [isVisible, resetModal]);
+
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
+    <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={handleClose}>
       <SafeAreaView style={styles.modalBackground}>
         <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Icon name="close" size={30} color="#000000" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            {shared && type === "Outcome" && currentPage === 2 ? (
+              <TouchableOpacity style={styles.backButton} onPress={() => setCurrentPage(1)}>
+                <Icon name="arrow-left" size={24} color="#370185" />
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.backButtonPlaceholder} />
+            )}
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Icon name="close" size={30} color="#000000" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.contentContainer}>
             {renderTypeSelector}
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={[styles.input, errors.description && styles.inputError, { width: type === "Income" ? "100%" : "88%" }]}
-                value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
-                onChangeText={handleDescriptionChange}
-                placeholder="Descripción (obligatorio)"
-                placeholderTextColor="#AAAAAA"
-              />
-              {type === "Outcome" && (
-                <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
-                  <Icon name="scan-helper" size={24} color="#370185" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <TextInput
-              style={[styles.input, errors.amount && styles.inputError]}
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={handleAmountChange}
-              placeholder="Monto (obligatorio)"
-              placeholderTextColor="#AAAAAA"
-            />
-
-            {type === "Outcome" && (
-              <View style={styles.pickerContainer}>
-                {isCategorizing && <Animated.View style={[styles.dashedBorder, { transform: [{ translateX: rotationAnimation }] }]} />}
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={selectedCategory}
-                    onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-                    style={[styles.picker, { flex: 1 }]}
-                    itemStyle={styles.pickerItem}
-                    enabled={!isCategorizing}
-                  >
-                    <Picker.Item label={isCategorizing ? "Categorizando..." : "Selecciona una categoría"} value="" />
-                    {categories.map((category) => (
-                      <Picker.Item key={category.id} label={category.name} value={category.id} />
-                    ))}
-                  </Picker>
-                  {isCategorizing && (
-                    <TouchableOpacity
-                      style={styles.cancelCategorization}
-                      onPress={() => {
-                        debouncedCategorize.cancel();
-                        setIsCategorizing(false);
-                      }}
-                    >
-                      <Icon name="close" size={20} color="#000000" />
+            {(!shared || type === "Income" || currentPage === 1) && (
+              <>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[styles.input, errors.description && styles.inputError, { width: type === "Income" ? "100%" : "88%" }]}
+                    value={description === "Escaneando ticket" ? `${description}${".".repeat(loadingDots)}` : description}
+                    onChangeText={handleDescriptionChange}
+                    placeholder="Descripción (obligatorio)"
+                    placeholderTextColor="#AAAAAA"
+                  />
+                  {type === "Outcome" && (
+                    <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
+                      <Icon name="scan-helper" size={24} color="#370185" />
                     </TouchableOpacity>
                   )}
                 </View>
-              </View>
+
+                <TextInput
+                  style={[styles.input, errors.amount && styles.inputError]}
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={handleAmountChange}
+                  placeholder="Monto (obligatorio)"
+                  placeholderTextColor="#AAAAAA"
+                />
+
+                {type === "Outcome" && (
+                  <View style={styles.pickerContainer}>
+                    {isCategorizing && <Animated.View style={[styles.dashedBorder, { transform: [{ translateX: rotationAnimation }] }]} />}
+                    <View style={styles.pickerWrapper}>
+                      <Picker
+                        selectedValue={selectedCategory}
+                        onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+                        style={[styles.picker, { flex: 1 }]}
+                        itemStyle={styles.pickerItem}
+                        enabled={!isCategorizing}
+                      >
+                        <Picker.Item label={isCategorizing ? "Categorizando..." : "Selecciona una categoría"} value="" />
+                        {categories.map((category) => (
+                          <Picker.Item key={category.id} label={category.name} value={category.id} />
+                        ))}
+                      </Picker>
+                      {isCategorizing && (
+                        <TouchableOpacity
+                          style={styles.cancelCategorization}
+                          onPress={() => {
+                            debouncedCategorize.cancel();
+                            setIsCategorizing(false);
+                          }}
+                        >
+                          <Icon name="close" size={20} color="#000000" />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
+                  <Text style={[styles.datePickerText, !date && styles.placeholderText]}>
+                    {date ? moment(date).format("DD/MM/YYYY") : "Fecha"}
+                  </Text>
+                  <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon} />
+                </TouchableOpacity>
+
+                {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
+
+                {shared && type === "Outcome" ? (
+                  <TouchableOpacity
+                    style={[styles.acceptButton, (!description || !amount) && { opacity: 0.5 }]}
+                    onPress={() => setCurrentPage(2)}
+                    disabled={!description || !amount}
+                  >
+                    <Text style={styles.acceptButtonText}>Continuar →</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.acceptButton, (!description || !amount) && { opacity: 0.5 }]}
+                    onPress={handleSubmit}
+                    disabled={!description || !amount}
+                  >
+                    <Text style={styles.acceptButtonText}>Aceptar</Text>
+                  </TouchableOpacity>
+                )}
+              </>
             )}
 
-            {type === "Outcome" && shared && (
-              <ParticipantSelect sharedUsers={sharedUsers} onSelect={(users: string[]) => setWhoPaidIt(users)} singleSelection={true} />
+            {shared && type === "Outcome" && currentPage === 2 && (
+              <>
+                <ParticipantSelect sharedUsers={sharedUsers} onSelect={(users: string[]) => setWhoPaidIt(users)} singleSelection={true} />
+
+                <ParticipantSelect
+                  sharedUsers={sharedUsers}
+                  onSelect={(users: string[]) => setSelectedSharedUser(users)}
+                  singleSelection={false}
+                  whoPaidIt={whoPaidIt ? whoPaidIt[0] : undefined}
+                />
+
+                <TouchableOpacity
+                  style={[styles.acceptButton, (!whoPaidIt || !whoPaidIt.length) && { opacity: 0.5 }]}
+                  onPress={handleSubmit}
+                  disabled={!whoPaidIt || !whoPaidIt.length}
+                >
+                  <Text style={styles.acceptButtonText}>Aceptar</Text>
+                </TouchableOpacity>
+              </>
             )}
-
-            {type === "Outcome" && shared && (
-              <ParticipantSelect
-                sharedUsers={sharedUsers}
-                onSelect={(users: string[]) => setSelectedSharedUser(users)}
-                singleSelection={false}
-                whoPaidIt={whoPaidIt ? whoPaidIt[0] : undefined}
-              />
-            )}
-
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerButton}>
-              <Text style={[styles.datePickerText, !date && styles.placeholderText]}>
-                {date ? moment(date).format("DD/MM/YYYY") : "Fecha"}
-              </Text>
-              <Icon name="calendar-today" size={24} color="#007BFF" style={styles.datePickerIcon} />
-            </TouchableOpacity>
-
-            {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={handleDateChange} />}
-
-            <TouchableOpacity style={styles.acceptButton} onPress={handleSubmit}>
-              <Text style={styles.acceptButtonText}>Aceptar</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -506,7 +567,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 10,
-    paddingTop: 40,
+    paddingTop: 50,
   },
   contentContainer: {
     width: "100%",
@@ -580,12 +641,6 @@ const styles = StyleSheet.create({
   datePickerIcon: {
     marginLeft: 10,
   },
-  closeButton: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 1,
-  },
   acceptButton: {
     backgroundColor: "#370185",
     borderRadius: 24,
@@ -610,7 +665,7 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     borderColor: "#ddd",
     borderRadius: 4,
-    marginBottom: -10,
+    marginBottom: 16,
     backgroundColor: "#f9f9f9",
     overflow: "hidden",
   },
@@ -747,7 +802,6 @@ const styles = StyleSheet.create({
   },
   whoPaidContainer: {
     width: "100%",
-    marginTop: 15,
   },
   dropdownButton: {
     borderWidth: 1,
@@ -783,6 +837,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 0,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    position: "absolute",
+    top: 0,
+    zIndex: 1,
+  },
+  backButton: {
+    padding: 10,
+  },
+  backButtonPlaceholder: {
+    width: 44,
+    height: 44,
+  },
+  closeButton: {
+    padding: 10,
   },
 });
 
