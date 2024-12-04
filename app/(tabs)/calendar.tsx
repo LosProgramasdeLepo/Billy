@@ -3,7 +3,6 @@ import { View, StyleSheet, TouchableOpacity, Text, FlatList, Alert } from "react
 import { LinearGradient } from "expo-linear-gradient";
 import { Calendar } from "react-native-calendars";
 import moment from "moment";
-import { Ionicons } from "@expo/vector-icons";
 import CalendarAddModal from "../../components/modals/CalendarAddModal";
 import { getOutcomesFromDateRange, getIncomesFromDateRange } from "../../api/api";
 import { useFocusEffect } from "@react-navigation/native";
@@ -268,7 +267,8 @@ const styles = StyleSheet.create({
     marginHorizontal: "2.5%",
   },
   calendarContainer: {
-    height: 320,
+    minHeight: 320,
+    maxHeight: 380,
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: "white",
