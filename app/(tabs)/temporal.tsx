@@ -139,6 +139,13 @@ export default function Temporal() {
 
   const refreshDebts = async () => {
     if (billId) {
+      const participants = await getBillParticipants(billId);
+      if (participants.length === 0) {
+       
+        setDebts(null); // O puedes establecer un estado que indique que no hay deudas
+        return; // Salir de la función si no hay participantes
+      }
+      
       const calculatedDebts = await calculateDebts(billId);
       setDebts(calculatedDebts);
     }
@@ -153,7 +160,7 @@ export default function Temporal() {
       <BillyHeader />
       <View style={styles.contentContainer}>
         <View style={styles.whiteContainer}>
-          <ScrollView>
+          <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.infoCard}>
               <View style={styles.personas}>
                 <TouchableOpacity onPress={showParticipantsList}>
@@ -195,28 +202,26 @@ export default function Temporal() {
             <View style={styles.sectionSeparator} />
 
             <View style={styles.movimientos}>
-              <View style={styles.movimientos}>
-                <View style={styles.movimientosHeader}>
-                  <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
-                </View>
-
-                {transactions.length === 0 ? (
-                  <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos.</Text>
-                ) : (
-                  transactions.map((transaction, index) => (
-                    <View key={index} style={styles.transactionCard}>
-                      <View>
-                        <Text style={styles.transactionTitle}>{transaction.title}</Text>
-                        <Text style={styles.transactionSubtitle}>
-                          <Text style={styles.pagadoPor}>Pagado por </Text>
-                          <Text style={styles.pagador}>{transaction.paidBy}</Text>
-                        </Text>
-                      </View>
-                      <Text style={styles.amount}>- $ {transaction.amount}</Text>
-                    </View>
-                  ))
-                )}
+              <View style={styles.movimientosHeader}>
+                <Text style={styles.movimientosTitle}>Todos los movimientos:</Text>
               </View>
+
+              {transactions.length === 0 ? (
+                <Text style={styles.noMovimientosText}>Todavía no se agregaron movimientos.</Text>
+              ) : (
+                transactions.map((transaction, index) => (
+                  <View key={index} style={styles.transactionCard}>
+                    <View>
+                      <Text style={styles.transactionTitle}>{transaction.title}</Text>
+                      <Text style={styles.transactionSubtitle}>
+                        <Text style={styles.pagadoPor}>Pagado por </Text>
+                        <Text style={styles.pagador}>{transaction.paidBy}</Text>
+                      </Text>
+                    </View>
+                    <Text style={styles.amount}>- $ {transaction.amount}</Text>
+                  </View>
+                ))
+              )}
             </View>
 
             <View style={styles.sectionSeparator} />
@@ -414,5 +419,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
     marginBottom: 10,
+  },
+  scrollViewContent: {
+    paddingBottom: 100,
   },
 });
