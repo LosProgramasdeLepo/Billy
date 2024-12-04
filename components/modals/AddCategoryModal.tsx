@@ -198,6 +198,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({ isVisible, onClose,
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   modalBackground: {
     flex: 1,
