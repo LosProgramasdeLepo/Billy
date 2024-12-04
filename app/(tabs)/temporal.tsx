@@ -6,6 +6,7 @@ import TemporalExpenseModal from "@/components/modals/TemporalExpenseModal";
 import AddPersonModal from "@/components/modals/AddPersonModal";
 import { createBill, deleteBill, addParticipantToBill, getBillParticipants, getBillTransactions, calculateDebts } from "@/api/api";
 import { formatNumber } from "@/lib/utils";
+import { useAppContext } from "@/hooks/useAppContext";
 
 interface Transaction {
   id: string | number;
@@ -16,6 +17,8 @@ interface Transaction {
 }
 
 export default function Temporal() {
+  const { user } = useAppContext();
+
   const [personCount, setPersonCount] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isPersonModalVisible, setIsPersonModalVisible] = useState(false);
@@ -25,7 +28,7 @@ export default function Temporal() {
 
   useEffect(() => {
     const initializeBill = async () => {
-      const newBillId = await createBill(0, []);
+      const newBillId = await createBill(0, [user?.name || "Usuario"]);
       if (newBillId) {
         setBillId(newBillId);
         refreshTransactions();
@@ -54,7 +57,7 @@ export default function Temporal() {
         deleteBill(billId);
       }
     };
-  }, []);
+  }, [user]);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -141,11 +144,10 @@ export default function Temporal() {
     if (billId) {
       const participants = await getBillParticipants(billId);
       if (participants.length === 0) {
-       
         setDebts(null); // O puedes establecer un estado que indique que no hay deudas
         return; // Salir de la función si no hay participantes
       }
-      
+
       const calculatedDebts = await calculateDebts(billId);
       setDebts(calculatedDebts);
     }

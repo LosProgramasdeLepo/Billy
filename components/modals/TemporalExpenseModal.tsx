@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
@@ -46,7 +46,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     });
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setAmount("");
     setDescription("");
     setTicketScanned(false);
@@ -56,7 +56,13 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     });
     setWhoPaid("");
     setSelectedParticipants([]);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) {
+      resetForm();
+    }
+  }, [isVisible, resetForm]);
 
   const handleScanTicket = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
