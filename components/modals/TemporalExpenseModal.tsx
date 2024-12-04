@@ -54,6 +54,8 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
       description: false,
       amount: false,
     });
+    setWhoPaid("");
+    setSelectedParticipants([]);
   };
 
   const handleScanTicket = async () => {
@@ -189,6 +191,7 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
                         style={styles.dropdownItem}
                         onPress={() => {
                           setWhoPaid(participant);
+                          setSelectedParticipants((prev) => (prev.includes(participant) ? prev : [...prev, participant]));
                           setShowPicker(false);
                         }}
                       >
@@ -362,9 +365,9 @@ const styles = StyleSheet.create({
     maxHeight: 80,
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
 });
