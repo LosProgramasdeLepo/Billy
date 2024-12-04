@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   rowAddButton: {
-    width: 40,
     height: 80,
+    width: 150,
   },
   gridAddButton: {
     width: "48%",
@@ -254,6 +254,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#370185",
+    borderRadius: 15,  // Match the category borderRadius
   },
   addCategoryButtonText: {
     fontSize: 24,
