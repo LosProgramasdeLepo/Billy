@@ -33,8 +33,13 @@ export default function Login() {
   const handleLogin = async () => {
     try {
       const { user, error } = await logIn(email, password);
+      if (error === "Email not validated") {
+        Alert.alert("Email no verificado", "Por favor, verifica tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.");
+        return;
+      }
+
       if (error) {
-        Alert.alert("Error de inicio de sesión", "Email o contraseña inválidos");
+        Alert.alert("Error de inicio de sesión", "Email o contraseña inválidos.");
         return;
       }
 
