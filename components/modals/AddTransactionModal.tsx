@@ -309,7 +309,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
             setIsCategorizing(false);
           }
         }
-      }, 500),
+      }, 1000),
     [categories, currentProfileId]
   );
 
