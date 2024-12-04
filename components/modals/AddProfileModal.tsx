@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, SafeAreaView } from "react-native";
+import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, SafeAreaView, Alert } from "react-native";
 import { addProfile, addSharedUsers, addCategory } from "@/api/api";
 import { useAppContext } from "@/hooks/useAppContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -70,7 +70,12 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
       await addCategory(newProfile?.id ?? "", "Otros", JSON.stringify(["#AAAAAA", "#AAAAAA"]), "shape");
 
       if (validEmails.length > 0 && newProfile?.id) {
-        await addSharedUsers(newProfile.id, validEmails);
+        const result = await addSharedUsers(newProfile.id, validEmails);
+        if (result?.invalidEmails && result.invalidEmails.length > 0) {
+          Alert.alert("Error al compartir perfil", `Los siguientes usuarios no existen:\n${result.invalidEmails.join("\n")}`, [
+            { text: "OK" },
+          ]);
+        }
       }
 
       setProfileName("");

@@ -617,7 +617,7 @@ export async function addSharedUsers(profileId: string, emails: string[]) {
 
     if (invalidEmails.length > 0) {
       console.error("Los siguientes emails no existen en la tabla users:", invalidEmails);
-      return;
+      return { invalidEmails };
     }
 
     // Actualizar el perfil como compartido
@@ -633,8 +633,11 @@ export async function addSharedUsers(profileId: string, emails: string[]) {
       const { error: profileError } = await supabase.rpc("append_user_to_profile", { profile_id: profileId, new_user: email });
       if (profileError) console.error(`Error al añadir ${email} al perfil ${profileId}:`, profileError);
     }
+
+    return { success: true };
   } catch (error) {
     console.error("Error inesperado en addSharedUsers:", error);
+    return { error };
   }
 }
 
@@ -727,9 +730,7 @@ export async function logIn(email: string, password: string) {
     if (error?.message.includes("Email not confirmed") || error?.message === "Email not validated") {
       console.error("Email not validated");
       return { error: "Email not validated" };
-    }
-
-    else if (error) {
+    } else if (error) {
       console.error("Error during login:", error);
       return { error: "Invalid login credentials" };
     }
