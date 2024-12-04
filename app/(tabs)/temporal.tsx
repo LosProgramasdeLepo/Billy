@@ -166,7 +166,7 @@ export default function Temporal() {
             <View style={styles.infoCard}>
               <View style={styles.personas}>
                 <TouchableOpacity onPress={showParticipantsList}>
-                  <TextInput style={styles.input} value={`Cantidad de personas: ${personCount}`} editable={false} />
+                  <TextInput style={styles.input} value={`Cantidad de personas: ${personCount + 1}`} editable={false} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleOpenPersonModal}>
                   <Text style={styles.addButton}>+</Text>
