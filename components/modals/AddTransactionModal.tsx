@@ -2,6 +2,7 @@ import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Animated, S
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useDebtsData } from "@/components/SharedBalanceCard";
 import { useAppContext } from "@/hooks/useAppContext";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
@@ -27,6 +28,7 @@ interface AddTransactionModalProps {
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, onClose }) => {
   const { currentProfileId, refreshIncomeData, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
+  const { refreshDebts } = useDebtsData();
 
   const [rotationAnimation] = useState(new Animated.Value(0));
 
@@ -172,7 +174,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
         setTicketScanned(true);
 
-        if ((await extractedData).total) {  
+        if ((await extractedData).total) {
           setAmount((await extractedData).total?.toString() ?? "");
         }
         if ((await extractedData).description) {
@@ -221,8 +223,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           whoPaidIt[0],
           selectedSharedUser || []
         );
+        refreshDebts();
       } else {
-        await addOutcome(currentProfileId ?? "", categoryToUse || "", parseFloat(amount), description, date, categorizedByIA, ticketScanned);
+        await addOutcome(
+          currentProfileId ?? "",
+          categoryToUse || "",
+          parseFloat(amount),
+          description,
+          date,
+          categorizedByIA,
+          ticketScanned
+        );
       }
       refreshOutcomeData();
       refreshCategoryData();
@@ -244,6 +255,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
     refreshOutcomeData,
     refreshCategoryData,
     refreshBalanceData,
+    refreshDebts,
     currentProfileId,
     onClose,
     shared,
@@ -521,9 +533,10 @@ const ParticipantSelect = ({
 
   const toggleUser = (user: string) => {
     setSelectedUsers((prev) => {
-      return prev.includes(user) ? prev.filter((u) => u !== user) : [...prev, user];
+      const newSelection = prev.includes(user) ? prev.filter((u) => u !== user) : [...prev, user];
+      onSelect(newSelection);
+      return newSelection;
     });
-    onSelect(selectedUsers);
   };
 
   const displayedUsers = sharedUsers?.filter((user) => user !== whoPaidIt) || [];

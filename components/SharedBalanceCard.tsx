@@ -67,7 +67,7 @@ export const DebtEntryComponent: React.FC<DebtEntryProps> = ({ name1, name2, amo
   return (
     <View style={styles.debtEntry}>
       <Text style={styles.debtText}>
-        {name1} le debe(s) a {name2}
+        {name2} le debe(s) a {name1}
       </Text>
       <View style={styles.debtDetailsContainer}>
         <Image source={avatar1 && avatar1 !== "NULL" ? { uri: avatar1 } : defaultAvatar} style={styles.avatar} />
@@ -119,6 +119,10 @@ export const SharedBalanceCard = () => {
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [userAvatars, setUserAvatars] = useState<Record<string, string>>({});
   const { debtsToUser, debtsFromUser, totalDebtsToUser, totalDebtsFromUser, totalToPay, refreshDebts } = useDebtsData();
+
+  useEffect(() => {
+    refreshDebts();
+  }, [outcomeData, refreshDebts]);
 
   useEffect(() => {
     const fetchUserData = async () => {
