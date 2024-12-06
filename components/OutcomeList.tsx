@@ -7,6 +7,7 @@ import moment from "moment";
 import { useAppContext } from "@/hooks/useAppContext";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { formatNumber } from "@/lib/utils";
+import { useDebtsData } from "@/hooks/useDebtsData";
 
 interface OutcomeListProps {
   category?: string;
@@ -15,6 +16,7 @@ interface OutcomeListProps {
 
 export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSeparators = false }) => {
   const { outcomeData, categoryData, currentProfileId, refreshOutcomeData, refreshCategoryData, refreshBalanceData } = useAppContext();
+  const { refreshDebts } = useDebtsData();
 
   // For deleting
   const [selectedOutcome, setSelectedOutcome] = useState<OutcomeData | null>(null);
@@ -63,10 +65,14 @@ export const OutcomeList: React.FC<OutcomeListProps> = ({ category, showDateSepa
   );
 
   const handleRemoveOutcome = async (profile: string, id: string) => {
+    const outcome = outcomeData?.find(o => o.id === id);
     await removeOutcome(profile, id);
     refreshOutcomeData();
     refreshCategoryData();
     refreshBalanceData();
+    if (outcome?.shared_outcome) {
+      refreshDebts();
+    }
   };
 
   const getCategoryIcon = useCallback(
