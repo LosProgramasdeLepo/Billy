@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   rowAddButton: {
-    width: 40,
     height: 80,
+    width: 150,
   },
   gridAddButton: {
     width: "48%",
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: "#4B00B8",
     textDecorationLine: "underline",
-    marginBottom: 10,
+    alignSelf: "center",
   },
   backgroundIcon: {
     position: "absolute",
@@ -254,6 +254,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#370185",
+    borderRadius: 15,
   },
   addCategoryButtonText: {
     fontSize: 24,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, Modal, TouchableOpacity, Alert } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { StyleSheet } from "react-native";
@@ -12,6 +12,17 @@ interface AddPersonModalProps {
 const AddPersonModal: React.FC<AddPersonModalProps> = ({ isVisible, onClose, onAddPerson }) => {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetForm = useCallback(() => {
+    setName("");
+    setIsSubmitting(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) {
+      resetForm();
+    }
+  }, [isVisible, resetForm]);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
@@ -43,7 +54,13 @@ const AddPersonModal: React.FC<AddPersonModalProps> = ({ isVisible, onClose, onA
           </View>
 
           <View style={styles.contentContainer}>
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nombre (obligatorio)" placeholderTextColor="#AAAAAA" />
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="Nombre (obligatorio)"
+              placeholderTextColor="#AAAAAA"
+            />
 
             <TouchableOpacity
               style={[styles.acceptButton, name.trim() === "" && styles.acceptButtonDisabled]}
@@ -72,13 +89,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 0,
     padding: 5,
   },
