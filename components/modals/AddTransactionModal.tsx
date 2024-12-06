@@ -172,7 +172,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
 
         setTicketScanned(true);
 
-        if ((await extractedData).total) {
+        if ((await extractedData).total) {  
           setAmount((await extractedData).total?.toString() ?? "");
         }
         if ((await extractedData).description) {
@@ -216,13 +216,13 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isVisible, on
           parseFloat(amount),
           description,
           date,
-          whoPaidIt[0],
-          selectedSharedUser || [],
           categorizedByIA,
-          ticketScanned
+          ticketScanned,
+          whoPaidIt[0],
+          selectedSharedUser || []
         );
       } else {
-        await addOutcome(currentProfileId ?? "", categoryToUse || "", parseFloat(amount), description, date);
+        await addOutcome(currentProfileId ?? "", categoryToUse || "", parseFloat(amount), description, date, categorizedByIA, ticketScanned);
       }
       refreshOutcomeData();
       refreshCategoryData();

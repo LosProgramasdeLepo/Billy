@@ -281,10 +281,10 @@ export async function addOutcome(
   amount: number,
   description: string,
   created_at?: Date,
-  paid_by?: string,
-  debtors?: string[],
   categorized_by_ia?: boolean,
-  ticket_scanned?: boolean
+  ticket_scanned?: boolean,
+  paid_by?: string,
+  debtors?: string[]
 ) {
   try {
     if (category === "") {
