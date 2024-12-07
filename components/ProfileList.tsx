@@ -104,11 +104,11 @@ export const ProfileList: React.FC<ProfileListProps> = ({ onAddProfile, isPro })
             <Text style={styles.profileName}>{item.name}</Text>
             <Text style={styles.balanceText}>${formatNumber(item.balance ?? 0)}</Text>
           </View>
-          {isSharedProfile && (
+{/*           {isSharedProfile && (
             <TouchableOpacity style={styles.shareButton} onPress={() => handleSharePress(item.id ?? "null")}>
               <Ionicons name="share-outline" size={24} color="#4B00B8" />
             </TouchableOpacity>
-          )}
+          )} */}
         </TouchableOpacity>
       );
     },

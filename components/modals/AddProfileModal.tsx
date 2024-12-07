@@ -62,6 +62,10 @@ const AddProfileModal: React.FC<AddProfileModalProps> = ({ isVisible, onClose, o
 
     const validEmails = emailBlocks.filter((block) => block.isValid).map((block) => block.email);
 
+    if (sharedUsers.trim() && isValidEmail(sharedUsers.trim())) {
+      validEmails.push(sharedUsers.trim());
+    }
+
     if (isSubmitting) return;
     setIsSubmitting(true);
 
