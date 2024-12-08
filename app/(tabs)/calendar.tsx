@@ -57,14 +57,28 @@ export default function CalendarScreen() {
 
   const onDayPress = useCallback(
     (day: any) => {
-      const selectedDate = moment(day.dateString).utc().startOf("day");
+      const selectedDate = moment(day.dateString).add(1, "day").startOf("day");
       if (selectionStart) {
-        const start = moment(selectionStart).utc().startOf("day");
+        const start = moment(selectionStart).add(1, "day").startOf("day");
         const end = selectedDate;
-        if (end.isBefore(start)) setSelectedRange({ start: end.format("YYYY-MM-DD"), end: start.format("YYYY-MM-DD") });
-        else setSelectedRange({ start: start.format("YYYY-MM-DD"), end: end.format("YYYY-MM-DD") });
+        if (end.isBefore(start)) {
+          setSelectedRange({
+            start: end.format("YYYY-MM-DD"),
+            end: start.format("YYYY-MM-DD"),
+          });
+        } else {
+          setSelectedRange({
+            start: start.format("YYYY-MM-DD"),
+            end: end.format("YYYY-MM-DD"),
+          });
+        }
         setSelectionStart(null);
-      } else setSelectedRange({ start: selectedDate.format("YYYY-MM-DD"), end: selectedDate.format("YYYY-MM-DD") });
+      } else {
+        setSelectedRange({
+          start: selectedDate.format("YYYY-MM-DD"),
+          end: selectedDate.format("YYYY-MM-DD"),
+        });
+      }
     },
     [selectionStart]
   );
@@ -142,7 +156,7 @@ export default function CalendarScreen() {
 
       const [incomes, outcomes] = await Promise.all([
         getIncomesFromDateRange(currentProfileId, startOfMonth, endOfMonth),
-        getOutcomesFromDateRange(currentProfileId, startOfMonth, endOfMonth)
+        getOutcomesFromDateRange(currentProfileId, startOfMonth, endOfMonth),
       ]);
 
       const marked: { [key: string]: { dots: { key: string; color: string }[] } } = {};
@@ -165,7 +179,7 @@ export default function CalendarScreen() {
 
       setMarkedDates(marked);
     } catch (error) {
-      console.error('Error processing transactions:', error);
+      console.error("Error processing transactions:", error);
     }
   }, [currentDate, currentProfileId]);
 
@@ -195,14 +209,24 @@ export default function CalendarScreen() {
         dayPressOut={handleDayPressOut}
       />
     ),
-    [key, currentDate, markedDates, customArrowLeft, customArrowRight, renderCustomHeader, onDayPress, onDayLongPress, handleDayPressIn, handleDayPressOut]
+    [
+      key,
+      currentDate,
+      markedDates,
+      customArrowLeft,
+      customArrowRight,
+      renderCustomHeader,
+      onDayPress,
+      onDayLongPress,
+      handleDayPressIn,
+      handleDayPressOut,
+    ]
   );
-
 
   return (
     <View style={styles.container}>
       <LinearGradient colors={["#4B00B8", "#20014E"]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.gradientContainer}>
-        <BillyHeader/>
+        <BillyHeader />
         <View style={styles.contentContainer}>
           <View style={styles.calendarContainer}>{viewMode === "month" ? memoizedCalendar : renderYearPicker()}</View>
           {/*           <View style={styles.buttonContainer}>
@@ -390,7 +414,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     marginHorizontal: 20,
     marginVertical: 10,
   },

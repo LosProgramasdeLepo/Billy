@@ -73,20 +73,20 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     const sorted = sortTransactions(combined);
 
     const filteredTransactions = sorted.filter((transaction) => {
-      const transactionDate = moment(transaction.created_at).utc().startOf("day");
+      const transactionDate = moment(transaction.created_at).startOf("day");
       switch (timeRange) {
         case "day":
-          return transactionDate.isSame(moment().utc().startOf("day"), "day");
+          return transactionDate.isSame(moment().startOf("day"), "day");
         case "week":
-          return transactionDate.isSameOrAfter(moment().utc().startOf("week"), "day");
+          return transactionDate.isSameOrAfter(moment().startOf("week"), "day");
         case "month":
-          return transactionDate.isSameOrAfter(moment().utc().startOf("month"), "day");
+          return transactionDate.isSameOrAfter(moment().startOf("month"), "day");
         case "year":
-          return transactionDate.isSameOrAfter(moment().utc().startOf("year"), "day");
+          return transactionDate.isSameOrAfter(moment().startOf("year"), "day");
         case "custom":
           if (customStartDate && customEndDate) {
-            const start = moment(customStartDate).utc().startOf("day");
-            const end = moment(customEndDate).utc().endOf("day");
+            const start = moment(customStartDate).startOf("day");
+            const end = moment(customEndDate).endOf("day");
             return transactionDate.isBetween(start, end, "day", "[]");
           }
           return true;
@@ -102,7 +102,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }
 
     const grouped = limitedTransactions.reduce((acc, transaction) => {
-      const date = moment(transaction.created_at).utc().format("YYYY-MM-DD");
+      const date = moment(transaction.created_at).format("YYYY-MM-DD");
       if (!acc[date]) acc[date] = [];
       acc[date].push(transaction);
       return acc;
