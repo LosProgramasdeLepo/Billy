@@ -5,6 +5,12 @@ import { Alert } from "react-native";
 import { decode } from "base64-arraybuffer";
 import { AuthError } from "@supabase/supabase-js";
 import { HfInference } from "@huggingface/inference";
+import mercadopago from 'mercadopago';
+
+mercadopago.configure({
+  access_token: 'TEST-1920729712540805-120712-bb7c515a6f8a7c4b5105408cfb9e1f4a-1057220329',
+});
+
 
 const INCOMES_TABLE = "Incomes";
 const OUTCOMES_TABLE = "Outcomes";
@@ -670,6 +676,39 @@ export async function getSharedUsers(profileId: string): Promise<UserData[]> {
 
 export async function isProfileShared(profileId: string): Promise<boolean | null> {
   return await getValueFromData(PROFILES_TABLE, "is_shared", "id", profileId);
+}
+
+export async function createPaymentLink(userEmail: string): Promise<string | null> {
+  try {
+    const preference: any = {
+      items: [
+        {
+          title: "Suscripción Pro",
+          description: "Acceso a funcionalidades avanzadas como crear más perfiles.",
+          quantity: 1,
+          currency_id: "ARS", 
+          unit_price: 2500.0,
+        },
+      ],
+      payer: {
+        email: userEmail, 
+      },
+      back_urls: {
+        success: "https://billyapp.online/payment-success",
+        failure: "https://billyapp.online/payment-failure",
+        pending: "https://billyapp.online/payment-pending",
+      },
+      auto_return: "approved",
+    };
+
+    const response = await mercadopago.preferences.create(preference);
+
+    return response.body.init_point;
+  } catch (error) {
+    console.error("Error al crear la preferencia de pago:", error);
+    throw error;
+  }
+
 }
 
 /* Balance */
