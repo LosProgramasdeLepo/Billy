@@ -80,7 +80,7 @@ export default function Temporal() {
     setTransactions([]);
 
     // Crear nuevo bill
-    const newBillId = await createBill(0, []);
+    const newBillId = await createBill(0, [user?.name || "Usuario"]);
     if (newBillId) {
       setBillId(newBillId);
     } else {

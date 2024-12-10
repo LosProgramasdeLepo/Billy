@@ -1,9 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, TextInput, Modal, TouchableOpacity, StyleSheet, Animated, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Alert,
+  ScrollView,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import * as ImagePicker from "expo-image-picker";
 import MlkitOcr from "react-native-mlkit-ocr";
-import { processOcrResults, getBillParticipants, addOutcomeToBill } from "../../api/api";
+import {
+  processOcrResults,
+  getBillParticipants,
+  addOutcomeToBill,
+} from "../../api/api";
 
 interface TemporalExpenseModalProps {
   isVisible: boolean;
@@ -12,11 +26,18 @@ interface TemporalExpenseModalProps {
   billId: string;
 }
 
-const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId }: TemporalExpenseModalProps) => {
+const TemporalExpenseModal = ({
+  isVisible,
+  onClose,
+  refreshTransactions,
+  billId,
+}: TemporalExpenseModalProps) => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [ticketScanned, setTicketScanned] = useState(false);
   const [errors, setErrors] = useState({
@@ -40,7 +61,9 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
 
   const toggleParticipant = (participant: string) => {
     setSelectedParticipants((prev) => {
-      const newSelected = prev.includes(participant) ? prev.filter((p) => p !== participant) : [...prev, participant];
+      const newSelected = prev.includes(participant)
+        ? prev.filter((p) => p !== participant)
+        : [...prev, participant];
 
       return newSelected;
     });
@@ -68,7 +91,10 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
     if (status !== "granted") {
-      Alert.alert("Permisos requerido", "Necesitamos permisos para escanear tickets.");
+      Alert.alert(
+        "Permisos requerido",
+        "Necesitamos permisos para escanear tickets."
+      );
       return;
     }
 
@@ -96,7 +122,10 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
       }
     } catch (error) {
       console.error("Error accediendo a la cámara:", error);
-      Alert.alert("Error", "No se pudo acceder a la cámara. Por favor, intenta de nuevo.");
+      Alert.alert(
+        "Error",
+        "No se pudo acceder a la cámara. Por favor, intenta de nuevo."
+      );
       setTicketScanned(false);
       setDescription("");
       setAmount("");
@@ -113,15 +142,29 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
 
     setErrors(newErrors);
 
-    if (newErrors.description || newErrors.amount || !whoPaid || selectedParticipants.length === 0) {
-      Alert.alert("Error", "Por favor complete todos los campos obligatorios y seleccione quién pagó");
+    if (
+      newErrors.description ||
+      newErrors.amount ||
+      !whoPaid ||
+      selectedParticipants.length === 0
+    ) {
+      Alert.alert(
+        "Error",
+        "Por favor complete todos los campos obligatorios y seleccione quién pagó"
+      );
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const success = await addOutcomeToBill(billId, whoPaid, parseFloat(amount), description, selectedParticipants);
+      const success = await addOutcomeToBill(
+        billId,
+        whoPaid,
+        parseFloat(amount),
+        description,
+        selectedParticipants
+      );
 
       if (!success) {
         Alert.alert("Error", "No se pudo guardar el gasto");
@@ -148,7 +191,12 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
   };
 
   return (
-    <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={handleClose}>
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={handleClose}
+    >
       <View style={styles.modalBackground}>
         <View style={styles.modalContainer}>
           <View style={styles.headerContainer}>
@@ -161,13 +209,20 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
           <View style={styles.contentContainer}>
             <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, errors.description && styles.inputError, { width: "90%" }]}
+                style={[
+                  styles.input,
+                  errors.description && styles.inputError,
+                  { width: "90%" },
+                ]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descripción (obligatorio)"
                 placeholderTextColor="#AAAAAA"
               />
-              <TouchableOpacity onPress={handleScanTicket} style={styles.scanButton}>
+              <TouchableOpacity
+                onPress={handleScanTicket}
+                style={styles.scanButton}
+              >
                 <Icon name="document-scanner" size={24} color="#370185" />
               </TouchableOpacity>
             </View>
@@ -183,25 +238,45 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
 
             <View style={styles.whoPaidContainer}>
               <Text style={styles.participantsTitle}>¿Quién pagó?</Text>
-              <TouchableOpacity style={styles.dropdownButton} onPress={() => setShowPicker(!showPicker)}>
-                <Text style={styles.dropdownButtonText}>{whoPaid || "Seleccione quién pagó"}</Text>
-                <Icon name={showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={24} color="#000" />
+              <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setShowPicker(!showPicker)}
+              >
+                <Text style={styles.dropdownButtonText}>
+                  {whoPaid || "Seleccione quién pagó"}
+                </Text>
+                <Icon
+                  name={
+                    showPicker ? "keyboard-arrow-up" : "keyboard-arrow-down"
+                  }
+                  size={24}
+                  color="#000"
+                />
               </TouchableOpacity>
 
               {showPicker && (
                 <View style={styles.dropdownList}>
-                  <ScrollView style={styles.scrollView} nestedScrollEnabled={true}>
+                  <ScrollView
+                    style={styles.scrollView}
+                    nestedScrollEnabled={true}
+                  >
                     {participants.map((participant) => (
                       <TouchableOpacity
                         key={participant}
                         style={styles.dropdownItem}
                         onPress={() => {
                           setWhoPaid(participant);
-                          setSelectedParticipants((prev) => (prev.includes(participant) ? prev : [...prev, participant]));
+                          setSelectedParticipants((prev) =>
+                            prev.includes(participant)
+                              ? prev
+                              : [...prev, participant]
+                          );
                           setShowPicker(false);
                         }}
                       >
-                        <Text style={styles.dropdownItemText}>{participant}</Text>
+                        <Text style={styles.dropdownItemText}>
+                          {participant}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -210,18 +285,30 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
             </View>
 
             <Text style={styles.participantsTitle}>Participantes:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.participantsList}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.participantsList}
+            >
               <View style={styles.participantsContainer}>
                 {participants.map((participant, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={[styles.participantButton, selectedParticipants.includes(participant) && styles.participantButtonSelected]}
+                    style={[
+                      styles.participantButton,
+                      selectedParticipants.includes(participant) &&
+                        styles.participantButtonSelected,
+                      whoPaid === participant && styles.participantButtonPayer,
+                    ]}
                     onPress={() => toggleParticipant(participant)}
                   >
                     <Text
                       style={[
                         styles.participantButtonText,
-                        selectedParticipants.includes(participant) && styles.participantButtonTextSelected,
+                        selectedParticipants.includes(participant) &&
+                          styles.participantButtonTextSelected,
+                        whoPaid === participant &&
+                          styles.participantButtonTextPayer,
                       ]}
                     >
                       {participant}
@@ -232,7 +319,11 @@ const TemporalExpenseModal = ({ isVisible, onClose, refreshTransactions, billId 
             </ScrollView>
 
             <TouchableOpacity
-              style={[styles.acceptButton, selectedParticipants.length === 0 && styles.acceptButtonDisabled]}
+              style={[
+                styles.acceptButton,
+                selectedParticipants.length === 0 &&
+                  styles.acceptButtonDisabled,
+              ]}
               onPress={handleSubmit}
               disabled={selectedParticipants.length === 0}
             >
@@ -375,6 +466,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+  participantButtonPayer: {
+    backgroundColor: "#4B00B8",
+  },
+  participantButtonTextPayer: {
+    color: "#FFFFFF",
   },
 });
 
